@@ -28,7 +28,7 @@ accelerate config
 Below are some examples to evaluate a model (CodeParrot and fine-tuned GPT2 on APPS) on HumanEval and APPS benchmarks:
 
 ```bash
-#to run both evaluation on Codeparrot with default parameters
+#to run both humaneval and apps evaluations on Codeparrot with default parameters
 accelerate launch main.py \
 	--model codeparrot/codeparrot \
 	--tasks humaneval,apps \
@@ -47,6 +47,5 @@ accelerate launch main.py \
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
 
 ## To do:
-- [ ] finish APPS fix
-- [ ] add MBPP benchmark
-- [ ] add a table with CodeParrot evaluation scores
+- [ ] finish tests on APPS and MBPP
+- [ ] add a table with some model evaluation scores
