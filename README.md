@@ -14,8 +14,8 @@ Features:
 ## Setup
 
 ```bash
-git clone https://github.com/loubnabnl/code-evaluation-harness.git
-cd code-evaluation-harness
+git clone https://github.com/bigcode-collaboration/bigcode-evaluation-harness.git
+cd bigcode-evaluation-harness
 pip install -r requirements.txt
 ```
 We used `accelerate` to generate code in parallel when multiple GPUs are present. You can configure it using:
