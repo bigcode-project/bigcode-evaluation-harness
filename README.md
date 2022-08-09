@@ -39,7 +39,7 @@ accelerate launch main.py \
 	--model loubnabnl/apps-1.5B-model  \
 	--tasks apps \
 	--level_apps introductory \
-    --n_samples 1 \
+    	--n_samples 1 \
 	--allow_code_execution=False
 ```
 
