@@ -119,7 +119,7 @@ class TokenizedDataset(IterableDataset):
         prompts = []
         for task in range(self.n_tasks):
             if self.mode == "apps":
-                prompt = generate_prompt_apps(self.dataset[task], self.tokenizer, self.max_length_prompt, prefix=self.prefix)
+                prompt = generate_prompt_apps(self.dataset[task], self.tokenizer, self.max_length_prompt, prefix=self.prefix).strip()
             elif self.mode == "mbpp":
                 if self.prompt_type_mbpp == "incoder":
                     prompt = mbpp_incoder_prompt(self.dataset[task], self.include_solution_mbpp, prefix=self.prefix)
@@ -191,7 +191,7 @@ def complete_code(accelerator,
                 code_gens[task].append(remove_last_block(gen_code[len(prefix):], EOF_STRINGS))
             elif mode == "apps":
                 try:
-                    code_gens[task].append(gen_code.split("\nANSWER:\n", 1)[1])
+                    code_gens[task].append(gen_code.split("\nANSWER:", 1)[1])
                 except IndexError:
                     print(f"Index error for task {task}!")
                     code_gens[task].append(gen_code.replace(tokenizer.eos_token, ""))
