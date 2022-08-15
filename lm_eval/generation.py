@@ -27,7 +27,7 @@ class EndOfFunctionCriteria(StoppingCriteria):
         return all(done)
 
 
-def get_references(dataset, num_tasks=None):
+def get_references_humaneval(dataset, num_tasks=None):
     n_tasks = num_tasks if num_tasks is not None else len(dataset)
     references = []
     for task in tqdm(range(n_tasks)):
@@ -37,57 +37,57 @@ def get_references(dataset, num_tasks=None):
     return references
 
 
-def humaneval_parallel_generations(accelerator, model, tokenizer, dataset, args, num_tasks=None):
-    set_seed(args.seed, device_specific=True)
-
-    # Generation settings
-    gen_kwargs = {
-        "do_sample": args.do_sample,
-        "temperature": args.temperature,
-        "max_new_tokens": args.max_new_tokens,
-        "top_p": args.top_p,
-        "top_k": args.top_k,
-        "stopping_criteria": StoppingCriteriaList([EndOfFunctionCriteria(0, EOF_STRINGS, tokenizer)]),
-    }
-
+def get_references_mbpp(dataset, num_tasks=None):
     n_tasks = num_tasks if num_tasks is not None else len(dataset)
-    n_copies = args.n_samples // args.batch_size
-
-    ds_tokenized = TokenizedDataset(tokenizer, model, dataset, mode="humaneval", n_copies=n_copies, n_tasks=n_tasks)
-    # do not confuse args.batch_size, which is actually the num_return_sequences
-    ds_loader = DataLoader(ds_tokenized, batch_size=1)
-
-    model, ds_loader = accelerator.prepare(model, ds_loader)
-
-    generations = complete_code(
-        accelerator,
-        model,
-        tokenizer,
-        ds_loader,
-        n_tasks=n_tasks,
-        batch_size=args.batch_size,
-        mode="humaneval",
-        **gen_kwargs,
-    )
-    return generations
+    references = []
+    for task in tqdm(range(n_tasks)):
+        asserts = '\n'.join(dataset[task]['test_list'])
+        references.append(asserts)
+    return references
 
 
 def parallel_generations(accelerator, model, tokenizer, dataset, mode, args, num_tasks=None):
 
-    # Generation settings
+    set_seed(args.seed, device_specific=True)
+
     gen_kwargs = {
         "do_sample": args.do_sample,
         "temperature": args.temperature,
         "top_p": args.top_p,
         "top_k": args.top_k,
-        "max_length": args.max_length
     }
+    # Generation settings
+    if mode == "apps":
+        additional = {
+            "max_new_tokens": args.max_new_tokens_apps
+        }
+    elif mode == "humaneval":
+        additional = {
+            "max_new_tokens": args.max_new_tokens_he,
+            "stopping_criteria": StoppingCriteriaList([EndOfFunctionCriteria(0, EOF_STRINGS, tokenizer)]),
+        }
+    else:
+        #stoppingcriteria had an issue with InCoder for MBPP
+        additional = {
+            "max_new_tokens": args.max_new_tokens_mbpp,
+        }
+
+    gen_kwargs.update(additional)
+
     n_tasks = num_tasks if num_tasks is not None else len(dataset)
     n_copies = args.n_samples // args.batch_size
-    if mode == "apps":
-        ds_tokenized = TokenizedDataset(tokenizer, dataset, mode="apps", n_copies=n_copies, n_tasks=n_tasks, max_length=args.max_length)
-    elif mode == "mbpp":
-        ds_tokenized = TokenizedDataset(tokenizer, dataset, mode="mbpp", n_copies=n_copies, n_tasks=n_tasks, max_length=args.max_length)
+
+    ds_tokenized = TokenizedDataset(tokenizer,
+                                    dataset,
+                                    mode=mode,
+                                    n_tasks=n_tasks,
+                                    n_copies=n_copies,
+                                    max_length_prompt=args.max_length_prompt,
+                                    include_tests_mbpp=args.include_tests_mbpp,
+                                    include_solution_mbpp=args.include_solution_mbpp,
+                                    prompt_type_mbpp=args.prompt_type_mbpp,
+                                    prefix=args.prefix)
+
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
 
@@ -100,7 +100,11 @@ def parallel_generations(accelerator, model, tokenizer, dataset, mode, args, num
         ds_loader,
         n_tasks=n_tasks,
         batch_size=args.batch_size,
-        mode = "apps",
+        mode=mode,
+        include_tests_mbpp=args.include_tests_mbpp,
+        include_solution_mbpp=args.include_solution_mbpp,
+        prompt_type_mbpp=args.prompt_type_mbpp,
+        prefix=args.prefix,
         **gen_kwargs,
     )
     return generations
