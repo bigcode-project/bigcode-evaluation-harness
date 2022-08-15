@@ -1,12 +1,10 @@
 import os
 import json
 
-from transformers import set_seed
-
 from datasets import load_dataset
 from evaluate import load
 
-from lm_eval.generation import get_references, parallel_generations, humaneval_parallel_generations
+from lm_eval.generation import get_references_humaneval, get_references_mbpp, parallel_generations
 
 
 _WARNING = """
@@ -36,7 +34,6 @@ class Evaluator():
 
         # setup arguments
         self.output_path = args.output_path
-        self.seed = args.seed
 
         # code evaluation permission
         self.allow_code_execution = args.allow_code_execution
@@ -46,33 +43,31 @@ class Evaluator():
         
     def generate_text(self, task):
 
-        set_seed(self.seed)
-
         if task == "apps":
             dataset = load_dataset("codeparrot/apps", split="test", difficulties=[self.level_apps])
-            generations = parallel_generations(self.accelerator, self.model, self.tokenizer, dataset, "apps", self.args, self.args.num_tasks_apps)
+            generations = parallel_generations(self.accelerator, self.model, self.tokenizer, dataset, mode="apps", args=self.args, num_tasks=self.args.num_tasks_apps)
             references = None
             return generations, references
 
         elif task == "humaneval":
             dataset = load_dataset("openai_humaneval", split="test")
-            generations = humaneval_parallel_generations(self.accelerator, self.model, self.tokenizer, dataset, self.args, self.args.num_tasks_humaneval)
-            references = get_references(dataset, self.args.num_tasks_humaneval)
+            generations = parallel_generations(self.accelerator, self.model, self.tokenizer, dataset, mode="humaneval", args=self.args, num_tasks=self.args.num_tasks_he)
+            references = get_references_humaneval(dataset, self.args.num_tasks_he)
             return generations, references
 
         elif task == "mbpp":
             dataset = load_dataset("mbpp", split="test", ignore_verifications=True)
             # the evaluation set is task ids 11->510 
             dataset = dataset.select([i for i in range(10,510)])
-            generations = parallel_generations(self.accelerator, self.model, self.tokenizer, dataset, "mbpp", self.args, self.args.num_tasks_mbpp)
-            references = get_references(dataset, self.args.num_tasks_humaneval)
+            generations = parallel_generations(self.accelerator, self.model, self.tokenizer, dataset, mode="mbpp", args=self.args, num_tasks=self.args.num_tasks_mbpp)
+            references = get_references_mbpp(dataset, self.args.num_tasks_mbpp)
             return generations, references
 
         else:
             raise ValueError(f"Task {task} is not supported, please choose from apps, humaneval, or mbpp")
 
     def evaluate(self, task):
-        #logging.set_verbosity_error()
+
         if not self.allow_code_execution:
             print(_WARNING)
             raise ValueError("Code evaluation is not enabled. Read the warning above carefully and then use `--allow_code_execution=True` flag to enable code evaluation.")
@@ -82,6 +77,7 @@ class Evaluator():
                 with open("generations.json", "w") as fp:
                     json.dump(generations, fp)
                     print("generations saved")
+                    print(f"first generation\n\n{generations[0]}\n\n")
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
             if task == "apps":
