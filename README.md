@@ -40,7 +40,7 @@ accelerate launch main.py \
 	--tasks apps \
 	--level_apps introductory \
 	--num_tasks_apps 10 \
-    --n_samples 1 \
+    	--n_samples 1 \
 	--temperature 0.2 \
 	--allow_code_execution=False
 
@@ -51,7 +51,7 @@ accelerate launch main.py \
 	--tasks mbpp \
 	--num_tasks_mbpp 10 \
 	--prompt_type_mbpp "incoder" \
-    --n_samples 1 \
+    	--n_samples 1 \
 	--temperature 0.2 \
 	--allow_code_execution=False
 ```
