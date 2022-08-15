@@ -188,7 +188,7 @@ def complete_code(accelerator,
         for s in generated_tokens:
             gen_code = tokenizer.decode(s, skip_special_tokens=True, clean_up_tokenization_spaces=True)
             if mode == "humaneval":
-                code_gens[task].append(remove_last_block(gen_code, EOF_STRINGS))
+                code_gens[task].append(remove_last_block(gen_code[len(prefix):], EOF_STRINGS))
             elif mode == "apps":
                 try:
                     code_gens[task].append(gen_code.split("\nANSWER:\n", 1)[1])
