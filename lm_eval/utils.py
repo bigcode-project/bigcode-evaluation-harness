@@ -119,14 +119,14 @@ class TokenizedDataset(IterableDataset):
         prompts = []
         for task in range(self.n_tasks):
             if self.mode == "apps":
-                prompt = generate_prompt_apps(self.dataset[task], self.tokenizer, self.max_length_prompt)
+                prompt = generate_prompt_apps(self.dataset[task], self.tokenizer, self.max_length_prompt, prefix=self.prefix)
             elif self.mode == "mbpp":
                 if self.prompt_type_mbpp == "incoder":
                     prompt = mbpp_incoder_prompt(self.dataset[task], self.include_solution_mbpp, prefix=self.prefix)
                 else:
                     prompt = mbpp_google_prompt(self.dataset[task], self.include_tests_mbpp, prefix = self.prefix)
             else:
-                prompt = self.dataset[task]["prompt"].strip()
+                prompt = self.prefix + self.dataset[task]["prompt"].strip()
             prompts.append(prompt)
         outputs = self.tokenizer(prompts, padding=True, truncation=True, return_tensors="pt", max_length=self.max_length_prompt)
         for task in range(self.n_tasks):
