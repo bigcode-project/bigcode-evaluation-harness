@@ -4,6 +4,7 @@ import fnmatch
 import transformers
 from transformers import  AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 from accelerate import Accelerator
+import datasets
 
 from arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
@@ -51,6 +52,7 @@ def pattern_match(patterns, source_list):
 def main():
     args = parse_args()
     transformers.logging.set_verbosity_error()
+    datasets.logging.set_verbosity_error()
     
     if args.tasks is None:
         task_names = ALL_TASKS
