@@ -9,7 +9,7 @@ from torch.utils.data import IterableDataset
 from datasets import load_dataset
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
-MBPP_EOF_STRINGS = ["\nclass", "\nassert", '\n"""', "\nprint", "\nif"]
+MBPP_EOF_STRINGS = ["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/"]
 
 
 def truncate_prompt_apps(prompt, tokenizer, max_length, call_format):
