@@ -39,9 +39,26 @@ accelerate launch main.py \
 	--model loubnabnl/apps-1.5B-model  \
 	--tasks apps \
 	--level_apps introductory \
-    	--n_samples 1 \
+	--num_tasks_apps 10 \
+    --n_samples 1 \
+	--temperature 0.2 \
+	--allow_code_execution=False
+
+#to evaluate only on some MBPP samples with InCoder 1B
+accelerate launch main.py \
+	--model facebook/incoder-1B  \
+	--prefix "<| file ext=.py |>\n" \
+	--tasks mbpp \
+	--num_tasks_mbpp 10 \
+	--prompt_type_mbpp "incoder" \
+    --n_samples 1 \
+	--temperature 0.2 \
 	--allow_code_execution=False
 ```
+
+## Remarks
+* Currenltly, we use parallel evaluation across multple GPUs using `accelerate`, this assumes that you can fit the model in one GPU. 
+* Please note this evaluation harness tries to cover a wide set of models, but there could still be room for improvement based on each model, some might require different prompt engineering or post-processing of the code generations.
 
 ## Acknowledgements
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
