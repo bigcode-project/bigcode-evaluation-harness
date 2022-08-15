@@ -77,7 +77,6 @@ class Evaluator():
                 with open("generations.json", "w") as fp:
                     json.dump(generations, fp)
                     print("generations saved")
-                    print(f"first generation\n\n{generations[0]}\n\n")
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
             if task == "apps":
