@@ -33,7 +33,6 @@ def parse_args():
     parser.add_argument("--tasks", default=None, choices=MultiChoice(ALL_TASKS), help=f"evalution tasks from {ALL_TASKS}")
     parser.add_argument("--batch_size", type=int, default=1, help = "batch size for evaluation on each worker, can be larger for HumanEval")
     parser.add_argument("--allow_code_execution", type=bool, default=False, help = "allow code evaluation to execute external/untrusted Python code on your machine")
-    #parser.add_argument("--device", type=int, default=-1, help = "device for text-generation, -1 is CPU, else is GPU")
     parser.add_argument("--output_path", type=str, default="evaluation_results.json", help="path to save the results")
     parser.add_argument("--save_generations", type=bool, default=True, help="save code generations")
     return parser.parse_args()
@@ -60,6 +59,12 @@ def main():
 
     model = AutoModelForCausalLM.from_pretrained(args.model)
     tokenizer = AutoTokenizer.from_pretrained(args.model)
+    if not tokenizer.eos_token:
+        if tokenizer.bos_token:
+            tokenizer.eos_token = tokenizer.bos_token
+            print("bos_token used as eos_token")
+        else:
+            raise ValueError("No eos_token or bos_token found")
     tokenizer.pad_token = tokenizer.eos_token
     
     accelerator = Accelerator()
