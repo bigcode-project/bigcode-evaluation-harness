@@ -1,4 +1,4 @@
-# Code Generation LM Evaluation Harness [WIP]
+# Code Generation LM Evaluation Harness
 
 A framework for the evaluation of autoregressive code generation language models. 
 
@@ -64,5 +64,5 @@ accelerate launch main.py \
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
 
 ## To do:
-- [ ] finish tests on APPS and MBPP
+- [ ] finish tests on APPS
 - [ ] add a table with some model evaluation scores
