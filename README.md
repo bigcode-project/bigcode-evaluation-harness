@@ -56,6 +56,26 @@ accelerate launch main.py \
 	--allow_code_execution=False
 ```
 
+## Scores
+
+<div align="center">
+
+|Task | Model  | pass@1 | 
+|-------|--------|---------|
+|MBPP | InCoder (1B) | 10.6% (temp=0.1) |
+|MBPP | CodeParrot (1.5B) |  |
+|MBPP | BigCode (340M) |  |
+</div>
+
+<div align="center">
+
+ |Task | Model  | average acc | strict acc| pass@1| pass@5|
+|-------|--------|---------|-------|-------|-------|
+|APPS | GPT2 finetuned (1.5B) | |  |  | |
+|APPS | CodeParrot (1.5B) |  | | | |
+|APPS | BigCode (340M) |  | | | |
+</div>
+
 ## Remarks
 * Currenltly, we use parallel evaluation across multple GPUs using `accelerate`, this assumes that you can fit the model in one GPU. 
 * Please note this evaluation harness tries to cover a wide set of models, but there could still be room for improvement based on each model, some might require different prompt engineering or post-processing of the code generations.
