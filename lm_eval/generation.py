@@ -61,11 +61,7 @@ def parallel_generations(accelerator, model, tokenizer, dataset, mode, args, num
     
     if mode == "humaneval":
         #to check: stoppingcriteria had an issue with InCoder for MBPP
-        additional = {
-            "stopping_criteria": StoppingCriteriaList([EndOfFunctionCriteria(0, EOF_STRINGS, tokenizer)]),
-        }
-
-    gen_kwargs.update(additional)
+        gen_kwargs["stopping_criteria"] = StoppingCriteriaList([EndOfFunctionCriteria(0, EOF_STRINGS, tokenizer)])
 
     n_tasks = num_tasks if num_tasks is not None else len(dataset)
     n_copies = args.n_samples // args.batch_size
