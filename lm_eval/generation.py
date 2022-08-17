@@ -50,26 +50,19 @@ def parallel_generations(accelerator, model, tokenizer, dataset, mode, args, num
 
     set_seed(args.seed, device_specific=True)
 
+    # Generation settings
     gen_kwargs = {
         "do_sample": args.do_sample,
         "temperature": args.temperature,
         "top_p": args.top_p,
         "top_k": args.top_k,
+        "max_length": args.max_length_generation
     }
-    # Generation settings
-    if mode == "apps":
+    
+    if mode == "humaneval":
+        #to check: stoppingcriteria had an issue with InCoder for MBPP
         additional = {
-            "max_new_tokens": args.max_new_tokens_apps
-        }
-    elif mode == "humaneval":
-        additional = {
-            "max_new_tokens": args.max_new_tokens_he,
             "stopping_criteria": StoppingCriteriaList([EndOfFunctionCriteria(0, EOF_STRINGS, tokenizer)]),
-        }
-    else:
-        #stoppingcriteria had an issue with InCoder for MBPP
-        additional = {
-            "max_new_tokens": args.max_new_tokens_mbpp,
         }
 
     gen_kwargs.update(additional)
