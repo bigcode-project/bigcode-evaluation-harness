@@ -45,9 +45,7 @@ class EvalArguments:
         default=1024,
         metadata={"help": "The maximum length of the prompt."},
     )
-    max_new_tokens_he: Optional[int] = field(default=256, metadata={"help": "Maximum number of newly generated tokens, used in humaneval."})
-    max_new_tokens_apps: Optional[int] = field(default=450, metadata={"help": "Maximum number of newly generated tokens, used in apps."})
-    max_new_tokens_mbpp: Optional[int] = field(default=450, metadata={"help": "Maximum number of newly generated tokens, used in mbpp."})
+    max_length_generation: Optional[int] = field(default=1024, metadata={"help": "Maximum length of generated sequence (prompt+generation)."})
     do_sample: Optional[bool] = field(
         default=True, metadata={"help": "Sample from the language model's output distribution."}
     )
