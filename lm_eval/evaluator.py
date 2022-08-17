@@ -81,7 +81,7 @@ class Evaluator():
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
             if task == "apps":
                 code_metric = load("codeparrot/apps_metric")
-                results = code_metric.compute(predictions=generations)
+                results = code_metric.compute(predictions=generations, k_list=[1, 10, 100], level=self.level_apps)
 
             else:
                 os.environ["HF_ALLOW_CODE_EVAL"] = "1"
