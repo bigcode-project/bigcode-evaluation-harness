@@ -58,22 +58,52 @@ accelerate launch main.py \
 
 ## Scores
 
-<div align="center">
+## Scores
+For all experiments with use the default setting of top-p sampling with `p=0.95` and adapt the temperature.
 
+For MBPP we use temperature 0.1:
+
+<div align="center">
+	
 |Task | Model  | pass@1 | 
 |-------|--------|---------|
-|MBPP | InCoder (1B) | 10.6% (temp=0.1) |
-|MBPP | CodeParrot (1.5B) |  |
-|MBPP | BigCode (340M) |  |
+|MBPP | InCoder (1B) | 10.6% | 
+|MBPP | CodeParrot (1.5B) | 0.2%(to be updated) |
+|MBPP | BigCode-any-license (340M) | 17% |
+|MBPP | BigCode-safe-license (340M) | 10.2% |
+|MBPP | CodeGen-Mono (16B) | 42.4%(*) |
+|MBPP | code-cushman-001/davinci-002 (Codex) | 45%/58%(*)(+) |	
 </div>
 
-<div align="center">
+(*) score reported on [CodeT](https://arxiv.org/pdf/2207.10397v1.pdf) paper
 
- |Task | Model  | average acc | strict acc| pass@1| pass@5|
-|-------|--------|---------|-------|-------|-------|
-|APPS | GPT2 finetuned (1.5B) | |  |  | |
+(+) these models are variants of Codex available thrigh OpenAI API, size is unknown
+
+
+For APPS we use temperature 0.2:
+
+   * Average accuracy:
+
+<div align="center">
+	
+|Task | Model | Introductory| Interview| Competition| Average |
+|-------|--------|--------|-------|-------|-------|
+|APPS | GPT2 finetuned (1.5B) | 10.01%|  | 4.29% | |
 |APPS | CodeParrot (1.5B) |  | | | |
 |APPS | BigCode (340M) |  | | | |
+	
+</div>
+
+   * Strict accuracy:
+    
+<div align="center">
+	
+|Task | Model  | Introductory | Interview| Competition| Average |
+|-------|--------|--------|-------|-------|-------|
+|APPS | GPT2 finetuned (1.5B) |2.4%|  |  | |
+|APPS | CodeParrot (1.5B) |  | | | |
+|APPS | BigCode (340M) |  | | | |
+	
 </div>
 
 ## Remarks
