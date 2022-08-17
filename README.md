@@ -88,7 +88,7 @@ For APPS we use temperature 0.2:
 	
 |Task | Model | Introductory| Interview| Competition| Average |
 |-------|--------|--------|-------|-------|-------|
-|APPS | GPT2 finetuned (1.5B) | 10.01%|  | 4.29% | |
+|APPS | GPT2 finetuned (1.5B) | 10.01%| 7.52% | 4.29% | |
 |APPS | CodeParrot (1.5B) |  | | | |
 |APPS | BigCode (340M) |  | | | |
 	
@@ -100,7 +100,7 @@ For APPS we use temperature 0.2:
 	
 |Task | Model  | Introductory | Interview| Competition| Average |
 |-------|--------|--------|-------|-------|-------|
-|APPS | GPT2 finetuned (1.5B) |2.4%|  |  | |
+|APPS | GPT2 finetuned (1.5B) |2.4%| 0.5% | 0% | |
 |APPS | CodeParrot (1.5B) |  | | | |
 |APPS | BigCode (340M) |  | | | |
 	
