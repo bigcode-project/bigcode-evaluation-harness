@@ -86,8 +86,8 @@ def main():
     else:
         task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
 
-    model = AutoModelForCausalLM.from_pretrained(args.model)
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    model = AutoModelForCausalLM.from_pretrained(args.model, use_auth_token=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=True)
     if not tokenizer.eos_token:
         if tokenizer.bos_token:
             tokenizer.eos_token = tokenizer.bos_token
