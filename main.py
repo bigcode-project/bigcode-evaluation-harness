@@ -1,15 +1,16 @@
-import json
 import fnmatch
+import json
 
-import transformers
-from transformers import  AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
-from accelerate import Accelerator
 import datasets
+import transformers
+from accelerate import Accelerator
+from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 
 from arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
 
 ALL_TASKS = ["humaneval", "apps", "mbpp"]
+
 
 class MultiChoice:
     def __init__(self, choices):
@@ -30,12 +31,38 @@ class MultiChoice:
 
 def parse_args():
     parser = HfArgumentParser(EvalArguments)
-    parser.add_argument("--model", required=True, help="Model to evaluate, provide repo name Hugging Face hub or local path")
-    parser.add_argument("--tasks", default=None, choices=MultiChoice(ALL_TASKS), help=f"evalution tasks from {ALL_TASKS}")
-    parser.add_argument("--batch_size", type=int, default=1, help = "batch size for evaluation on each worker, can be larger for HumanEval")
-    parser.add_argument("--allow_code_execution", type=bool, default=False, help = "allow code evaluation to execute external/untrusted Python code on your machine")
-    parser.add_argument("--output_path", type=str, default="evaluation_results.json", help="path to save the results")
-    parser.add_argument("--save_generations", type=bool, default=True, help="save code generations")
+    parser.add_argument(
+        "--model",
+        required=True,
+        help="Model to evaluate, provide repo name Hugging Face hub or local path",
+    )
+    parser.add_argument(
+        "--tasks",
+        default=None,
+        choices=MultiChoice(ALL_TASKS),
+        help=f"evalution tasks from {ALL_TASKS}",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=1,
+        help="batch size for evaluation on each worker, can be larger for HumanEval",
+    )
+    parser.add_argument(
+        "--allow_code_execution",
+        type=bool,
+        default=False,
+        help="allow code evaluation to execute external/untrusted Python code on your machine",
+    )
+    parser.add_argument(
+        "--output_path",
+        type=str,
+        default="evaluation_results.json",
+        help="path to save the results",
+    )
+    parser.add_argument(
+        "--save_generations", type=bool, default=True, help="save code generations"
+    )
     return parser.parse_args()
 
 
@@ -53,7 +80,7 @@ def main():
     args = parse_args()
     transformers.logging.set_verbosity_error()
     datasets.logging.set_verbosity_error()
-    
+
     if args.tasks is None:
         task_names = ALL_TASKS
     else:
@@ -68,20 +95,18 @@ def main():
         else:
             raise ValueError("No eos_token or bos_token found")
     tokenizer.pad_token = tokenizer.eos_token
-    
+
     accelerator = Accelerator()
     if accelerator.is_main_process:
         print(f"Selected Tasks: {task_names}")
-        
+
     evaluator = Evaluator(accelerator, model, tokenizer, args)
     results = {}
     for task in task_names:
         results[task] = evaluator.evaluate(task)
 
     # add info about the model and few shot config
-    results["config"] = {
-        "model": args.model
-    }
+    results["config"] = {"model": args.model}
 
     dumped = json.dumps(results, indent=2)
     if accelerator.is_main_process:
