@@ -32,6 +32,7 @@ def get_args():
     parser.add_argument("--fp16", default=False, action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output_dir", type=str, default="./checkpoints")
+    parser.add_argument("--log-freq", default=1, type=int)
     parser.add_argument("--save-freq", default=50, type=int)
     return parser.parse_args()
 
@@ -56,6 +57,7 @@ def run_training(args, train_data):
         output_dir=args.output_dir,
         save_steps=args.save_freq,
         dataloader_drop_last=True,
+        logging_steps=args.log_freq,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
         num_train_epochs=args.num_epochs,
@@ -69,7 +71,11 @@ def run_training(args, train_data):
         report_to="wandb",
     )
 
-    trainer = Trainer(model=model, args=training_args, train_dataset=train_data,)
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_data,
+    )
 
     print("Training...")
     trainer.train()
