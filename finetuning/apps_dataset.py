@@ -14,7 +14,7 @@ class APPSBaseDataset(torch.utils.data.Dataset):
         self.samples = []  # Should be set in initialize()
         self.initialize()
 
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=True)
 
     def initialize(self):
 

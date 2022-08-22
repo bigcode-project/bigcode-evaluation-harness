@@ -22,12 +22,13 @@ def get_args():
     parser.add_argument("--model_ckpt", type=str, default="codeparrot/codeparrot-small")
     parser.add_argument("--max_length", type=int, default=1024)
     parser.add_argument("--num_epochs", type=int, default=10)
+    parser.add_argument("--max_steps", type=int, default=-1)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=8)
 
     parser.add_argument("--learning_rate", type=float, default=5e-5)
     parser.add_argument("--lr_scheduler_type", type=str, default="cosine")
-    parser.add_argument("--num_warmup_steps", type=int, default=0)
+    parser.add_argument("--num_warmup_steps", type=int, default=100)
     parser.add_argument("--weight_decay", type=float, default=0.05)
 
     parser.add_argument("--fp16", default=False, action="store_true")
@@ -50,27 +51,30 @@ def get_dataset(dataset, args):
 
 def run_training(args, train_data, val_data):
 
-    model = AutoModelForCausalLM.from_pretrained(args.model_ckpt)
+    model = AutoModelForCausalLM.from_pretrained(args.model_ckpt, use_auth_token=True)
     train_data.start_iteration = 0
 
     print(f"Starting main loop")
 
     training_args = TrainingArguments(
         output_dir=args.output_dir,
-        save_steps=args.save_freq,
         dataloader_drop_last=True,
         evaluation_strategy = "steps",
+        num_train_epochs=args.num_epochs,
+        max_steps = args.max_steps,
         eval_steps = args.eval_freq,
+        save_steps=args.save_freq,
         logging_steps=args.log_freq,
+
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
-        num_train_epochs=args.num_epochs,
         learning_rate=args.learning_rate,
         lr_scheduler_type=args.lr_scheduler_type,
         warmup_steps = args.num_warmup_steps,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         weight_decay=args.weight_decay,
         fp16=args.fp16,
+
         run_name="apps-train",
         report_to="wandb",
     )
