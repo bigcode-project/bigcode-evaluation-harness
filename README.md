@@ -114,5 +114,4 @@ For APPS we use temperature 0.2:
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
 
 ## To do:
-- [ ] finish tests on APPS
-- [ ] add a table with some model evaluation scores
+- [ ] add APPS scores
