@@ -58,7 +58,6 @@ accelerate launch main.py \
 
 ## Scores
 
-## Scores
 For all experiments with use the default setting of top-p sampling with `p=0.95` and adapt the temperature.
 
 For MBPP we use temperature 0.1:
