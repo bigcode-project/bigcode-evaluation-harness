@@ -34,9 +34,9 @@ accelerate launch main.py \
 	--tasks humaneval,apps \
 	--allow_code_execution=False
 
-#to evaluate only on some APPS samples 
+#to evaluate only on some APPS samples using single generations
 accelerate launch main.py \
-	--model loubnabnl/apps-1.5B-model  \
+	--model BigCode/gpt_all_license_apps_finetuned \
 	--tasks apps \
 	--level_apps introductory \
 	--num_tasks_apps 10 \
@@ -103,11 +103,12 @@ For APPS we use temperature 0.2:
 |APPS | GPT2 finetuned (1.5B) |2.4%| 0.5% | 0% |0.97% |
 |APPS | CodeParrot (1.5B) |  | | | |
 |APPS | BigCode (340M) |  | | | |
-	
+   * Pass@k scores:
+   
 </div>
 
 ## Remarks
-* Currenltly, we use parallel evaluation across multple GPUs using `accelerate`, this assumes that you can fit the model in one GPU. 
+* Currenltly, we use parallel evaluation across multiple GPUs using `accelerate`, this assumes that you can fit the model in one GPU. 
 * Please note this evaluation harness tries to cover a wide set of models, but there could still be room for improvement based on each model, some might require different prompt engineering or post-processing of the code generations.
 
 ## Acknowledgements
