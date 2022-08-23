@@ -62,10 +62,10 @@ class EvalArguments:
         },
     )
     max_length_prompt: Optional[int] = field(
-        default=1024, metadata={"help": "The maximum length of the prompt."},
+        default=2048, metadata={"help": "The maximum length of the prompt."},
     )
     max_length_generation: Optional[int] = field(
-        default=1024,
+        default=2048,
         metadata={"help": "Maximum length of generated sequence (prompt+generation)."},
     )
     do_sample: Optional[bool] = field(
