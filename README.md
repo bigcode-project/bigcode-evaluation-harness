@@ -93,22 +93,27 @@ For APPS we use temperature 0.2:
 	
 </div>
 
-   * Strict accuracy:
-    
+* Strict accuracy:
 <div align="center">
-	
+
 |Task | Model  | Introductory | Interview| Competition| Average |
 |-------|--------|--------|-------|-------|-------|
 |APPS | GPT2 finetuned (1.5B) |2.4%| 0.5% | 0% |0.97% |
 |APPS | CodeParrot (1.5B) |  | | | |
 |APPS | BigCode (340M) |  | | | |
-   * Pass@k scores:
-   
+	
 </div>
+
+* Pass@k scores:
 
 ## Remarks
 * Currenltly, we use parallel evaluation across multiple GPUs using `accelerate`, this assumes that you can fit the model in one GPU. 
 * Please note this evaluation harness tries to cover a wide set of models, but there could still be room for improvement based on each model, some might require different prompt engineering or post-processing of the code generations.
+
+## Evaluation time on 8 A100 GPUs:
+- Evaluation on MBPP is 1-shot for 500 prompts, the evaluation takes **~1 hour**
+- Evaluation on APPS (total of 5000 prompts) with single generations to compute average accuracy/strict accuracy takes in average **~4 hours for each of the 3 difficulty levels** (<ins> although</ins> average accuracy might not be very relevant and strict accuracy similar to pass@1 with one genertion usually very low)
+- The evaluation on APPS with multiple generations (n=200) to compute pass@k takes ~**16 hours for each of the 3 difficulty level**
 
 ## Acknowledgements
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
