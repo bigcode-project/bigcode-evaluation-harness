@@ -3,9 +3,8 @@
 In this folder we show how to train an autoregressive Language model on APPS dataset, since a common way to evaluate on this benchmark is after finetuning the model on its training split.
 We use Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) which supports distributed training on multiple GPUs.
 
-First configure `accelerate` and login to Weights & Biases
+First login to Weights & Biases
 ```
-accelerate config
 wandb login
 ```
 
