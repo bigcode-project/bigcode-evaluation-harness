@@ -3,6 +3,8 @@
 In this folder we show how to train an autoregressive Language model on APPS dataset, since a common way to evaluate on this benchmark is after finetuning the model on its training split.
 We use Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) which supports distributed training on multiple GPUs.
 
+## Setup
+
 First login to Weights & Biases
 ```
 wandb login
@@ -21,3 +23,7 @@ python apps_train.py \
         --fp16
 ```
 The fine-tuning takes 14h without mixed precision on 8 A100 GPUs.
+
+## Acknowledgments
+
+This script is adapted from [APPS repository](https://github.com/hendrycks/apps).
