@@ -10,19 +10,18 @@ class APPSBaseDataset(torch.utils.data.Dataset):
     def __init__(self, dataset, max_tokens, tokenizer_path):
         self.dataset = dataset
         self.max_tokens = max_tokens
-
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
         self.samples = []  # Should be set in initialize()
-        self.initialize()
 
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=True)
+        self.initialize(self.tokenizer)
 
-    def initialize(self):
+    def initialize(self, tokenizer):
 
         all_samples = []
         skipped_problems = []
 
         all_samples_dict = {}  # Mapping from question_fname to list of samples
-
+        count = 0
         for idx in tqdm(range(len(self.dataset))):
             sample = self.dataset[idx]
             # question
@@ -56,7 +55,19 @@ class APPSBaseDataset(torch.utils.data.Dataset):
             # Read all the solutions
             for solution in solutions:
                 sample = (question_str, starter_code, solution, answer_type)
-
+                # remove samples with long questions
+                q_str = (
+                    "\nQUESTION:\n"
+                    + question_str
+                    + "\n"
+                    + starter_code
+                    + "\n"
+                    + answer_type
+                    + "\nANSWER:\n"
+                )
+                if len(tokenizer(q_str)["input_ids"]) >= self.max_tokens:
+                    count += 1
+                    continue
                 all_samples.append(sample)
                 if question_str in all_samples_dict:
                     all_samples_dict[question_str].append(sample)
@@ -64,7 +75,8 @@ class APPSBaseDataset(torch.utils.data.Dataset):
                     all_samples_dict[question_str] = [sample]
 
         print(f"Loaded {len(all_samples)} samples")
-        print(f"Skipped {len(skipped_problems)} problems")
+        print(f"Skipped {len(skipped_problems)} problems because no solution was found")
+        print(f"Skipped {count} problems because the prompt was too long")
         self.samples = all_samples
         self.samples_dict = all_samples_dict
 
@@ -74,8 +86,8 @@ class APPSBaseDataset(torch.utils.data.Dataset):
     def pack_samples(self, idx):
         """
         Repeatedly pick question, answer pairs from self.dataroot until we hit max_tokens.
-        This will not include the tokens for the QUESTION and ANSWER prompt, as well as the  
-        self.question_prefix. These will be added later and the total input will be 
+        This will not include the tokens for the QUESTION and ANSWER prompt, as well as the
+        self.question_prefix. These will be added later and the total input will be
         truncated if necessary.
 
         Always include the sample at idx at the beginning.
@@ -107,7 +119,9 @@ class APPSBaseDataset(torch.utils.data.Dataset):
 
         raw_samples = self.pack_samples(idx)
         output_samples = sample_gpt_task(
-            raw_samples, max_tokens=self.max_tokens, tokenizer=self.tokenizer,
+            raw_samples,
+            max_tokens=self.max_tokens,
+            tokenizer=self.tokenizer,
         )
         return output_samples
 
