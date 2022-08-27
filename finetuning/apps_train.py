@@ -34,9 +34,9 @@ def get_args():
     parser.add_argument("--fp16", default=False, action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output_dir", type=str, default="./checkpoints")
-    parser.add_argument("--log-freq", default=1, type=int)
-    parser.add_argument("--eval-freq", default=250, type=int)
-    parser.add_argument("--save-freq", default=250, type=int)
+    parser.add_argument("--log_freq", default=1, type=int)
+    parser.add_argument("--eval_freq", default=250, type=int)
+    parser.add_argument("--save_freq", default=250, type=int)
     return parser.parse_args()
 
 
@@ -98,7 +98,7 @@ def main(args):
     dataset = load_dataset("codeparrot/apps", split="train")
     dataset.shuffle(seed=args.seed)
     data = get_dataset(dataset, args)
-    train_size = int(0.9 * len(data))
+    train_size = int(0.95 * len(data))
     train_data, val_data = torch.utils.data.random_split(data, [train_size, len(data) - train_size], generator=torch.Generator().manual_seed(args.seed))
     print(f"size of training data {len(train_data)}\nsize of validation data {len(val_data)}")
     run_training(args, train_data, val_data)
