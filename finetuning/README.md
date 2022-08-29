@@ -22,7 +22,7 @@ python apps_train.py \
         --eval_freq 250 \
         --fp16
 ```
-The fine-tuning takes 14h without mixed precision on 8 A100 GPUs.
+The fine-tuning takes 11h without mixed precision on 4 A100 GPUs.
 
 ## Acknowledgments
 
