@@ -28,23 +28,35 @@ accelerate config
 Below are some examples to evaluate a model (CodeParrot and fine-tuned GPT2 on APPS) on HumanEval and APPS benchmarks:
 
 ```bash
-#to run both humaneval and apps evaluations on Codeparrot with default parameters
+# to run both humaneval and apps evaluations on Codeparrot with default parameters
 accelerate launch main.py \
 	--model codeparrot/codeparrot \
 	--tasks humaneval,apps \
 	--allow_code_execution=False
+	
+# to run full pass@k evaluation on the Introductory level of APPS (1000samples)
+# the other levels are interview (3000 samples) and competitioon (1000 samples)
+accelerate launch main.py \
+	--model BigCode/gpt_all_license_apps_finetuned \
+	--tasks apps \
+	--level_apps introductory \
+    	--n_samples 200 \
+	--batch_size 40 \
+	--temperature 0.6 \
+	--allow_code_execution=False
 
-#to evaluate only on some APPS samples using single generations
+# to evaluate only on some APPS samples using single generations
 accelerate launch main.py \
 	--model BigCode/gpt_all_license_apps_finetuned \
 	--tasks apps \
 	--level_apps introductory \
 	--num_tasks_apps 10 \
     	--n_samples 1 \
+	--batch_size 40 \
 	--temperature 0.2 \
 	--allow_code_execution=False
-
-#to evaluate only on some MBPP samples with InCoder 1B
+	
+# to evaluate only on some MBPP samples with InCoder 1B
 accelerate launch main.py \
 	--model facebook/incoder-1B  \
 	--prefix "<| file ext=.py |>\n" \
@@ -112,8 +124,8 @@ For APPS we use temperature 0.1:
 
 ## Evaluation time on 8 A100 GPUs:
 - Evaluation on MBPP is 1-shot for 500 prompts, the evaluation takes **~1 hour**
-- Evaluation on APPS (total of 5000 prompts) with single generations to compute average accuracy/strict accuracy takes in average **~4 hours for each of the 3 difficulty levels** (<ins> although</ins> average accuracy might not be very relevant and strict accuracy similar to pass@1 with one genertion usually very low)
-- The evaluation on APPS with multiple generations (n=200) to compute pass@k takes ~**16 hours for each of the 3 difficulty level**
+- Evaluation on APPS (total of 5000 prompts) with single generations to compute average accuracy/strict accuracy takes in average **~4 hours for each of the 3 difficulty levels**
+- The evaluation on APPS with multiple generations (nsamples=200) to compute pass@k takes **~16 hours for each 1000 samples (introductory level for example)**
 
 ## Acknowledgements
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
