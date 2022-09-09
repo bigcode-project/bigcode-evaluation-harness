@@ -1,29 +1,12 @@
-# Finetuning
+# Finetuning 
+In this folder we show how to fine-tune an autoregressive Language model on the following evaluation and downstream tasks with support for 7 programming languages:
 
-In this folder we show how to train an autoregressive Language model on APPS dataset, since a common way to evaluate on this benchmark is after finetuning the model on its training split.
-We use Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) which supports distributed training on multiple GPUs.
+* [APPS](https://huggingface.co/datasets/codeparrot/apps): Python benchmark to evaluate code generation. It is similar to HumanEval and MBPP, but it is more challanging and has more evaluation problems.
+* [CodeComplex](https://huggingface.co/datasets/codeparrot/codecomplex): **Java** benchmark with a classification problem to predict the algorithmic complexity of Java programs among 7 labels.
+* [CodeClone](https://huggingface.co/datasets/code_x_glue_cc_clone_detection_big_clone_bench): **Java** benchmark from [CodeXGLUE](https://github.com/microsoft/CodeXGLUE) dataset, with a binary classification problem of predicting the semantic equivalence of two programs. [WIP]
+* [CodeDefect](https://huggingface.co/datasets/code_x_glue_cc_defect_detection): **C** benchmark from [CodeXGLUE](https://github.com/microsoft/CodeXGLUE), with a binary classification problem of predicting whether a code is insecure code and may attack software systems. [WIP]
+* [Code-to-text](https://huggingface.co/datasets/code_x_glue_ct_code_to_text): Dataset from [CodeXGLUE](https://github.com/microsoft/CodeXGLUE) for generationg natural language comments from code in **Python, Go, Java, Javascript, PHP and Ruby**. This task can also be done in a zero-shot setting without need for fine-tuning. [WIP]
 
-## Setup
+We use Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) API for all tasks, which supports distributed training on multiple GPUs.The fine-tuned models can then be used in this evaluation harness to evaluate them on their specific task.
 
-First login to Weights & Biases
-```
-wandb login
-```
-
-You can finetune a model, `gpt_345_python_any_license` for example, by running:
-```python
-# we use a global batch size of 256, here = 8 (GPUs) * 2 (batch_size_per_device) * 16 (gradient_accumulation)
-python apps_train.py \
-        --model_ckpt BigCode/gpt_345_python_any_license \
-        --num_epochs 10 \
-        --batch_size 2 \
-        --gradient_accumulation_steps 16 \
-        --learning_rate 5e-5 \
-        --eval_freq 250 \
-        --fp16
-```
-The fine-tuning takes 11h on 4 A100 GPUs.
-
-## Acknowledgments
-
-This script is adapted from [APPS repository](https://github.com/hendrycks/apps).
+For implementation details, please refer to the README inside each folder.
