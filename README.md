@@ -131,4 +131,4 @@ For APPS we use temperature 0.1:
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
 
 ## To do:
-- [ ] add APPS scores
+- [ ] add multilingual evaluation benchmarks
