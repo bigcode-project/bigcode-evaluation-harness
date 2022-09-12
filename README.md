@@ -9,7 +9,8 @@ This project provides a unified framework to test autoregressive code generation
 Features:
 - Any autoregressive model available on [Hugging Face hub](https://huggingface.co/) can be used, but we recommend using a code generation models trained specifically on Code such as [CodeParrot](https://huggingface.co/codeparrot/codeparrot), [InCoder](https://huggingface.co/facebook/incoder-6B) and [CodeGen](https://huggingface.co/Salesforce/codegen-16B-mono).
 - 3 code generation Python tasks implemented: [HumanEval](https://huggingface.co/datasets/openai_humaneval), [APPS](https://huggingface.co/datasets/codeparrot/apps) and [MBPP](https://huggingface.co/datasets/mbpp).
-- 4 multilingual downstream tasks: Java Complexity prediction, Java code equivalence prediction, C code defect prediction, Code to text generation [WIP] for 6 languages: Python, Go, Ruby, Java, JavaScript and PHP. 
+- 3 multilingual downstream tasks: Java Complexity prediction, Java code equivalence prediction, C code defect prediction
+- Docstring generation task from code (2-shot & fine-tuning) for 6 languages: Python, Go, Ruby, Java, JavaScript and PHP. 
 
 ## Setup
 
