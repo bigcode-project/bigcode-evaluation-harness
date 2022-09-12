@@ -109,7 +109,7 @@ def main():
         per_device_eval_batch_size=args.batch_size,
         num_train_epochs=args.num_epochs,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
-        weight_decay=0.01,
+        weight_decay=args.weight_decay,
         metric_for_best_model="accuracy",
         run_name="complexity-java",
         report_to="wandb",
@@ -129,6 +129,9 @@ def main():
     trainer.add_callback(CustomCallback(trainer))
     trainer.train()
 
+    result = trainer.evaluate(eval_dataset=tokenized_datasets["test"])
+    print(f"Evaluation accuracy on the test set: {result['eval_accuracy']}")
+    
     # push the model to the Hugging Face hub
     if args.push_to_hub:
         model.push_to_hub(args.model_hub_name)
