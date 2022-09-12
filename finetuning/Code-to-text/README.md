@@ -9,26 +9,31 @@ wandb login
 huggingface-cli login
 ```
 
+During the training, we use the code as input to the model and docstring as label. To fine-tune a model on the Python dataset for example, you can use the following command:
+```python
+python train.py \
+    --model_ckpt codeparrot/codeparrot-small \
+    --language Python \
+    --num_epochs 30 \
+    --batch_size 8 \
+    --num_warmup_steps 10 \
+    --learning_rate 5e-4 
+    --push_to_hub True
+```
+
 For the 2-shot evaluation we use as a prompt
 ```
 Generate comments for these code snippets:
 Code:
-CODE1
+$CODE1
 Comment:
-"""DOCSTRING1"""
+$DOCSTRING1
+
 Code:
 CODE2
 Comment:
-"""DOCSTRING2"""
+$DOCSTRING2
+
 Code: $CODE
 """
 ```
-
-For fine-tuned models we train them on this 
-```
-input = $CODE
-label = $DOCSTRING
-```
-
-To fine-tune a model on the Python dataset for example, you can use the following command:
-

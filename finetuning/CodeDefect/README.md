@@ -11,7 +11,7 @@ huggingface-cli login
 
 To fine-tune a model on this dataset you can use the following command:
 ```python
-python train_complexity_predictor.py \
+python train.py \
     --model_ckpt microsoft/unixcoder-base-nine \
     --num_epochs 30 \
     --batch_size 8 \
