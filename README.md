@@ -67,6 +67,14 @@ accelerate launch main.py \
     	--n_samples 1 \
 	--temperature 0.2 \
 	--allow_code_execution=False
+
+# to evaluate on the code-to-text becnhmark
+accelerate launch main.py \
+	--model facebook/incoder-1B  \
+	--prefix "<| file ext=.py |>\n" \
+	--tasks code-to-text \
+	--num_tasks_code_to_text 5
+	--n_samples 1 
 ```
 
 ## Scores

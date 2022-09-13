@@ -1,5 +1,6 @@
 import json
 import re
+import xml.sax.saxutils
 from collections import defaultdict
 
 import torch
@@ -76,7 +77,7 @@ def mbpp_incoder_prompt(sample, include_solution_mbpp=False, prefix=""):
 
 
 def mbpp_google_prompt(sample, include_tests=True, prefix=""):
-    """Generate prompts for MBPP prompt similarily to the original google paper
+    """Generate prompts for MBPP similarily to the original google paper
     with an option for including the tests cases or not:
     prompt = description + 'Your code should
     satisfy these tests:'+ three assert statements"""
@@ -87,6 +88,24 @@ def mbpp_google_prompt(sample, include_tests=True, prefix=""):
         for test in sample["test_list"]:
             prompt += "\n" + test
     return prefix + prompt
+
+def code_to_text_prompt(sample, language="Python", prompt_type="left", prefix=""):
+    """Generate prompts for code-to-text task
+    For prompt_type left we include the left code with function signature (only possible for Python now), 
+    else we only include the whole body"""
+    # TODO implement signature extraction for other languages ?
+    code = sample["code"]
+    if language == "Python":
+        splits = code.split('"""')
+        if prompt_type == "left":
+            prompt = splits[0].strip() + '\n    """\n'
+        else:
+            prompt = splits[0].strip() + splits[2] + '\n"""Explanation of the code above:\n'            
+        return prefix + prompt
+    if language == "Ruby":          
+        return prefix + prompt + '\n=begin Explanation of the code above:\n' 
+    else:
+        return prefix + prompt + '\n/* Explanation of the code above:\n' 
 
 
 class TokenizedDataset(IterableDataset):
@@ -106,6 +125,8 @@ class TokenizedDataset(IterableDataset):
         include_tests_mbpp=True,
         include_solution_mbpp=False,
         prompt_type_mbpp="incoder",
+        prompt_type_code_to_text="left",
+        language="Python",
         prefix="",
     ):
 
@@ -118,6 +139,8 @@ class TokenizedDataset(IterableDataset):
         self.include_tests_mbpp = include_tests_mbpp
         self.include_solution_mbpp = include_solution_mbpp
         self.prompt_type_mbpp = prompt_type_mbpp
+        self.prompt_type_code_to_text = prompt_type_code_to_text
+        self.language = language
         self.prefix = prefix
 
     def __iter__(self):
@@ -141,9 +164,18 @@ class TokenizedDataset(IterableDataset):
                     prompt = mbpp_google_prompt(
                         self.dataset[task], self.include_tests_mbpp, prefix=self.prefix
                     )
-            else:
+            elif self.mode == "humaneval":
                 prompt = self.prefix + self.dataset[task]["prompt"].strip()
+
+            elif self.mode == "code-to-text":
+                prompt = code_to_text_prompt(
+                    self.dataset[task],
+                    language=self.language,
+                    prompt_type=self.prompt_type_code_to_text,
+                    prefix=self.prefix,
+                )
             prompts.append(prompt)
+
         outputs = self.tokenizer(
             prompts,
             padding=True,
@@ -171,6 +203,8 @@ def complete_code(
     include_tests_mbpp=True,
     include_solution_mbpp=False,
     prompt_type_mbpp="incoder",
+    prompt_type_code_to_text="left",
+    language="Python",
     prefix="",
     **gen_kwargs,
 ):
@@ -189,7 +223,7 @@ def complete_code(
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(enumerate(dataloader)):
         with torch.no_grad():
-            if mode == "humaneval":
+            if mode == "humaneval" or mode == "code-to-text":
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
             generated_tokens = accelerator.unwrap_model(model).generate(
                 input_ids=batch["ids"][:, : batch["input_len"]],
@@ -221,13 +255,15 @@ def complete_code(
                 code_gens[task].append(
                     remove_last_block(gen_code[len(prefix) :], EOF_STRINGS)
                 )
+
             elif mode == "apps":
                 try:
                     code_gens[task].append(gen_code.split("\nANSWER:", 1)[1])
                 except IndexError:
                     print(f"Index error for task {task}!")
                     code_gens[task].append(gen_code.replace(tokenizer.eos_token, ""))
-            else:
+
+            elif mode == "mbpp":
                 if prompt_type_mbpp == "incoder":
                     prompt = mbpp_incoder_prompt(
                         MBPP[int(task)], include_solution_mbpp, prefix
@@ -238,4 +274,15 @@ def complete_code(
                     )
                 output = gen_code[len(prompt) :]
                 code_gens[task].append(first_block(output, MBPP_EOF_STRINGS))
+
+            elif mode == "code-to-text":
+                delimiters = {"Python": '\n"""Explanation of the code above:\n',
+                             "Ruby": '\n=begin Explanation of the code above:\n',
+                             "Other":'\n/* Explanation of the code above:\n'}
+                            
+                if language == "Python" and prompt_type_code_to_text == "left":
+                    output = gen_code.split('"""\n')[1].strip()
+                else:
+                    output = gen_code.split(delimiters[language])[1].strip()
+                code_gens[task].append(output)
     return code_gens

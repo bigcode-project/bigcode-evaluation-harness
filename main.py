@@ -9,7 +9,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 from arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
 
-ALL_TASKS = ["humaneval", "apps", "mbpp"]
+ALL_TASKS = ["humaneval", "apps", "mbpp", "code-to-text"]
 
 
 class MultiChoice:
@@ -41,6 +41,12 @@ def parse_args():
         default=None,
         choices=MultiChoice(ALL_TASKS),
         help=f"evalution tasks from {ALL_TASKS}",
+    )
+    parser.add_argument(
+        "--language",
+        type=str,
+        default="Python",
+        help=f"Language for the code to text task",
     )
     parser.add_argument(
         "--batch_size",
@@ -86,6 +92,7 @@ def main():
     else:
         task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
 
+    print("Loading the model and tokenizer")
     model = AutoModelForCausalLM.from_pretrained(args.model, use_auth_token=True)
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=True)
     if not tokenizer.eos_token:

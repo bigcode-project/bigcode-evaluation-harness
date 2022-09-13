@@ -33,6 +33,12 @@ class EvalArguments:
             "help": "The number of APPS tasks to run. If not specified all tasks are evaluated."
         },
     )
+    num_tasks_code_to_text: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "The number of Code-to-text tasks to run. If not specified, the first 1000 are evaluated."
+        },
+    )
     include_tests_mbpp: Optional[bool] = field(
         default=True,
         metadata={"help": "Whether to include test cases in the prompt for MBPP."},
@@ -47,6 +53,12 @@ class EvalArguments:
         default="incoder",
         metadata={
             "help": "The type of prompt to use for MBPP. Can be 'incoder' or 'google'."
+        },
+    )
+    prompt_type_code_to_text: Optional[str] = field(
+        default="left",
+        metadata={
+            "help": "The type of prompt to use for code-to-text task, if 'left' we include only left signature else the whole function body is included."
         },
     )
     prefix: Optional[str] = field(

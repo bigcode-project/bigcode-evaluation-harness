@@ -1,6 +1,7 @@
 from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
+import re
 from transformers import StoppingCriteria, StoppingCriteriaList
 
 from lm_eval.utils import TokenizedDataset, complete_code
@@ -53,26 +54,45 @@ def get_references_mbpp(dataset, num_tasks=None):
     return references
 
 
+def get_references_code_to_text(dataset, num_tasks=None):
+    n_tasks = num_tasks if num_tasks is not None else len(dataset)
+    references = []
+    for task in tqdm(range(n_tasks)):
+        docstring = dataset[task]["docstring"]
+        # strip extraneous content such as arguments definition
+        reference = re.split('Arguments:|arguments:|Args:|args:|returns:|Returns:', docstring)[0].strip()
+        references.append(reference)
+    return references
+
 def parallel_generations(
     accelerator, model, tokenizer, dataset, mode, args, num_tasks=None
 ):
 
     set_seed(args.seed, device_specific=True)
 
-    # Generation settings
-    gen_kwargs = {
-        "do_sample": args.do_sample,
-        "temperature": args.temperature,
-        "top_p": args.top_p,
-        "top_k": args.top_k,
-        "max_length": args.max_length_generation,
-    }
-
-    if mode == "humaneval":
-        # to check: stoppingcriteria had an issue with InCoder for MBPP
-        gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
-            [EndOfFunctionCriteria(0, EOF_STRINGS, tokenizer)]
-        )
+    # Setup generation settings
+    if mode == "code-to-text":
+        # use greedy sampling for the dosctring generation task
+        gen_kwargs = {
+            "do_sample": False,
+            "max_length": args.max_length_generation,
+            "stopping_criteria": StoppingCriteriaList(
+                [EndOfFunctionCriteria(0, ["\n"], tokenizer)]
+            )
+        }
+    else:
+        gen_kwargs = {
+            "do_sample": args.do_sample,
+            "temperature": args.temperature,
+            "top_p": args.top_p,
+            "top_k": args.top_k,
+            "max_length": args.max_length_generation,
+        }
+        if mode == "humaneval":
+            # to check: stoppingcriteria had an issue with InCoder for MBPP
+            gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
+                [EndOfFunctionCriteria(0, EOF_STRINGS, tokenizer)]
+            )
 
     n_tasks = num_tasks if num_tasks is not None else len(dataset)
     n_copies = args.n_samples // args.batch_size
@@ -87,6 +107,8 @@ def parallel_generations(
         include_tests_mbpp=args.include_tests_mbpp,
         include_solution_mbpp=args.include_solution_mbpp,
         prompt_type_mbpp=args.prompt_type_mbpp,
+        prompt_type_code_to_text=args.prompt_type_code_to_text,
+        language=args.language,
         prefix=args.prefix,
     )
 

@@ -5,9 +5,10 @@ from datasets import load_dataset
 from evaluate import load
 
 from lm_eval.generation import (
+    parallel_generations,
     get_references_humaneval,
     get_references_mbpp,
-    parallel_generations,
+    get_references_code_to_text
 )
 
 _WARNING = """
@@ -93,14 +94,30 @@ class Evaluator:
             references = get_references_mbpp(dataset, self.args.num_tasks_mbpp)
             return generations, references
 
+        elif task == "code-to-text":
+            dataset = load_dataset("code_x_glue_ct_code_to_text", language=self.args.language, split="test")
+            # the evaluation set has 14918 examples, we select the first 1000
+            dataset = dataset.select([i for i in range(1000)])
+            generations = parallel_generations(
+                self.accelerator,
+                self.model,
+                self.tokenizer,
+                dataset,
+                mode="code-to-text",
+                args=self.args,
+                num_tasks=self.args.num_tasks_code_to_text,
+            )
+            references = get_references_code_to_text(dataset, self.args.num_tasks_mbpp)
+            return generations, references
+
         else:
             raise ValueError(
-                f"Task {task} is not supported, please choose from apps, humaneval, or mbpp"
+                f"Task {task} is not supported, please choose from apps, humaneval, mbpp or code-to-text"
             )
 
     def evaluate(self, task):
 
-        if not self.allow_code_execution:
+        if not self.allow_code_execution and task != "code-to-text":
             print(_WARNING)
             raise ValueError(
                 "Code evaluation is not enabled. Read the warning above carefully and then use `--allow_code_execution=True` flag to enable code evaluation."
@@ -110,7 +127,7 @@ class Evaluator:
             if self.args.save_generations:
                 with open("generations.json", "w") as fp:
                     json.dump(generations, fp)
-                    print("generations saved")
+                    print("generations were saved")
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
             if task == "apps":
@@ -119,7 +136,17 @@ class Evaluator:
                     predictions=generations, k_list=[1, 10, 100], level=self.level_apps
                 )
 
+            elif task == "code-to-text":
+                bleu = load("bleu")
+                results = bleu.compute(
+                    references=references,
+                    predictions=generations,
+                    max_order=4,
+                    smooth=True
+                )["bleu"]
+
             else:
+                # HumanEval + MBPP
                 os.environ["HF_ALLOW_CODE_EVAL"] = "1"
                 code_metric = load("code_eval")
                 results, _ = code_metric.compute(
