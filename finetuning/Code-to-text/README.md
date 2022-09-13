@@ -1,5 +1,5 @@
 # Code-to-text finetuning [WIP]
-In this folder we show how to train an autoregressive on [Code-to-text](https://huggingface.co/datasets/https://huggingface.co/datasets/code_x_glue_ct_code_to_text) dataset, for natural language comments generation from code. We use Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) which supports distributed training on multiple GPUs.
+In this folder we show how to train an autoregressive on [Code-to-text](https://huggingface.co/datasets/code_x_glue_ct_code_to_text) dataset, for natural language comments generation from code. We use Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) which supports distributed training on multiple GPUs.
 
 ## Setup
 
