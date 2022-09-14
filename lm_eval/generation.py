@@ -7,7 +7,7 @@ from transformers import StoppingCriteria, StoppingCriteriaList
 from lm_eval.utils import TokenizedDataset, complete_code
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
-
+DELIMITERS = ("str", "bool", "int,","int->", "list->", "dict->", "tuple->", "float->", "JSON,")
 
 class EndOfFunctionCriteria(StoppingCriteria):
     """Custom `StoppingCriteria` which checks if all generated functions in the batch are completed."""
@@ -59,10 +59,16 @@ def get_references_code_to_text(dataset, num_tasks=None):
     references = []
     for task in tqdm(range(n_tasks)):
         docstring = dataset[task]["docstring"]
-        # strip extraneous content such as arguments definition
-        reference = re.split('Arguments:|arguments:|Args:|args:|returns:|Returns:', docstring)[0].strip()
+        # strip extraneous content such as arguments and type definition
+        reference = re.split('Arguments:|arguments:|Args:|args:|returns:|Returns:|:param', docstring)[0].strip()
+        if reference.startswith(DELIMITERS) and reference.count('\n') > 0:
+            reference = reference.split("\n", 1)[1].strip()
+        # keep only one line
+        if reference.count('\n') >= 1:
+            reference = reference.split("\n", 1)[0].strip()
         references.append(reference)
     return references
+
 
 def parallel_generations(
     accelerator, model, tokenizer, dataset, mode, args, num_tasks=None
