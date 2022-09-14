@@ -95,7 +95,7 @@ class Evaluator:
             return generations, references
 
         elif task == "code-to-text":
-            dataset = load_dataset("code_x_glue_ct_code_to_text", language=self.args.language, split="test")
+            dataset = load_dataset("code_x_glue_ct_code_to_text", self.args.language, split="test")
             # the evaluation set has 14918 examples, we select the first 1000
             dataset = dataset.select([i for i in range(1000)])
             generations = parallel_generations(
@@ -107,7 +107,7 @@ class Evaluator:
                 args=self.args,
                 num_tasks=self.args.num_tasks_code_to_text,
             )
-            references = get_references_code_to_text(dataset, self.args.num_tasks_mbpp)
+            references = get_references_code_to_text(dataset, self.args.num_tasks_code_to_text)
             return generations, references
 
         else:
@@ -128,6 +128,10 @@ class Evaluator:
                 with open("generations.json", "w") as fp:
                     json.dump(generations, fp)
                     print("generations were saved")
+            if self.args.save_references:
+                with open("references.json", "w") as fp:
+                    json.dump(references, fp)
+                    print("references were saved")
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
             if task == "apps":
@@ -138,9 +142,10 @@ class Evaluator:
 
             elif task == "code-to-text":
                 bleu = load("bleu")
+                gens = [gen[0] for gen in generations]
                 results = bleu.compute(
                     references=references,
-                    predictions=generations,
+                    predictions=gens,
                     max_order=4,
                     smooth=True
                 )["bleu"]
