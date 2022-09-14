@@ -89,13 +89,13 @@ def mbpp_google_prompt(sample, include_tests=True, prefix=""):
             prompt += "\n" + test
     return prefix + prompt
 
-def code_to_text_prompt(sample, language="Python", prompt_type="left", prefix=""):
+def code_to_text_prompt(sample, language="python", prompt_type="left", prefix=""):
     """Generate prompts for code-to-text task
     For prompt_type left we include the left code with function signature (only possible for Python now), 
     else we only include the whole body"""
     # TODO implement signature extraction for other languages ?
     code = sample["code"]
-    if language == "Python":
+    if language == "python":
         splits = code.split('"""')
         if prompt_type == "left":
             prompt = splits[0].strip() + '\n    """\n'
@@ -126,7 +126,7 @@ class TokenizedDataset(IterableDataset):
         include_solution_mbpp=False,
         prompt_type_mbpp="incoder",
         prompt_type_code_to_text="left",
-        language="Python",
+        language="python",
         prefix="",
     ):
 
@@ -204,7 +204,7 @@ def complete_code(
     include_solution_mbpp=False,
     prompt_type_mbpp="incoder",
     prompt_type_code_to_text="left",
-    language="Python",
+    language="python",
     prefix="",
     **gen_kwargs,
 ):
@@ -276,13 +276,15 @@ def complete_code(
                 code_gens[task].append(first_block(output, MBPP_EOF_STRINGS))
 
             elif mode == "code-to-text":
-                delimiters = {"Python": '\n"""Explanation of the code above:\n',
-                             "Ruby": '\n=begin Explanation of the code above:\n',
-                             "Other":'\n/* Explanation of the code above:\n'}
+                delimiters = {"python": '\n"""Explanation of the code above:\n',
+                             "ruby": '\n=begin Explanation of the code above:\n',
+                             "other":'\n/* Explanation of the code above:\n'}
                             
-                if language == "Python" and prompt_type_code_to_text == "left":
+                if language == "python" and prompt_type_code_to_text == "left":
                     output = gen_code.split('"""\n')[1].strip()
+                    output = output.split("\n")[0]
                 else:
                     output = gen_code.split(delimiters[language])[1].strip()
+                    output = output.split("\n")[0]
                 code_gens[task].append(output)
     return code_gens
