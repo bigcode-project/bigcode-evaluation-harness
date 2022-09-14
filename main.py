@@ -45,7 +45,7 @@ def parse_args():
     parser.add_argument(
         "--language",
         type=str,
-        default="Python",
+        default="python",
         help=f"Language for the code to text task",
     )
     parser.add_argument(
@@ -68,6 +68,9 @@ def parse_args():
     )
     parser.add_argument(
         "--save_generations", type=bool, default=True, help="save code generations"
+    )
+    parser.add_argument(
+        "--save_references", type=bool, default=False, help="save reference solutions/tests"
     )
     return parser.parse_args()
 
