@@ -39,7 +39,7 @@ def remove_last_block(string, stop_words):
     return "".join(string_list[:-2])
 
 
-def generate_prompt_apps(sample, tokenizer, max_length=1024, prefix=""):
+def generate_prompt_apps(sample, tokenizer, max_length=1024, prefix="", setup="finetuning"):
     """Generate prompts for APPS, they include a question along with some starter code and function name if they exist
     We also specify the type of the prompt, i.e. whether it is call-based or standard input"""
 
@@ -60,8 +60,22 @@ def generate_prompt_apps(sample, tokenizer, max_length=1024, prefix=""):
         call_format = "\nUse Call-Based format"
         prompt += call_format
     prompt += "\nANSWER:\n"
+    if setup != "finetuning":
+        # few shot mode: this adds 270 tokens in avg to the prompt
+        prompt = apps_few_shot_prompt(prompt)
     prompt = truncate_prompt_apps(prompt, tokenizer, max_length, call_format)
     return prefix + prompt
+
+
+def apps_few_shot_prompt(prompt):
+    with open("apps_few_shot_prompts.json", "r") as file:
+        examples = json.load(file)
+    
+    # add two examples one for each implementation type: call-based/input-based
+    one_shot_prompt = "Implement answers to the following problems:\nProblem:\n" + examples["problem_type1"] + \
+        "\nUse Standard Input format\nANSWER:\n" + examples["solution_type1"] + "\n\nProblem:\n" + examples["problem_type2"] \
+        + "\nUse Call-Based format\nANSWER:\n\n" + examples["solution_type2"] + "\n\nProblem:\n" + prompt
+    return one_shot_prompt
 
 
 def mbpp_incoder_prompt(sample, include_solution_mbpp=False, prefix=""):
@@ -128,6 +142,7 @@ class TokenizedDataset(IterableDataset):
         prompt_type_code_to_text="left",
         language="python",
         prefix="",
+        setup="finetuning",
     ):
 
         self.tokenizer = tokenizer
@@ -142,6 +157,7 @@ class TokenizedDataset(IterableDataset):
         self.prompt_type_code_to_text = prompt_type_code_to_text
         self.language = language
         self.prefix = prefix
+        self.setup = setup
 
     def __iter__(self):
         prompts = []
@@ -152,6 +168,7 @@ class TokenizedDataset(IterableDataset):
                     self.tokenizer,
                     self.max_length_prompt,
                     prefix=self.prefix,
+                    setup=self.setup,
                 ).strip()
             elif self.mode == "mbpp":
                 if self.prompt_type_mbpp == "incoder":
@@ -206,6 +223,7 @@ def complete_code(
     prompt_type_code_to_text="left",
     language="python",
     prefix="",
+    setup="finetuning",
     **gen_kwargs,
 ):
 
@@ -258,6 +276,9 @@ def complete_code(
 
             elif mode == "apps":
                 try:
+                    if setup != "finetuning":
+                        # we take the last answer
+                        code_gens[task].append(gen_code.split("\nANSWER:", -1)[-1])
                     code_gens[task].append(gen_code.split("\nANSWER:", 1)[1])
                 except IndexError:
                     print(f"Index error for task {task}!")

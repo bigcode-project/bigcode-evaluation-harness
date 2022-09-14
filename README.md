@@ -141,3 +141,4 @@ This repository is inspired from [EleutherAI's LM evaluation harness](https://gi
 
 ## To do:
 - [ ] add multilingual evaluation benchmarks
+- [ ] test APPS one-shot setup

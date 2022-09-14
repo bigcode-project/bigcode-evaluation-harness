@@ -49,6 +49,12 @@ def parse_args():
         help=f"Language for the code to text task",
     )
     parser.add_argument(
+        "--setup_apps",
+        type=str,
+        default="finetuning",
+        help=f"Evaluation setup for APPS: one shot or with a finetuned model(more common)",
+    )
+    parser.add_argument(
         "--batch_size",
         type=int,
         default=1,

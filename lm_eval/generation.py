@@ -115,6 +115,7 @@ def parallel_generations(
         prompt_type_mbpp=args.prompt_type_mbpp,
         prompt_type_code_to_text=args.prompt_type_code_to_text,
         language=args.language,
+        setup=args.setup_apps,
         prefix=args.prefix,
     )
 
@@ -135,6 +136,7 @@ def parallel_generations(
         include_solution_mbpp=args.include_solution_mbpp,
         prompt_type_mbpp=args.prompt_type_mbpp,
         prefix=args.prefix,
+        setup=args.setup_apps,
         **gen_kwargs,
     )
     return generations
