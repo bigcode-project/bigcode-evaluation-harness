@@ -68,7 +68,7 @@ def generate_prompt_apps(sample, tokenizer, max_length=1024, prefix="", setup="f
 
 
 def apps_few_shot_prompt(prompt):
-    with open("apps_few_shot_prompts.json", "r") as file:
+    with open("lm_eval/apps_few_shot_prompts.json", "r") as file:
         examples = json.load(file)
     
     # add two examples one for each implementation type: call-based/input-based
@@ -120,6 +120,24 @@ def code_to_text_prompt(sample, language="python", prompt_type="left", prefix=""
         return prefix + prompt + '\n=begin Explanation of the code above:\n' 
     else:
         return prefix + prompt + '\n/* Explanation of the code above:\n' 
+
+def conala_prompt(sample, prefix=""):
+    """Generate prompts for conala text-to-code task in a 2-shot setting"""
+    text_column = 'rewritten_intent' if sample['rewritten_intent'] else 'intent'
+    text = prefix + sample[text_column].strip()
+
+    with open("lm_eval/conala_few_shot_prompts.json", "r") as file:
+        examples = json.load(file)
+
+    entry = "Answer the following instructions in one line of code:\n"
+    instrcution1 = "\nInstruction:\n" + examples["instruction1"]
+    solution1 = "\nSolution:\n" + examples["solution1"]
+    instrcution2 = "\nInstruction:\n" + examples["instruction2"]
+    solution2 = "\nSolution:\n" + examples["solution2"]
+    examples = entry + instrcution1 + solution1 + instrcution2 + solution2 
+    prompt = examples + "\nInstruction:\n" + text + "\nSolution:\n"
+
+    return prefix + prompt + '\n/* Explanation of the code above:\n' 
 
 
 class TokenizedDataset(IterableDataset):
@@ -184,6 +202,9 @@ class TokenizedDataset(IterableDataset):
             elif self.mode == "humaneval":
                 prompt = self.prefix + self.dataset[task]["prompt"].strip()
 
+            elif self.mode == "conala":
+                prompt = conala_prompt(self.dataset[task], prefix="")
+
             elif self.mode == "code-to-text":
                 prompt = code_to_text_prompt(
                     self.dataset[task],
@@ -191,6 +212,7 @@ class TokenizedDataset(IterableDataset):
                     prompt_type=self.prompt_type_code_to_text,
                     prefix=self.prefix,
                 )
+                
             prompts.append(prompt)
 
         outputs = self.tokenizer(
@@ -269,7 +291,7 @@ def complete_code(
             gen_code = tokenizer.decode(
                 s, skip_special_tokens=True, clean_up_tokenization_spaces=True
             )
-            if mode == "humaneval":
+            if mode in ["humaneval", "conala"]:
                 code_gens[task].append(
                     remove_last_block(gen_code[len(prefix) :], EOF_STRINGS)
                 )
@@ -300,12 +322,17 @@ def complete_code(
                 delimiters = {"python": '\n"""Explanation of the code above:\n',
                              "ruby": '\n=begin Explanation of the code above:\n',
                              "other":'\n/* Explanation of the code above:\n'}
-                            
+
                 if language == "python" and prompt_type_code_to_text == "left":
                     output = gen_code.split('"""\n')[1].strip()
                     output = output.split("\n")[0]
                 else:
                     output = gen_code.split(delimiters[language])[1].strip()
                     output = output.split("\n")[0]
+                code_gens[task].append(output)
+            
+            elif mode == "conala":
+                output = gen_code.split("Solution:\n", 3)[-1]
+                output = output.split("\n")[0]
                 code_gens[task].append(output)
     return code_gens

@@ -99,6 +99,10 @@ def parallel_generations(
             gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
                 [EndOfFunctionCriteria(0, EOF_STRINGS, tokenizer)]
             )
+        elif mode == "conala":
+            gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
+                [EndOfFunctionCriteria(0, ["\n"], tokenizer)]
+            )
 
     n_tasks = num_tasks if num_tasks is not None else len(dataset)
     n_copies = args.n_samples // args.batch_size

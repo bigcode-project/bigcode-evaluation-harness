@@ -110,6 +110,21 @@ class Evaluator:
             references = get_references_code_to_text(dataset, self.args.num_tasks_code_to_text)
             return generations, references
 
+        elif task == "conala":
+            dataset = load_dataset("loubnabnl/conala", split="test")
+            generations = parallel_generations(
+                self.accelerator,
+                self.model,
+                self.tokenizer,
+                dataset,
+                mode="conala",
+                args=self.args,
+                num_tasks=self.args.num_tasks_conala,
+            )
+            n_tasks = self.args.num_tasks_conala if self.args.num_tasks_conala is not None else len(dataset)
+            references = dataset['snippet'][:n_tasks]
+            return generations, references
+
         else:
             raise ValueError(
                 f"Task {task} is not supported, please choose from apps, humaneval, mbpp or code-to-text"
@@ -117,7 +132,7 @@ class Evaluator:
 
     def evaluate(self, task):
 
-        if not self.allow_code_execution and task != "code-to-text":
+        if not self.allow_code_execution and task not in ["code-to-text", "conala"]:
             print(_WARNING)
             raise ValueError(
                 "Code evaluation is not enabled. Read the warning above carefully and then use `--allow_code_execution=True` flag to enable code evaluation."
@@ -141,6 +156,16 @@ class Evaluator:
                 )
 
             elif task == "code-to-text":
+                bleu = load("bleu")
+                gens = [gen[0] for gen in generations]
+                results = bleu.compute(
+                    references=references,
+                    predictions=gens,
+                    max_order=4,
+                    smooth=True
+                )["bleu"]
+
+            elif task == "conala":
                 bleu = load("bleu")
                 gens = [gen[0] for gen in generations]
                 results = bleu.compute(
