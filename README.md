@@ -11,6 +11,7 @@ Features:
 - 3 code generation Python tasks (with unit tests): [HumanEval](https://huggingface.co/datasets/openai_humaneval), [APPS](https://huggingface.co/datasets/codeparrot/apps) and [MBPP](https://huggingface.co/datasets/mbpp).
 - [CoNaLa](https://huggingface.co/datasets/neulab/conala) for Python code generation (2-shot setting and evaluation with BLEU score)
 - [Spider](https://huggingface.co/datasets/spider) for SQL code generation (2-shot setting and evaluation with BLEU score)
+- [Concode](https://huggingface.co/datasets/code_x_glue_tc_text_to_code) for Java code generation (2-shot setting and evaluation with BLEU score)
 - Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text) (zero-shot & fine-tuning) for 6 languages: Python, Go, Ruby, Java, JavaScript and PHP. 
 - 3 multilingual downstream classification tasks: [Java Complexity prediction](https://huggingface.co/datasets/codeparrot/codecomplex), [Java code equivalence prediction](https://huggingface.co/datasets/code_x_glue_cc_clone_detection_big_clone_bench), [C code defect prediction](https://huggingface.co/datasets/code_x_glue_cc_defect_detection).
 
@@ -142,5 +143,5 @@ For APPS we use temperature 0.1:
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
 
 ## To do:
-- [ ] add multilingual evaluation benchmarks
+- [ ] update prompt generation of the code to text task 
 - [ ] test APPS one-shot setup

@@ -140,6 +140,22 @@ class Evaluator:
             references = dataset["query"][:n_tasks]
             return generations, references
 
+        elif task == "concode":
+            # concode is the dataset in the text-to-code benchmark of CodeXGLUE
+            dataset = load_dataset("code_x_glue_tc_text_to_code", split="validation")
+            generations = parallel_generations(
+                self.accelerator,
+                self.model,
+                self.tokenizer,
+                dataset,
+                mode="concode",
+                args=self.args,
+                num_tasks=self.args.num_tasks_concode,
+            )
+            n_tasks = self.args.num_tasks_concode if self.args.num_tasks_concode is not None else len(dataset)
+            references = dataset["code"][:n_tasks]
+            return generations, references
+
         else:
             raise ValueError(
                 f"Task {task} is not supported, please choose from apps, humaneval, mbpp or code-to-text"
@@ -147,7 +163,7 @@ class Evaluator:
 
     def evaluate(self, task):
 
-        if not self.allow_code_execution and task not in ["code-to-text", "conala", "spider"]:
+        if not self.allow_code_execution and task not in ["code-to-text", "conala", "spider", "concode"]:
             print(_WARNING)
             raise ValueError(
                 "Code evaluation is not enabled. Read the warning above carefully and then use `--allow_code_execution=True` flag to enable code evaluation."
@@ -170,7 +186,7 @@ class Evaluator:
                     predictions=generations, k_list=[1, 10, 100], level=self.level_apps
                 )
 
-            elif task in ["conala", "code-to-text", "spider"]:
+            elif task in ["conala", "code-to-text", "spider", "concode"]:
                 bleu = load("bleu")
                 gens = [gen[0] for gen in generations]
                 results = bleu.compute(
