@@ -1,7 +1,6 @@
 import json
 import re
 from collections import defaultdict
-from matplotlib.cbook import pts_to_midstep
 
 import torch
 from datasets import load_dataset
@@ -344,8 +343,8 @@ def complete_code(
                 code_gens[task].append(output)
 
             elif mode in ["conala", "spider"]:
-                output = gen_code.split("Solution:\n", 3)[-1]
-                output = output.split("\n")[0]
+                #output = gen_code.split("Solution:\n", 3)[-1]
+                #output = output.split("\n")[0]
                 code_gens[task].append(output)
             
     return code_gens
