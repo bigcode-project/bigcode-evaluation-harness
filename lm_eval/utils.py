@@ -66,7 +66,7 @@ def generate_prompt_apps(sample, tokenizer, max_length=1024, prefix="", setup="f
 
 
 def apps_few_shot_prompt(prompt):
-    with open("lm_eval/apps_few_shot_prompts.json", "r") as file:
+    with open("lm_eval/few_shot_examples/apps_few_shot_prompts.json", "r") as file:
         examples = json.load(file)
     
     # add two examples one for each implementation type: call-based/input-based
@@ -130,7 +130,7 @@ def two_shot_prompt(entry, text):
 
 def conala_prompt(sample, prefix=""):
     """Generate prompts for CoNaLa text-to-code task in a 2-shot setting"""
-    with open("lm_eval/conala_few_shot_prompts.json", "r") as file:
+    with open("lm_eval/few_shot_examples/conala_few_shot_prompts.json", "r") as file:
         examples = json.load(file)
     text_column = 'rewritten_intent' if sample['rewritten_intent'] else 'intent'
     text = prefix + sample[text_column].strip()
@@ -140,7 +140,7 @@ def conala_prompt(sample, prefix=""):
 
 def spider_prompt(sample, prefix=""):
     """Generate prompts for Spider text-to-code task in a 2-shot setting"""
-    with open("lm_eval/spider_few_shot_prompts.json", "r") as file:
+    with open("lm_eval/few_shot_examples/spider_few_shot_prompts.json", "r") as file:
         examples = json.load(file)
     text = prefix + sample["question"].strip()
     entry = "Answer the following instructions in a one line SQL query:\n"
