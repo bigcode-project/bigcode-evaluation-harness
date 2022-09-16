@@ -45,6 +45,12 @@ class EvalArguments:
             "help": "The number of CoNaLa text-to-code tasks to run. If not specified all tasks are evaluated."
         },
     )
+    num_tasks_spider: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "The number of Spider text-to-code tasks to run. If not specified all tasks are evaluated."
+        },
+    )
     include_tests_mbpp: Optional[bool] = field(
         default=True,
         metadata={"help": "Whether to include test cases in the prompt for MBPP."},

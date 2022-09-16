@@ -1,6 +1,7 @@
 import json
 import re
 from collections import defaultdict
+from matplotlib.cbook import pts_to_midstep
 
 import torch
 from datasets import load_dataset
@@ -119,22 +120,32 @@ def code_to_text_prompt(sample, language="python", prompt_type="left", prefix=""
     else:
         return prefix + prompt + '\n/* Explanation of the code above:\n' 
 
-def conala_prompt(sample, prefix=""):
-    """Generate prompts for conala text-to-code task in a 2-shot setting"""
-    text_column = 'rewritten_intent' if sample['rewritten_intent'] else 'intent'
-    text = prefix + sample[text_column].strip()
-
-    with open("lm_eval/conala_few_shot_prompts.json", "r") as file:
-        examples = json.load(file)
-
-    entry = "Answer the following instructions in one line of code:\n"
+def two_shot_prompt(entry, text):
     instrcution1 = "\nInstruction:\n" + examples["instruction1"]
     solution1 = "\nSolution:\n" + examples["solution1"]
     instrcution2 = "\nInstruction:\n" + examples["instruction2"]
     solution2 = "\nSolution:\n" + examples["solution2"]
     examples = entry + instrcution1 + solution1 + instrcution2 + solution2 
     prompt = examples + "\nInstruction:\n" + text + "\nSolution:\n"
+    return prompt
 
+def conala_prompt(sample, prefix=""):
+    """Generate prompts for CoNaLa text-to-code task in a 2-shot setting"""
+    with open("lm_eval/conala_few_shot_prompts.json", "r") as file:
+        examples = json.load(file)
+    text_column = 'rewritten_intent' if sample['rewritten_intent'] else 'intent'
+    text = prefix + sample[text_column].strip()
+    entry = "Answer the following instructions in one line of code:\n"
+    prompt = two_shot_prompt(entry, text)
+    return prefix + prompt
+
+def spider_prompt(sample, prefix=""):
+    """Generate prompts for Spider text-to-code task in a 2-shot setting"""
+    with open("lm_eval/spider_few_shot_prompts.json", "r") as file:
+        examples = json.load(file)
+    text = prefix + sample["question"].strip()
+    entry = "Answer the following instructions in a one line SQL query:\n"
+    prompt = two_shot_prompt(entry, text)
     return prefix + prompt
 
 
@@ -203,6 +214,9 @@ class TokenizedDataset(IterableDataset):
             elif self.mode == "conala":
                 prompt = conala_prompt(self.dataset[task], prefix="")
 
+            elif self.mode == "spider":
+                prompt = spider_prompt(self.dataset[task], prefix="")
+
             elif self.mode == "code-to-text":
                 prompt = code_to_text_prompt(
                     self.dataset[task],
@@ -261,7 +275,7 @@ def complete_code(
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(enumerate(dataloader)):
         with torch.no_grad():
-            if mode in ["humaneval", "code-to-text", "conala"]:
+            if mode in ["humaneval", "code-to-text", "conala", "spider"]:
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
             generated_tokens = accelerator.unwrap_model(model).generate(
                 input_ids=batch["ids"][:, : batch["input_len"]],
@@ -329,8 +343,9 @@ def complete_code(
                     output = output.split("\n")[0]
                 code_gens[task].append(output)
 
-            elif mode == "conala":
+            elif mode in ["conala", "spider"]:
                 output = gen_code.split("Solution:\n", 3)[-1]
                 output = output.split("\n")[0]
                 code_gens[task].append(output)
+            
     return code_gens

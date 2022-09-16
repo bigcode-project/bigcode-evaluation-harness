@@ -9,7 +9,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 from arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
 
-ALL_TASKS = ["humaneval", "apps", "mbpp", "code-to-text", "conala"]
+ALL_TASKS = ["humaneval", "apps", "mbpp", "code-to-text", "conala", "spider"]
 
 
 class MultiChoice:
