@@ -135,4 +135,5 @@ This repository is inspired from [EleutherAI's LM evaluation harness](https://gi
 
 ## To do:
 - [ ] update prompt generation of the code to text task 
+- [ ] test code-to-text for other languages than pythons
 - [ ] test APPS one-shot setup
