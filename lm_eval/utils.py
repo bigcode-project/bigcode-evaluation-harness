@@ -119,7 +119,7 @@ def code_to_text_prompt(sample, language="python", prompt_type="left", prefix=""
     else:
         return prefix + prompt + '\n/* Explanation of the code above:\n' 
 
-def two_shot_prompt(entry, text):
+def two_shot_prompt(entry, text, examples):
     instrcution1 = "\nInstruction:\n" + examples["instruction1"]
     solution1 = "\nSolution:\n" + examples["solution1"]
     instrcution2 = "\nInstruction:\n" + examples["instruction2"]
@@ -135,7 +135,7 @@ def conala_prompt(sample, prefix=""):
     text_column = 'rewritten_intent' if sample['rewritten_intent'] else 'intent'
     text = prefix + sample[text_column].strip()
     entry = "Answer the following instructions in one line of code:\n"
-    prompt = two_shot_prompt(entry, text)
+    prompt = two_shot_prompt(entry, text, examples)
     return prefix + prompt
 
 def spider_prompt(sample, prefix=""):
@@ -144,7 +144,7 @@ def spider_prompt(sample, prefix=""):
         examples = json.load(file)
     text = prefix + sample["question"].strip()
     entry = "Answer the following instructions in a one line SQL query:\n"
-    prompt = two_shot_prompt(entry, text)
+    prompt = two_shot_prompt(entry, text, examples)
     return prefix + prompt
 
 
@@ -343,8 +343,8 @@ def complete_code(
                 code_gens[task].append(output)
 
             elif mode in ["conala", "spider"]:
-                #output = gen_code.split("Solution:\n", 3)[-1]
-                #output = output.split("\n")[0]
+                output = gen_code.split("Solution:\n", 3)[-1]
+                output = output.split("\n")[0]
                 code_gens[task].append(output)
             
     return code_gens
