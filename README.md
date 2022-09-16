@@ -49,18 +49,9 @@ accelerate launch main.py \
 	--temperature 0.6 \
 	--allow_code_execution=False
 
-# to evaluate only on some APPS samples using single generations
-accelerate launch main.py \
-	--model BigCode/gpt_all_license_apps_finetuned \
-	--tasks apps \
-	--level_apps introductory \
-	--num_tasks_apps 10 \
-    	--n_samples 1 \
-	--batch_size 40 \
-	--temperature 0.2 \
-	--allow_code_execution=False
+# to evaluate only on X APPS samples using single generations add --num_tasks_apps X --n_samples 1
 	
-# to evaluate only on some MBPP samples with InCoder 1B
+# to evaluate  on some MBPP samples with InCoder 1B (nneds to specify extension)
 accelerate launch main.py \
 	--model facebook/incoder-1B  \
 	--prefix "<| file ext=.py |>\n" \
@@ -71,12 +62,12 @@ accelerate launch main.py \
 	--temperature 0.2 \
 	--allow_code_execution=False
 
-# to evaluate on the code-to-text becnhmark
+# to evaluate on another TASK such as code-to-text/conala/spider/concode
 accelerate launch main.py \
 	--model facebook/incoder-1B  \
-	--prefix "<| file ext=.py |>\n" \
-	--tasks conala \
-	--num_tasks_conala 10 \
+	--prefix "<| file ext=.$EXTENSION |>\n" \
+	--tasks $TASK \
+	--num_tasks_$TASK 10 \
 	--n_samples 1 
 ```
 
