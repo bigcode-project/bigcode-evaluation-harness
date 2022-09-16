@@ -11,8 +11,8 @@ Features:
 - 3 code generation Python tasks implemented: [HumanEval](https://huggingface.co/datasets/openai_humaneval), [APPS](https://huggingface.co/datasets/codeparrot/apps) and [MBPP](https://huggingface.co/datasets/mbpp).
 - [CoNaLa](https://huggingface.co/datasets/neulab/conala) for Python code generation (2-shot setting and evaluation with BLEU score)
 - [Spider](https://huggingface.co/datasets/spider) for SQL code generation (2-shot setting and evaluation with BLEU score)
-- Docstring generation task from code (zero-shot & fine-tuning) for 6 languages: Python, Go, Ruby, Java, JavaScript and PHP. 
-- 3 multilingual downstream tasks: Java Complexity prediction, Java code equivalence prediction, C code defect prediction
+- Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text) (zero-shot & fine-tuning) for 6 languages: Python, Go, Ruby, Java, JavaScript and PHP. 
+- 3 multilingual downstream classification tasks: [Java Complexity prediction](https://huggingface.co/datasets/codeparrot/codecomplex), [Java code equivalence prediction](https://huggingface.co/datasets/code_x_glue_cc_clone_detection_big_clone_bench), [C code defect prediction](https://huggingface.co/datasets/code_x_glue_cc_defect_detection).
 
 ## Setup
 
