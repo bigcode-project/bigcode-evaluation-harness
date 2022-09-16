@@ -155,17 +155,7 @@ class Evaluator:
                     predictions=generations, k_list=[1, 10, 100], level=self.level_apps
                 )
 
-            elif task == "code-to-text":
-                bleu = load("bleu")
-                gens = [gen[0] for gen in generations]
-                results = bleu.compute(
-                    references=references,
-                    predictions=gens,
-                    max_order=4,
-                    smooth=True
-                )["bleu"]
-
-            elif task == "conala":
+            elif task in ["conala", "code-to-text"]:
                 bleu = load("bleu")
                 gens = [gen[0] for gen in generations]
                 results = bleu.compute(

@@ -1,6 +1,5 @@
 import json
 import re
-import xml.sax.saxutils
 from collections import defaultdict
 
 import torch
@@ -10,7 +9,6 @@ from tqdm import tqdm
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
 MBPP_EOF_STRINGS = ["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/"]
-
 
 def truncate_prompt_apps(prompt, tokenizer, max_length, call_format):
     # if a prompt is very long we truncate it but keep the end phrases
@@ -137,7 +135,7 @@ def conala_prompt(sample, prefix=""):
     examples = entry + instrcution1 + solution1 + instrcution2 + solution2 
     prompt = examples + "\nInstruction:\n" + text + "\nSolution:\n"
 
-    return prefix + prompt + '\n/* Explanation of the code above:\n' 
+    return prefix + prompt
 
 
 class TokenizedDataset(IterableDataset):
@@ -263,7 +261,7 @@ def complete_code(
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(enumerate(dataloader)):
         with torch.no_grad():
-            if mode == "humaneval" or mode == "code-to-text":
+            if mode in ["humaneval", "code-to-text", "conala"]:
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
             generated_tokens = accelerator.unwrap_model(model).generate(
                 input_ids=batch["ids"][:, : batch["input_len"]],
@@ -291,7 +289,7 @@ def complete_code(
             gen_code = tokenizer.decode(
                 s, skip_special_tokens=True, clean_up_tokenization_spaces=True
             )
-            if mode in ["humaneval", "conala"]:
+            if mode == "humaneval":
                 code_gens[task].append(
                     remove_last_block(gen_code[len(prefix) :], EOF_STRINGS)
                 )
@@ -330,7 +328,7 @@ def complete_code(
                     output = gen_code.split(delimiters[language])[1].strip()
                     output = output.split("\n")[0]
                 code_gens[task].append(output)
-            
+
             elif mode == "conala":
                 output = gen_code.split("Solution:\n", 3)[-1]
                 output = output.split("\n")[0]

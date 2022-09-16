@@ -8,6 +8,7 @@ from lm_eval.utils import TokenizedDataset, complete_code
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
 DELIMITERS = ("str", "bool", "int,","int->", "list->", "dict->", "tuple->", "float->", "JSON,")
+CONALA_EOF_STRINGS = ["\n"]
 
 class EndOfFunctionCriteria(StoppingCriteria):
     """Custom `StoppingCriteria` which checks if all generated functions in the batch are completed."""

@@ -73,8 +73,8 @@ accelerate launch main.py \
 accelerate launch main.py \
 	--model facebook/incoder-1B  \
 	--prefix "<| file ext=.py |>\n" \
-	--tasks code-to-text \
-	--num_tasks_code_to_text 60 \
+	--tasks conala \
+	--num_tasks_conala 10 \
 	--n_samples 1 
 ```
 
