@@ -8,7 +8,7 @@ This project provides a unified framework to test autoregressive code generation
 
 Features:
 - Any autoregressive model available on [Hugging Face hub](https://huggingface.co/) can be used, but we recommend using a code generation models trained specifically on Code such as [CodeParrot](https://huggingface.co/codeparrot/codeparrot), [InCoder](https://huggingface.co/facebook/incoder-6B) and [CodeGen](https://huggingface.co/Salesforce/codegen-16B-mono).
-- 3 code generation Python tasks implemented: [HumanEval](https://huggingface.co/datasets/openai_humaneval), [APPS](https://huggingface.co/datasets/codeparrot/apps) and [MBPP](https://huggingface.co/datasets/mbpp).
+- 3 code generation Python tasks (with unit tests): [HumanEval](https://huggingface.co/datasets/openai_humaneval), [APPS](https://huggingface.co/datasets/codeparrot/apps) and [MBPP](https://huggingface.co/datasets/mbpp).
 - [CoNaLa](https://huggingface.co/datasets/neulab/conala) for Python code generation (2-shot setting and evaluation with BLEU score)
 - [Spider](https://huggingface.co/datasets/spider) for SQL code generation (2-shot setting and evaluation with BLEU score)
 - Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text) (zero-shot & fine-tuning) for 6 languages: Python, Go, Ruby, Java, JavaScript and PHP. 
