@@ -1,0 +1,1 @@
+{"instruction1": "How many heads of the departments are older than 56 ?", "instruction2": "List the name, born state and age of the heads of departments ordered by age.", "solution1": "SELECT count(*) FROM head WHERE age  >  56", "solution2": "SELECT name ,  born_state ,  age FROM head ORDER BY age"}
