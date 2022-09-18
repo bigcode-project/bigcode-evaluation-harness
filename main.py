@@ -76,7 +76,10 @@ def parse_args():
         "--save_generations", type=bool, default=True, help="save code generations"
     )
     parser.add_argument(
-        "--save_references", type=bool, default=False, help="save reference solutions/tests"
+        "--save_references",
+        type=bool,
+        default=False,
+        help="save reference solutions/tests",
     )
     return parser.parse_args()
 

@@ -65,9 +65,9 @@ accelerate launch main.py \
 # to evaluate on another TASK such as code-to-text/conala/spider/concode
 accelerate launch main.py \
 	--model facebook/incoder-1B  \
-	--prefix "<| file ext=.$EXTENSION |>\n" \
-	--tasks $TASK \
-	--num_tasks_$TASK 10 \
+	--prefix "<| file ext=.py |>\n" \
+	--tasks code-to-text \
+	--num_tasks_code_to_text 2 \
 	--n_samples 1 
 ```
 

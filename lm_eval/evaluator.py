@@ -8,7 +8,7 @@ from lm_eval.generation import (
     parallel_generations,
     get_references_humaneval,
     get_references_mbpp,
-    get_references_code_to_text
+    get_references_code_to_text,
 )
 
 _WARNING = """
@@ -95,7 +95,9 @@ class Evaluator:
             return generations, references
 
         elif task == "code-to-text":
-            dataset = load_dataset("code_x_glue_ct_code_to_text", self.args.language, split="test")
+            dataset = load_dataset(
+                "code_x_glue_ct_code_to_text", self.args.language, split="test"
+            )
             # the evaluation set has 14918 examples, we select the first 1000
             dataset = dataset.select([i for i in range(1000)])
             generations = parallel_generations(
@@ -107,7 +109,9 @@ class Evaluator:
                 args=self.args,
                 num_tasks=self.args.num_tasks_code_to_text,
             )
-            references = get_references_code_to_text(dataset, self.args.num_tasks_code_to_text)
+            references = get_references_code_to_text(
+                dataset, self.args.num_tasks_code_to_text
+            )
             return generations, references
 
         elif task == "conala":
@@ -121,8 +125,12 @@ class Evaluator:
                 args=self.args,
                 num_tasks=self.args.num_tasks_conala,
             )
-            n_tasks = self.args.num_tasks_conala if self.args.num_tasks_conala is not None else len(dataset)
-            references = dataset['snippet'][:n_tasks]
+            n_tasks = (
+                self.args.num_tasks_conala
+                if self.args.num_tasks_conala is not None
+                else len(dataset)
+            )
+            references = dataset["snippet"][:n_tasks]
             return generations, references
 
         elif task == "spider":
@@ -136,7 +144,11 @@ class Evaluator:
                 args=self.args,
                 num_tasks=self.args.num_tasks_spider,
             )
-            n_tasks = self.args.num_tasks_spider if self.args.num_tasks_spider is not None else len(dataset)
+            n_tasks = (
+                self.args.num_tasks_spider
+                if self.args.num_tasks_spider is not None
+                else len(dataset)
+            )
             references = dataset["query"][:n_tasks]
             return generations, references
 
@@ -152,7 +164,11 @@ class Evaluator:
                 args=self.args,
                 num_tasks=self.args.num_tasks_concode,
             )
-            n_tasks = self.args.num_tasks_concode if self.args.num_tasks_concode is not None else len(dataset)
+            n_tasks = (
+                self.args.num_tasks_concode
+                if self.args.num_tasks_concode is not None
+                else len(dataset)
+            )
             references = dataset["code"][:n_tasks]
             return generations, references
 
@@ -163,7 +179,12 @@ class Evaluator:
 
     def evaluate(self, task):
 
-        if not self.allow_code_execution and task not in ["code-to-text", "conala", "spider", "concode"]:
+        if not self.allow_code_execution and task not in [
+            "code-to-text",
+            "conala",
+            "spider",
+            "concode",
+        ]:
             print(_WARNING)
             raise ValueError(
                 "Code evaluation is not enabled. Read the warning above carefully and then use `--allow_code_execution=True` flag to enable code evaluation."
@@ -190,10 +211,7 @@ class Evaluator:
                 bleu = load("bleu")
                 gens = [gen[0] for gen in generations]
                 results = bleu.compute(
-                    references=references,
-                    predictions=gens,
-                    max_order=4,
-                    smooth=True
+                    references=references, predictions=gens, max_order=4, smooth=True
                 )["bleu"]
 
             else:

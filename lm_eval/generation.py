@@ -1,13 +1,25 @@
-from accelerate.utils import set_seed
-from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
-import re
+from mosestokenizer import MosesDetokenizer
+
+from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
+from accelerate.utils import set_seed
 
 from lm_eval.utils import TokenizedDataset, complete_code
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
-DELIMITERS = ("str", "bool", "int,","int->", "list->", "dict->", "tuple->", "float->", "JSON,")
+EOF_STRINGS_DOCSTRING = ["'''", '"""']
+DELIMITERS = (
+    "str",
+    "bool",
+    "int,",
+    "int->",
+    "list->",
+    "dict->",
+    "tuple->",
+    "float->",
+    "JSON,",
+)
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
@@ -59,15 +71,18 @@ def get_references_code_to_text(dataset, num_tasks=None):
     n_tasks = num_tasks if num_tasks is not None else len(dataset)
     references = []
     for task in tqdm(range(n_tasks)):
-        docstring = dataset[task]["docstring"]
-        # strip extraneous content such as arguments and type definition
-        reference = re.split('Arguments:|arguments:|Args:|args:|returns:|Returns:|:param', docstring)[0].strip()
-        if reference.startswith(DELIMITERS) and reference.count('\n') > 0:
-            reference = reference.split("\n", 1)[1].strip()
-        # keep only one line
-        if reference.count('\n') >= 1:
-            reference = reference.split("\n", 1)[0].strip()
-        references.append(reference)
+        # docstring_tokens are preprocessed and don't have extra context like variable defs
+        docstring = " ".join(dataset[task]["docstring_tokens"]).replace("\n", "")
+        # some docstrings started with r""" before tokenization but r was kept
+        if docstring[0] == "r":
+            docstring = docstring[1:]
+        with MosesDetokenizer("en") as detokenize:
+            docstring = detokenize(docstring.strip().split())
+        # TODO remove type definitions in the beginning, but when to stop (no \n here)?
+        # try using original doctring
+        # if reference.startswith(DELIMITERS)
+        #    reference = reference.split("\n", 1)[1].strip()
+        references.append(docstring)
     return references
 
 
@@ -80,12 +95,14 @@ def parallel_generations(
     # Setup generation settings
     if mode == "code-to-text":
         # use greedy sampling for the dosctring generation task
+        if args.language != "python" or args.prompt_type_code_to_text != "left":
+            EOF_STRINGS_DOCSTRING = ["\n"]
         gen_kwargs = {
             "do_sample": False,
             "max_length": args.max_length_generation,
             "stopping_criteria": StoppingCriteriaList(
-                [EndOfFunctionCriteria(0, ["\n"], tokenizer)]
-            )
+                [EndOfFunctionCriteria(0, EOF_STRINGS_DOCSTRING, tokenizer)]
+            ),
         }
     else:
         gen_kwargs = {
