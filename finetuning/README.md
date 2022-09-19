@@ -7,6 +7,6 @@ In this folder we show how to fine-tune an autoregressive Language model on the 
 * [CodeDefect](https://huggingface.co/datasets/code_x_glue_cc_defect_detection): **C** benchmark from [CodeXGLUE](https://github.com/microsoft/CodeXGLUE), with a binary classification problem of predicting whether a code is insecure code and may attack software systems. [WIP]
 * [Code-to-text](https://huggingface.co/datasets/code_x_glue_ct_code_to_text): Dataset from [CodeXGLUE](https://github.com/microsoft/CodeXGLUE) for generationg natural language comments from code in **Python, Go, Java, Javascript, PHP and Ruby**. This task can also be done in a zero-shot setting without need for fine-tuning. [WIP]
 
-We use Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) API for all tasks, which supports distributed training on multiple GPUs.The fine-tuned models can then be used in this evaluation harness to evaluate them on their specific task.
+We use Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) API for all tasks, which supports distributed training on multiple GPUs. 
 
-For implementation details, please refer to the README inside each folder.
+The evaluation score on the test set is shown at the end of the fine-tuning. For implementation details, please refer to the README inside each folder.
