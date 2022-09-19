@@ -9,17 +9,6 @@ from lm_eval.utils import TokenizedDataset, complete_code
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
 EOF_STRINGS_DOCSTRING = ["'''", '"""']
-DELIMITERS = (
-    "str",
-    "bool",
-    "int,",
-    "int->",
-    "list->",
-    "dict->",
-    "tuple->",
-    "float->",
-    "JSON,",
-)
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
