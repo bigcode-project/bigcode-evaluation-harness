@@ -95,13 +95,14 @@ def parallel_generations(
     # Setup generation settings
     if mode == "code-to-text":
         # use greedy sampling for the dosctring generation task
+        stop_words = ["'''", '"""']
         if args.language != "python" or args.prompt_type_code_to_text != "left":
-            EOF_STRINGS_DOCSTRING = ["\n"]
+            stop_words = ["\n"]
         gen_kwargs = {
             "do_sample": False,
             "max_length": args.max_length_generation,
             "stopping_criteria": StoppingCriteriaList(
-                [EndOfFunctionCriteria(0, EOF_STRINGS_DOCSTRING, tokenizer)]
+                [EndOfFunctionCriteria(0, stop_words, tokenizer)]
             ),
         }
     else:
