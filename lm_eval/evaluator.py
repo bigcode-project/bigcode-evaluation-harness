@@ -98,8 +98,8 @@ class Evaluator:
             dataset = load_dataset(
                 "code_x_glue_ct_code_to_text", self.args.language, split="test"
             )
-            # the evaluation set has 14918 examples, we select the first 1000
-            dataset = dataset.select([i for i in range(1000)])
+            # the evaluation set has 14918 examples, we select the first 2000
+            dataset = dataset.select([i for i in range(2000)])
             generations = parallel_generations(
                 self.accelerator,
                 self.model,
@@ -109,6 +109,7 @@ class Evaluator:
                 args=self.args,
                 num_tasks=self.args.num_tasks_code_to_text,
             )
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
             references = get_references_code_to_text(
                 dataset, self.args.num_tasks_code_to_text
             )
