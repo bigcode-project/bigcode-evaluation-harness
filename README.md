@@ -76,6 +76,9 @@ accelerate launch main.py \
 * Please note this evaluation harness tries to cover a wide set of models, but there could still be room for improvement based on each model, some might require different prompt engineering or post-processing of the code generations.
 * For some scores of ongoing experiments please refer to [example_scores/README.md](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/master/example_scores/README.md).
 
+## Implementing new tasks
+To implement a new task in this evaluation harness, see the guide in [docs/guide](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/master/docs/guide.md).
+
 ## Acknowledgements
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
 
