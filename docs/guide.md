@@ -66,6 +66,9 @@ in `lm_eval/generation.py` implement a function to get the reference solutions f
 ## Arguments
 Don't forget to add all the new argumets you used to `arguments.py` (for example `num_tasks_<TASK>`)
 
+## Fine-tuning
+Few-shot tasks are easier to conduct, but if you need to add the finetuning script for your task, you can create a folder for it in `finetuning` folder and use a similar training and evaluation script to the other tasks.
+
 ## Pull request
 In your Pull Request, please present the task you want to add and a short description of how the prompts are made and how the generations are evaluated. Also specify if your approach follows the orginal paper's approach or if some changes were introduced. Ideally, you can evaluate some public models and compare the scores to the published results and see if they match.
 
