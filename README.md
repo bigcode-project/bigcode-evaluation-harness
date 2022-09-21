@@ -17,7 +17,7 @@
 
 ## Features
 
-This is a framework to test autoregressive code generation language models. This is a work in progress part of the BigCode project. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guide in [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md). 
+This is a framework to evaluate autoregressive code generation language models. This is a work in progress part of the BigCode project. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guide in [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md). 
 
 Below are the features and tasks of this framework:
 
@@ -85,7 +85,7 @@ accelerate launch main.py \
 ```
 
 ## Implementing new tasks
-To implement a new task in this evaluation harness, see the guide in [`docs/guide`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/master/docs/guide.md). The are also contribution guidelines in this [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md)
+To implement a new task in this evaluation harness, see the guide in [`docs/guide`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md). The are also contribution guidelines in this [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md)
 
 ## Documentation
 We provide documentation for the existing benchmarks and how we make the evaluation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md).
