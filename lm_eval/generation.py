@@ -9,7 +9,7 @@ from lm_eval.utils import TokenizedDataset, complete_code
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
 EOF_STRINGS_DOCSTRING = ["'''", '"""']
-EOF_APPS_FEW_SHOT = ["\nProblem", "\nExample", "\nANSWER"]
+EOF_APPS_FEW_SHOT = ["\nQUESTION", "\n---", "\nANSWER"]
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
