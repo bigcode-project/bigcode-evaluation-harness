@@ -17,7 +17,7 @@
 
 ## Features
 
-This is a framework to test autoregressive code generation language models. This is a work in progress part of the BigCode project. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guide in [CONTRIBUTING.md](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md). 
+This is a framework to test autoregressive code generation language models. This is a work in progress part of the BigCode project. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guide in [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md). 
 
 Below are the features and tasks of this framework:
 
@@ -85,15 +85,15 @@ accelerate launch main.py \
 ```
 
 ## Implementing new tasks
-To implement a new task in this evaluation harness, see the guide in [docs/guide](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/master/docs/guide.md). The are also contribution guidelines in this [CONTRIBUTING.md](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md)
+To implement a new task in this evaluation harness, see the guide in [`docs/guide](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/master/docs/guide.md). The are also contribution guidelines in this [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md)
 
 ## Documentation
-We provide documentation for the existing benchmarks and how we make the evaluation in `docs/documentation`.
+We provide documentation for the existing benchmarks and how we make the evaluation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md).
 
 ## Remarks
 * Currenltly, we use parallel evaluation across multiple GPUs using `accelerate`, this assumes that you can fit the model in one GPU. 
 * Please note this evaluation harness tries to cover a wide set of models, but there could still be room for improvement based on each model, some might require different prompt engineering or post-processing of the code generations.
-* For some scores of ongoing experiments please refer to [example_scores/README.md](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/master/example_scores/README.md).
+* For some scores of ongoing experiments please refer to [`example_scores/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/master/example_scores/README.md).
 
 ## Acknowledgements
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
