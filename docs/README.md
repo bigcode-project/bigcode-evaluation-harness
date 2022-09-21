@@ -1,10 +1,10 @@
 <h4 align="center">
     <p>
         <a href="#code-generation-benchmarks-with-unit-tests">Benchmarks w/ unit tests</a> |
-        <a href="#code-generation-benchmarks-with-unit-tests">Benchmarks w/o unit tests</a> |
+        <a href="#code-generation-benchmarks-without-unit-tests">Benchmarks w/o unit tests</a> |
         <a href="#documentation-generation-task">Documentation generation </a> |
         <a href="#downstream-classification-tasks">Downstream classification</a> |
-        <a href="#how-to-add-a-new-benchmark">New benchmark</a> |
+        <a href="#how-to-add-a-new-benchmark">New benchmark</a> 
     <p>
 </h4>
 
