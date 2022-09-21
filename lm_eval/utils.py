@@ -19,7 +19,7 @@ from lm_eval.prompts import (
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
 MBPP_EOF_STRINGS = ["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/"]
-EOF_APPS_FEW_SHOT = ["\nProblem", "\nExample", "\nANSWER"]
+EOF_APPS_FEW_SHOT = ["\nQUESTION", "\n---", "\nANSWER"]
 TRIPLE_QUOTE = '"""'
 SINGLE_TRIPLE_QUOTE = "'''"
 
@@ -203,7 +203,7 @@ def complete_code(
                     if setup != "finetuning":
                         # we take the third answwer (2 are few shot examples)
                         output = gen_code.split("\nANSWER:", 3)[-1]
-                        output = re.split("|".join(EOF_APPS_FEW_SHOT), output)[0].rstrip()
+                        #output = re.split("|".join(EOF_APPS_FEW_SHOT), output)[0].rstrip()
                         code_gens[task].append(output)
                     else:
                         code_gens[task].append(gen_code.split("\nANSWER:", 1)[1])
