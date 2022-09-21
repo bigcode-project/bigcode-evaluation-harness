@@ -1,5 +1,6 @@
 import json
 import os
+import warnings
 
 from datasets import load_dataset
 from evaluate import load
@@ -191,6 +192,10 @@ class Evaluator:
                 "Code evaluation is not enabled. Read the warning above carefully and then use `--allow_code_execution=True` flag to enable code evaluation."
             )
         generations, references = self.generate_text(task)
+        if len(generations[0]) != self.args.n_samples:
+            generations = [l[:self.args.n_samples] for l in generations]
+            warnings.warn("Number of tasks wasn't proportional to number of devices, we removed extra predictions")
+
         if self.accelerator.is_main_process:
             if self.args.save_generations:
                 with open("generations.json", "w") as fp:

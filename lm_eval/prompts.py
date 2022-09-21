@@ -16,6 +16,7 @@ def truncate_prompt_apps(prompt, tokenizer, max_length, call_format):
     # if a prompt is very long we truncate it but keep the end phrases
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids[0]
     if len(input_ids) > max_length:
+        print("max reached:", len(input_ids))
         end_phrase = tokenizer(
             call_format + "\nANSWER:\n", return_tensors="pt"
         ).input_ids[0]
@@ -33,15 +34,15 @@ def apps_few_shot_prompt(prompt):
 
     # add two examples one for each implementation type: call-based/input-based
     one_shot_prompt = (
-        "Implement answers to the following problems:\nProblem:\n"
+        "Implement answers to the following questions:\nQUESTION:\n"
         + examples["problem_type1"]
         + "\nUse Standard Input format\nANSWER:\n"
         + examples["solution_type1"]
-        + "\n\nProblem:\n"
+        + "\nQUESTION:\n"
         + examples["problem_type2"]
-        + "\nUse Call-Based format\nANSWER:\n\n"
+        + "\nUse Call-Based format\nANSWER:\n"
         + examples["solution_type2"]
-        + "\n\nProblem:\n"
+        + "\n"
         + prompt
     )
     return one_shot_prompt
@@ -55,51 +56,32 @@ def generate_prompt_apps(
     We also specify the type of the prompt, i.e. whether it is call-based or standard input
     2-shot: two examples of input/output are included"""
 
-    if setup == "finetuning":
-        starter_code = (
-            None if len(sample["starter_code"]) == 0 else sample["starter_code"]
+    starter_code = (
+        None if len(sample["starter_code"]) == 0 else sample["starter_code"]
+    )
+    try:
+        input_outpout = json.loads(sample["input_output"])
+        fn_name = (
+            None if not input_outpout.get("fn_name") else input_outpout["fn_name"]
         )
-        try:
-            input_outpout = json.loads(sample["input_output"])
-            fn_name = (
-                None if not input_outpout.get("fn_name") else input_outpout["fn_name"]
-            )
-        except ValueError:
-            fn_name = None
-        prompt = "\nQUESTION:\n"
-        prompt += sample["question"]
-        if starter_code:
-            prompt += starter_code
-        if fn_name:
-            call_format = "\nUse Standard Input format"
-            prompt += call_format
-        else:
-            call_format = "\nUse Call-Based format"
-            prompt += call_format
-        prompt += "\nANSWER:\n"
-        if setup != "finetuning":
-            # few shot mode: this adds 270 tokens in avg to the prompt
-            prompt = apps_few_shot_prompt(prompt)
-        prompt = truncate_prompt_apps(prompt, tokenizer, max_length, call_format)
-
+    except ValueError:
+        fn_name = None
+    prompt = "\nQUESTION:\n"
+    prompt += sample["question"]
+    if starter_code:
+        prompt += starter_code
+    if fn_name:
+        call_format = "\nUse Standard Input format"
+        prompt += call_format
     else:
-        with open("lm_eval/few_shot_examples/apps_few_shot_prompts.json", "r") as file:
-            examples = json.load(file)
+        call_format = "\nUse Call-Based format"
+        prompt += call_format
+    prompt += "\nANSWER:\n"
 
+    if setup != "finetuning":
         # add two examples one for each implementation type: call-based/input-based
-        prompt = (
-            "Implement answers to the following problems:\nProblem:\n"
-            + examples["problem_type1"]
-            + "\nUse Standard Input format\nANSWER:\n"
-            + examples["solution_type1"]
-            + "\n\nProblem:\n"
-            + examples["problem_type2"]
-            + "\nUse Call-Based format\nANSWER:\n\n"
-            + examples["solution_type2"]
-            + "\n\nProblem:\n"
-            + prompt
-        )
-
+        prompt = apps_few_shot_prompt(prompt)
+    prompt = truncate_prompt_apps(prompt, tokenizer, max_length, call_format)
     return prefix + prompt
 
 
