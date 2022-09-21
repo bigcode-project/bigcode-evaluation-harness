@@ -9,6 +9,7 @@ from lm_eval.utils import TokenizedDataset, complete_code
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
 EOF_STRINGS_DOCSTRING = ["'''", '"""']
+EOF_APPS_FEW_SHOT = ["\nProblem", "\nExample", "\nANSWER"]
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
@@ -67,10 +68,6 @@ def get_references_code_to_text(dataset, num_tasks=None):
             docstring = docstring[1:]
         with MosesDetokenizer("en") as detokenize:
             docstring = detokenize(docstring.strip().split())
-        # TODO remove type definitions in the beginning, but when to stop (no \n here)?
-        # try using original doctring
-        # if reference.startswith(DELIMITERS)
-        #    reference = reference.split("\n", 1)[1].strip()
         references.append(docstring)
     return references
 
@@ -111,6 +108,10 @@ def parallel_generations(
             gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
                 [EndOfFunctionCriteria(0, ["\n"], tokenizer)]
             )
+        elif mode == "apps" and args.setup_apps != "finetuning":
+            gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
+                [EndOfFunctionCriteria(0, EOF_APPS_FEW_SHOT, tokenizer)]
+            )
 
     n_tasks = num_tasks if num_tasks is not None else len(dataset)
     n_copies = args.n_samples // args.batch_size
@@ -135,7 +136,6 @@ def parallel_generations(
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
 
     model, ds_loader = accelerator.prepare(model, ds_loader)
-
     generations = complete_code(
         accelerator,
         model,
