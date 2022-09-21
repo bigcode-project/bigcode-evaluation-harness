@@ -19,6 +19,7 @@ from lm_eval.prompts import (
 
 EOF_STRINGS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
 MBPP_EOF_STRINGS = ["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/"]
+EOF_APPS_FEW_SHOT = ["\nProblem", "\nExample", "\nANSWER"]
 TRIPLE_QUOTE = '"""'
 SINGLE_TRIPLE_QUOTE = "'''"
 
@@ -164,7 +165,7 @@ def complete_code(
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(enumerate(dataloader)):
         with torch.no_grad():
-            if mode in ["humaneval", "code-to-text", "conala", "spider", "concode"]:
+            if mode in ["humaneval", "code-to-text", "conala", "spider", "concode"] or (mode == "apps" and setup != "finetuning"):
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
             generated_tokens = accelerator.unwrap_model(model).generate(
                 input_ids=batch["ids"][:, : batch["input_len"]],
@@ -200,9 +201,12 @@ def complete_code(
             elif mode == "apps":
                 try:
                     if setup != "finetuning":
-                        # we take the last answer
-                        code_gens[task].append(gen_code.split("\nANSWER:", -1)[-1])
-                    code_gens[task].append(gen_code.split("\nANSWER:", 1)[1])
+                        # we take the third answwer (2 are few shot examples)
+                        output = gen_code.split("\nANSWER:", 3)[-1]
+                        output = re.split("|".join(EOF_APPS_FEW_SHOT), output)[0].rstrip()
+                        code_gens[task].append(output)
+                    else:
+                        code_gens[task].append(gen_code.split("\nANSWER:", 1)[1])
                 except IndexError:
                     print(f"Index error for task {task}!")
                     code_gens[task].append(gen_code.replace(tokenizer.eos_token, ""))
