@@ -22,23 +22,29 @@ In this evaluation harness we include tasks with unit tests, but also some tasks
 ### HumanEval
 [HumanEval](https://huggingface.co/datasets/openai_humaneval): 164 handwritten Python programming problems with a function signature, docstring, body, and several unit tests.
 
-* Prompts & generation: in a zero-shot setting, we use function signatures as prompts to the models and generate code until some stop words. By default, top-p sampling is used with $p=0.95$ (same for the other tasks unless we say otherwise). 
-We follow Chen et al. approach for generating 200 solutions (`n_samples=200`) per problem for the estimation of the success rate.
+* Prompts & generation: in a zero-shot setting, we use function signatures as prompts to the models and generate code until some stop words. By default, top-p sampling is used with $p=0.95$ (same for the other tasks unless we say otherwise), this is set using the arguments `do_sample` and `top_p`. 
+We follow Chen et al. approach for pass@k estimation, where $n=200 > k$ solutions are generated per problem for the estimation of the success rate (`n_samples=200`).
 * Evaluation: we evaluate the pass@1, pass@10 and pass@100 for a given temperature.
 
-
+Below are the commands to run the evaluation with these settings:
 ```python
 accelerate launch  main.py \
-  --do_sample True \
-  --temperature 0.2 \
-  --top_p 0.95 \
-  --n_samples=200 \
   --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
   --tasks humaneval \
-  --batch_size 40 \
-  --allow_code_execution=False
+  --temperature 0.2 \
+  --n_samples 200 \
+  --batch_size 10 \
+  --allow_code_execution=False 
 ```
-For all tasks, adapt the  `batch_size` based on your device memory, by default it is 1. Also adapt `max_length_generation` based on your model's context size, by default it is `2048`.
+
+If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `num_tasks_he` argument to $n$. 
+
+For all benchmarks:
+  * Adapt `max_length_generation` based on your model's context size, by default it is `2048`
+  * Adapt the  `batch_size` based on your device memory, by default it is 1. The larger the batch size is the better, since it makes the generation faster.
+  * `allow_code_execution` allows the execution of the model generated (unstrusted) code on your machine, please read carefully the displayed warning before setting it to `True`. 
+  * Some models, such as [InCoder](https://huggingface.co/facebook/incoder-6B), might require adding a prefix before the prompt to give a hint about the language. To add the prefix for InCoder to indicate Python language for example, set `prefix` argument to `"<| file ext=.py |>\n"`.
 
 ### MBPP
 [MBPP](https://huggingface.co/datasets/mbpp):  consists of around 1,000 crowd-sourced Python programming problems, 
@@ -57,9 +63,26 @@ and 3 automated test cases. We evaluate on the test set of samples from index 11
   ```python
   prompt = f'"""\n{description}\n{test_example}\n"""\n'
   ```
-  To use this setting (it's the case by default) set `prompt_type_mbpp` to `incoder`. We also give the option to include a code solution in the prompt, just set `include_solution_mbpp`to `True`.
-  We use single generations per pronlem (`n_samples=1`), where the model is only given one chance to solve each problem and 
+  To use this setting (it's the case by default) set `prompt_type_mbpp` to `incoder`. We also give the option to include a code solution in the prompt, just set `include_solution_mbpp` to `True`.
+  We use single generations per problem (pass@1), where the model is only given one chance to solve each problem. But we still follow Chen et al. approach similarily to HumanEval for pass@k estimation, we generate $n=15 > k$ solutions ($k=1$ in this case) per problem for the estimation of the success rate (`n_samples=15`).
 * Evaluation: we evaluate the pass@1.
+
+Below are the commands to run the evaluation with these settings:
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks mbpp \
+	--prompt_type_mbpp "incoder" \
+  --temperature 0.1 \
+  --n_samples 15 \
+  --batch_size 10 \
+  --allow_code_execution=False \
+```
+
+If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `num_tasks_mbpp` argument to $n$. 
+
+Low temperatures generally work better for small $k$ in pass@k.
 
 ### APPS
 [APPS](https://huggingface.co/datasets/codeparrot/apps): is a challenging benchmark for code generation with 10,000 Python problems, 
@@ -88,7 +111,7 @@ we a similar prompt format to the original paper of Hendrycks et al. There are t
 ```
 Sometimes the prompts can be long and exceed model's context length, so they get truncated. In this case we truncate the prompt before the context length to be able to include the entry "\nUse Call-Based format\nANSWER:\n" for example. The problem description if always at the beginning of the prompt followed by examples that aren't always relevant while the entry is important for the model to know it has to generate Python code that can be executed and not natural text.
 
-To use this setting (it's the case by default) set the argument `setup-apps` to `finetuning`.
+To use this setting (it's the case by default) set the argument `setup_apps` to `finetuning`. To select a difficulty level use `level_apps`argument, by default it is `all`.
 **Few-shot:** for non finetuned models, we provide one example in the prompt for each call type (Standard Input and Call-Based format). We add the examples with an instruction before the prompt above:
 
 ```
@@ -109,9 +132,28 @@ To use this setting (it's the case by default) set the argument `setup-apps` to 
 * Evaluation: we have two types of evaluations for this benchmark:
   * the original Hendrycks et al. evaluation, where we do single generations (`n_samples=1`) and compute the average accuracy of the number 
 of tests that pass for each problem, and the sctrict accuracy, where a problem is solved if all tests pass and we average over all problems. This metric is fast to compute given that we do single generations and capture incremental improvement especially for small models. However, strict accuracy is often very low and average accuracy may not very reprsentative as the number of tests is not consistent through the problems. Recent papers evaluate this benchmark using pass@k.
-  * we compute the pass@1, pass@10 and pass@100 and generate 200 problems per task. Note that this takes a lot of time since there are 5000 evaluation samples, and there aren't some python stop words for the generation to prevent small models that struggle in answering from generating until max_length or EOS token.
+  * we compute the pass@1, pass@10 and pass@100 and generate 200 problems per task (`n_samples=200`). Note that this takes a lot of time since there are 5000 evaluation samples, and there aren't some python stop words for the generation to prevent small models that struggle in answering from generating until max_length or EOS token.
 
 In case of single generations (`n_samples=1`), the first metric is used, but when multiple generations are made the pass@k metric is used.
+
+Below are the commands to run the evaluation with these settings:
+```python
+# to compute average/strict accuracies: use n_samples 1 
+# to compute pass@k: use n_samples != 1 (200)
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks apps \
+  --level_apps <LEVEL> \
+  --setup_apps <SETUP> \
+  --n_samples 1 \
+  --temperature 0.1 \
+  --batch_size 10 \
+  --allow_code_execution=False 
+```
+By default <SETUP>="finetuning" and we expect a model [finetuned](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS) on the train split of APPS, otherwise switch to <SETUP>="fewshot" and a one-shot setting will be used (the scores might be very low since APPS is a challenging benchmark).
+
+If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `num_tasks_apps` argument to $n$. 
 
 ## Code generation benchmarks without unit tests
 
@@ -121,6 +163,25 @@ For these tasks, we do single generations and compare the generated code againt 
 - [Spider](https://huggingface.co/datasets/spider) for SQL code generation.
 - [Concode](https://huggingface.co/datasets/code_x_glue_tc_text_to_code) for Java code generation.
 
+We only do single generation `n_samples=1`, and use the same generation settings as before.
+Below are the commands to run the evaluation:
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks <TASK> \
+  --n_samples 1 \
+  --temperature 0.1 \
+  --batch_size 10 \
+  --allow_code_execution=False 
+```
+
+accelerate launch main.py \
+	--model facebook/incoder-1B  \
+	--prefix "<| file ext=.py |>\n" \
+	--tasks code-to-text \
+	--num_tasks_code_to_text 20 \
+	--n_samples 1 
 ## Documentation generation task
 Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text): is a benchmark for english documentation generation from for 6 programming languages: Python, Go, Ruby, Java, JavaScript and PHP. 
 
