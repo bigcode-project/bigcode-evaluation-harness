@@ -36,52 +36,60 @@ git clone https://github.com/bigcode-collaboration/bigcode-evaluation-harness.gi
 cd bigcode-evaluation-harness
 pip install -r requirements.txt
 ```
-We use `accelerate` to generate code in parallel when multiple GPUs are present. You can configure it using:
+We use [`accelerate`](https://huggingface.co/docs/accelerate/index) to generate code/text in parallel when multiple GPUs are present. You can configure it using:
 
 ```bash
 accelerate config
 ```
 ## Usage
 
-Below are examples to evaluate code models on some of the available benchmarks:
+For details on how to evaluate on the tasks, please refer to the documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). Below are some examples:
 
 ```bash
-# to run both humaneval and apps evaluations on CodeParrot with default parameters
-accelerate launch main.py \
-	--model codeparrot/codeparrot \
-	--tasks humaneval,apps \
-	--allow_code_execution=False
-	
-# to run full pass@k evaluation on the Introductory level of APPS (1000 samples)
-# note: to evaluate only on X samples using single generations add --num_tasks_apps X --n_samples 1
-accelerate launch main.py \
-	--model bigcode-data/gpt_all_license_apps_finetuned \
-	--tasks apps \
-	--level_apps introductory \
-    	--n_samples 200 \
-	--batch_size 40 \
-	--temperature 0.6 \
-	--allow_code_execution=False
-
-	
-# to evaluate  on some MBPP samples with InCoder 1B (needs to specify extension)
-accelerate launch main.py \
-	--model facebook/incoder-1B  \
-	--prefix "<| file ext=.py |>\n" \
-	--tasks mbpp \
-	--num_tasks_mbpp 10 \
+# to evaluate on HumanEval
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks humaneval \
+  --temperature 0.2 \
+  --n_samples 200 \
+  --batch_size 10 \
+  --allow_code_execution=False 
+  
+# to evaluate your model on MBPP
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks mbpp \
 	--prompt_type_mbpp "incoder" \
-    	--n_samples 1 \
-	--temperature 0.2 \
-	--allow_code_execution=False
+  --temperature 0.1 \
+  --n_samples 15 \
+  --batch_size 10 \
+  --allow_code_execution=False \
+	
+# to evaluate on APPS
+# to compute average/strict accuracies: use n_samples 1 
+# to compute pass@k: use n_samples != 1 (200)
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks apps \
+  --level_apps <LEVEL> \
+  --setup_apps <SETUP> \
+  --n_samples 1 \
+  --temperature 0.1 \
+  --batch_size 10 \
+  --allow_code_execution=False 
 
 # to evaluate on another task such as code-to-text/conala/spider/concode
-accelerate launch main.py \
-	--model facebook/incoder-1B  \
-	--prefix "<| file ext=.py |>\n" \
-	--tasks code-to-text \
-	--num_tasks_code_to_text 20 \
-	--n_samples 1 
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks <TASK> \
+  --n_samples 1 \
+  --temperature 0.1 \
+  --batch_size 10 \
+  --allow_code_execution=False 
 ```
 
 ## Implementing new tasks
