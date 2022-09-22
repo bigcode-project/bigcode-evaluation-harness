@@ -176,13 +176,8 @@ accelerate launch  main.py \
   --batch_size 10 \
   --allow_code_execution=False 
 ```
+You can evaluate on the first $n$ samples of a `<TASK>` by setting `num_tasks_<TASK>` to $n$.
 
-accelerate launch main.py \
-	--model facebook/incoder-1B  \
-	--prefix "<| file ext=.py |>\n" \
-	--tasks code-to-text \
-	--num_tasks_code_to_text 20 \
-	--n_samples 1 
 ## Documentation generation task
 Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text): is a benchmark for english documentation generation from for 6 programming languages: Python, Go, Ruby, Java, JavaScript and PHP. 
 
