@@ -46,7 +46,8 @@ accelerate config
 For details on how to evaluate on the tasks, please refer to the documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). Below are some examples:
 
 ```bash
-# to evaluate on HumanEval
+# to evaluate on HumanEval :
+# (allow_code_execution is for executing the generated code: read the displayed warning)
 accelerate launch  main.py \
   --model <MODEL_NAME> \
   --max_length_generation <MAX_LENGTH> \
@@ -55,17 +56,17 @@ accelerate launch  main.py \
   --n_samples 200 \
   --batch_size 10 \
   --allow_code_execution=False 
-  
+
 # to evaluate your model on MBPP
 accelerate launch  main.py \
   --model <MODEL_NAME> \
   --max_length_generation <MAX_LENGTH> \
   --tasks mbpp \
-	--prompt_type_mbpp "incoder" \
+  --prompt_type_mbpp "incoder" \
   --temperature 0.1 \
   --n_samples 15 \
   --batch_size 10 \
-  --allow_code_execution=False \
+  --allow_code_execution=False 
 	
 # to evaluate on APPS
 # to compute average/strict accuracies: use n_samples 1 
