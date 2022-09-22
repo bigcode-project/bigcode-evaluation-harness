@@ -122,7 +122,7 @@ def parallel_generations(
         mode=mode,
         n_tasks=n_tasks,
         n_copies=n_copies,
-        max_length_prompt=args.max_length_prompt,
+        max_length_prompt=args.max_length_generation,
         include_tests_mbpp=args.include_tests_mbpp,
         include_solution_mbpp=args.include_solution_mbpp,
         prompt_type_mbpp=args.prompt_type_mbpp,

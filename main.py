@@ -61,6 +61,12 @@ def parse_args():
         help="batch size for evaluation on each worker, can be larger for HumanEval",
     )
     parser.add_argument(
+        "--max_length_generation",
+        type=int,
+        default=2048,
+        help="Maximum length of generated sequence (prompt+generation)",
+    )
+    parser.add_argument(
         "--allow_code_execution",
         type=bool,
         default=False,
