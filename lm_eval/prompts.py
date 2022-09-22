@@ -84,7 +84,7 @@ def generate_prompt_apps(
     prompt = truncate_prompt_apps(prompt, tokenizer, max_length, call_format)
     return prefix + prompt
 
-
+# MBPP prompts inspired from https://github.com/dpfried/incoder/blob/d195d64eee055081585d0ecb1f93e2adbe694546/evaluation/mbpp.py
 def mbpp_incoder_prompt(sample, include_solution_mbpp=False, prefix=""):
     """Generate prompts for MBPP prompt similarily to InCoder
     prompt = docstringthat includes one test"""
