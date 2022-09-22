@@ -17,6 +17,13 @@ is considered correct if it passes some unit tests, a poplular metric for this i
 
 In this evaluation harness we include tasks with unit tests, but also some tasks with BLEU evaluation, due to the scarcity and evaluation cost of the first type.
 
+Before diving into the tasks, here are some instructions that stand for all the benchmarks:
+  * Adapt `max_length_generation` based on your model's context size, by default it is 2048.
+  * Adapt the  `batch_size` based on your device memory, by default it is 1. The larger the batch size is the better, since it makes the generation faster.
+  * `allow_code_execution` allows the execution of the model generated (unstrusted) code on your machine, please read carefully the displayed warning before setting it to `True`. 
+  * Some models, such as [InCoder](https://huggingface.co/facebook/incoder-6B), might require adding a prefix before the prompt to give a hint about the language. To add the prefix for InCoder to indicate Python language for example, set `prefix` argument to `"<| file ext=.py |>\n"`.
+  * The generations are saved with `save_generations` that is set to True, you can visualize the postprocessed model generations used for the evaluaion. You also have the option of saving the references, it can be useful for tasks that use BLEU score and actual solutions as references, just set `save_references` to True.
+
 ## Code generation benchmarks with unit tests
 
 ### HumanEval
@@ -39,12 +46,6 @@ accelerate launch  main.py \
 ```
 
 If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `num_tasks_he` argument to $n$. 
-
-For all benchmarks:
-  * Adapt `max_length_generation` based on your model's context size, by default it is `2048`
-  * Adapt the  `batch_size` based on your device memory, by default it is 1. The larger the batch size is the better, since it makes the generation faster.
-  * `allow_code_execution` allows the execution of the model generated (unstrusted) code on your machine, please read carefully the displayed warning before setting it to `True`. 
-  * Some models, such as [InCoder](https://huggingface.co/facebook/incoder-6B), might require adding a prefix before the prompt to give a hint about the language. To add the prefix for InCoder to indicate Python language for example, set `prefix` argument to `"<| file ext=.py |>\n"`.
 
 ### MBPP
 [MBPP](https://huggingface.co/datasets/mbpp):  consists of around 1,000 crowd-sourced Python programming problems, 
