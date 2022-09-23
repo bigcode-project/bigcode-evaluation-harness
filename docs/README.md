@@ -93,7 +93,7 @@ However, Chen et al. evaluated Codex-12B in a one-shot setting, althought the de
 with fine-tuning and in a one-shot setting:
 * Prompts & generation
 
-**Fine-tuning:** we provide the code to fine tune autioregressive model on this dataset in 
+**1- Fine-tuning:** we provide the code to fine tune autioregressive model on this dataset in 
 [`finetuning/APPS`](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS). To evaluate a fine-tuned model,
 we a similar prompt format to the original paper of Hendrycks et al. There are two types of calls based if the function name is provided for the sample or not.
 
@@ -113,7 +113,8 @@ we a similar prompt format to the original paper of Hendrycks et al. There are t
 Sometimes the prompts can be long and exceed model's context length, so they get truncated. In this case we truncate the prompt before the context length to be able to include the entry "\nUse Call-Based format\nANSWER:\n" for example. The problem description if always at the beginning of the prompt followed by examples that aren't always relevant while the entry is important for the model to know it has to generate Python code that can be executed and not natural text.
 
 To use this setting (it's the case by default) set the argument `setup_apps` to `finetuning`. To select a difficulty level use `level_apps`argument, by default it is `all`.
-**Few-shot:** for non finetuned models, we provide one example in the prompt for each call type (Standard Input and Call-Based format). We add the examples with an instruction before the prompt above:
+
+**2- Few-shot:** for non finetuned models, we provide one example in the prompt for each call type (Standard Input and Call-Based format). We add the examples with an instruction before the prompt above:
 
 ```
     one_shot_prompt = (
