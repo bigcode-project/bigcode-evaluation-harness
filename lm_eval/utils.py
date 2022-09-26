@@ -171,7 +171,6 @@ def complete_code(
 
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(enumerate(dataloader)):
-        print(batch["task_id"])
         with torch.no_grad():
             if mode in ["humaneval", "code-to-text", "conala", "spider", "concode"] or (mode == "apps" and setup != "finetuning"):
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
