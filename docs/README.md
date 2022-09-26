@@ -25,7 +25,7 @@ Before diving into the tasks, here are some instructions that stand for all the 
   * Some models, such as [InCoder](https://huggingface.co/facebook/incoder-6B), might require adding a prefix before the prompt to give a hint about the language. To add the prefix for InCoder to indicate Python language for example, set `prefix` argument to `"<| file ext=.py |>\n"`.
   * The generations are saved with `save_generations` that is set to True, you can visualize the postprocessed model generations used for the evaluaion. You also have the option of saving the references, it can be useful for tasks that use BLEU score and actual solutions as references, just set `save_references` to True.
   * For experimenting, you can choose the number of tasks to evaluate on instead of using the whole test set, try using a number that is proportional to your number of devices.
-  
+
 ## Code generation benchmarks with unit tests
 
 ### HumanEval
@@ -190,8 +190,18 @@ We retrieve the reference solutions from the docstring tokens, similarily to InC
 
 For the other languages : the docstring is not included in the code so we currently don't extract signatures and use the full function body followed by a comment in that language saying `\n=begin Explanation of the code above:\n` for Ruby, and `\n/* Explanation of the code above:\n` for the rest. This task is still not well tested, please report any bugs you might find.
 
-For this task we use greedy generation, and we compute the BLEU score.  We evaluate on the first 2,000 examples from the test set. You can select the language by setting `langauge`argument and choose the prompt type as function signature for Python (it's the case by defaullt) by setting the argument `prompt_type` to `left`.
+For this task we use greedy generation, and we compute the BLEU score.  We evaluate on the first 1,200 examples from the test set (`code_to_text_data_size=1200`). You can select the language by setting `langauge`argument and choose the prompt type as function signature for Python (it's the case by defaullt) by setting the argument `prompt_type` to `left`.
 
+Below are the commands to run the evaluation:
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks code_to_text \
+  --language python \
+  --n_samples 1 \
+  --batch_size 1 
+```
 ## Downstream classification tasks
 
 These are classification tasks for Java and C, we provide the code to finetune models on these benchmarks and evaluate on them in the 
