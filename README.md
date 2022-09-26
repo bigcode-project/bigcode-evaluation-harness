@@ -89,8 +89,7 @@ accelerate launch  main.py \
   --tasks <TASK> \
   --n_samples 1 \
   --temperature 0.1 \
-  --batch_size 1 \
-  --allow_code_execution=False 
+  --batch_size 1 
 ```
 
 ## Implementing new tasks
