@@ -19,8 +19,9 @@ In this evaluation harness we include tasks with unit tests, but also some tasks
 
 Before diving into the tasks, here are some instructions that stand for all the benchmarks:
   * Adapt `max_length_generation` based on your model's context size, by default it is 2048.
-  * Adapt the  `batch_size` based on your device memory, by default it is 1. For multiple generations per problem, the larger the batch size the better (but it should be smaller than `n_samples`), since it makes the generation faster.
+  * Adapt the  `batch_size` based on your device memory and `n_samples`, by default it is 1. It should be smaller than `n_samples`, but for multiple generations per problem, the larger the batch size the better, since it makes the generation faster.
   * `allow_code_execution` allows the execution of the model generated (unstrusted) code on your machine, please read carefully the displayed warning before setting it to `True`. 
+  * You can adapt the text generation parameter by changing `do_sample`, `top_p` and `temperature` parameters. 
   * Some models, such as [InCoder](https://huggingface.co/facebook/incoder-6B), might require adding a prefix before the prompt to give a hint about the language. To add the prefix for InCoder to indicate Python language for example, set `prefix` argument to `"<| file ext=.py |>\n"`.
   * The generations are saved with `save_generations` that is set to True, you can visualize the postprocessed model generations used for the evaluaion. You also have the option of saving the references, it can be useful for tasks that use BLEU score and actual solutions as references, just set `save_references` to True.
 
@@ -161,9 +162,9 @@ If you want to evaluate only on the first $n$ samples instead of all the test da
 
 For these tasks, we do single generations and compare the generated code againt reference solutions and compute BLEU score. For the following tasks, we use a two-shot setting where we include 2 inputs and their solutions in the prompt, all preceded by an instruction such as: ` "Answer the following instructions in a one line SQL query:\n"`. The solutions consist of one line so we stop the generation when a new line is generated. 3 languages are present: Python, SQL and Java.
 
-- [CoNaLa](https://huggingface.co/datasets/neulab/conala)for Python code generation.
-- [Spider](https://huggingface.co/datasets/spider) for SQL code generation.
-- [Concode](https://huggingface.co/datasets/code_x_glue_tc_text_to_code) for Java code generation.
+- [CoNaLa](https://huggingface.co/datasets/neulab/conala)for Python code generation, it has 500 tasks in the test set.
+- [Spider](https://huggingface.co/datasets/spider) for SQL code generation, it has 1,034 tasks in the test set.
+- [Concode](https://huggingface.co/datasets/code_x_glue_tc_text_to_code) for Java code generation, it has 2,000 tasks in the test set.
 
 We only do single generation `n_samples=1`, and use the same generation settings as before.
 Below are the commands to run the evaluation:
