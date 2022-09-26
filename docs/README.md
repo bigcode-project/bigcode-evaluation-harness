@@ -19,7 +19,7 @@ In this evaluation harness we include tasks with unit tests, but also some tasks
 
 Before diving into the tasks, here are some instructions that stand for all the benchmarks:
   * Adapt `max_length_generation` based on your model's context size, by default it is 2048.
-  * Adapt the  `batch_size` based on your device memory, by default it is 1. The larger the batch size is the better, since it makes the generation faster.
+  * Adapt the  `batch_size` based on your device memory, by default it is 1. For multiple generations per problem, the larger the batch size the better (but it should be smaller than `n_samples`), since it makes the generation faster.
   * `allow_code_execution` allows the execution of the model generated (unstrusted) code on your machine, please read carefully the displayed warning before setting it to `True`. 
   * Some models, such as [InCoder](https://huggingface.co/facebook/incoder-6B), might require adding a prefix before the prompt to give a hint about the language. To add the prefix for InCoder to indicate Python language for example, set `prefix` argument to `"<| file ext=.py |>\n"`.
   * The generations are saved with `save_generations` that is set to True, you can visualize the postprocessed model generations used for the evaluaion. You also have the option of saving the references, it can be useful for tasks that use BLEU score and actual solutions as references, just set `save_references` to True.
@@ -150,7 +150,7 @@ accelerate launch  main.py \
   --setup_apps <SETUP> \
   --n_samples 1 \
   --temperature 0.1 \
-  --batch_size 10 \
+  --batch_size 1 \
   --allow_code_execution=False 
 ```
 By default <SETUP>="finetuning" and we expect a model [finetuned](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS) on the train split of APPS, otherwise switch to <SETUP>="fewshot" and a one-shot setting will be used (the scores might be very low since APPS is a challenging benchmark).
@@ -174,8 +174,7 @@ accelerate launch  main.py \
   --tasks <TASK> \
   --n_samples 1 \
   --temperature 0.1 \
-  --batch_size 10 \
-  --allow_code_execution=False 
+  --batch_size 1 
 ```
 You can evaluate on the first $n$ samples of a `<TASK>` by setting `num_tasks_<TASK>` to $n$.
 

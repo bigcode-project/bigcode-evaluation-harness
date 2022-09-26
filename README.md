@@ -79,7 +79,7 @@ accelerate launch  main.py \
   --setup_apps <SETUP> \
   --n_samples 1 \
   --temperature 0.1 \
-  --batch_size 10 \
+  --batch_size 1 \
   --allow_code_execution=False 
 
 # to evaluate on another task such as code-to-text/conala/spider/concode with BLEU
@@ -89,7 +89,7 @@ accelerate launch  main.py \
   --tasks <TASK> \
   --n_samples 1 \
   --temperature 0.1 \
-  --batch_size 10 \
+  --batch_size 1 \
   --allow_code_execution=False 
 ```
 
