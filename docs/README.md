@@ -24,7 +24,8 @@ Before diving into the tasks, here are some instructions that stand for all the 
   * You can adapt the text generation parameter by changing `do_sample`, `top_p` and `temperature` parameters. 
   * Some models, such as [InCoder](https://huggingface.co/facebook/incoder-6B), might require adding a prefix before the prompt to give a hint about the language. To add the prefix for InCoder to indicate Python language for example, set `prefix` argument to `"<| file ext=.py |>\n"`.
   * The generations are saved with `save_generations` that is set to True, you can visualize the postprocessed model generations used for the evaluaion. You also have the option of saving the references, it can be useful for tasks that use BLEU score and actual solutions as references, just set `save_references` to True.
-
+  * For experimenting, you can choose the number of tasks to evaluate on instead of using the whole test set, try using a number that is proportional to your number of devices.
+  
 ## Code generation benchmarks with unit tests
 
 ### HumanEval
@@ -177,7 +178,7 @@ accelerate launch  main.py \
   --temperature 0.1 \
   --batch_size 1 
 ```
-You can evaluate on the first $n$ samples of a `<TASK>` by setting `num_tasks_<TASK>` to $n$.
+You can evaluate on the first $n$ samples of a `<TASK>` by setting `num_tasks_<TASK>` to $n$. (If you ever get index out of range errors try using a number of tasks that is proportional to the number of devices you are using).
 
 ## Documentation generation task
 Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text): is a benchmark for english documentation generation from for 6 programming languages: Python, Go, Ruby, Java, JavaScript and PHP. 
