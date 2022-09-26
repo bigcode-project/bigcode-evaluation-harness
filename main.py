@@ -31,6 +31,7 @@ class MultiChoice:
 
 def parse_args():
     parser = HfArgumentParser(EvalArguments)
+    
     parser.add_argument(
         "--model",
         required=True,
@@ -57,7 +58,7 @@ def parse_args():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=1,
+        default=10,
         help="batch size for evaluation on each worker, can be larger for HumanEval",
     )
     parser.add_argument(

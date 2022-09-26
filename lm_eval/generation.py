@@ -119,6 +119,7 @@ def parallel_generations(
     ds_tokenized = TokenizedDataset(
         tokenizer,
         dataset,
+        num_devices = accelerator.state.num_processes,
         mode=mode,
         n_tasks=n_tasks,
         n_copies=n_copies,

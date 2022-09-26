@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+import warnings
 
 import torch
 from datasets import load_dataset
@@ -46,6 +47,7 @@ class TokenizedDataset(IterableDataset):
         self,
         tokenizer,
         dataset,
+        num_devices,
         mode="humaneval",
         n_tasks=None,
         n_copies=1,
@@ -61,6 +63,7 @@ class TokenizedDataset(IterableDataset):
 
         self.tokenizer = tokenizer
         self.dataset = dataset
+        self.num_devices = num_devices
         self.mode = mode
         self.n_tasks = len(dataset) if n_tasks is None else n_tasks
         self.n_copies = n_copies
@@ -124,6 +127,10 @@ class TokenizedDataset(IterableDataset):
             return_tensors="pt",
             max_length=self.max_length_prompt,
         )
+        if self.n_copies == 1 and self.n_tasks % self.num_devices != 0:
+            self.n_copies = 2
+            warnings.warn("n_copies (n_samples/batch_size) was changed from 1 to 2 because n_tasks isn't proportional to num devices ")
+
         for task in range(self.n_tasks):
             for _ in range(self.n_copies):
                 yield {
@@ -164,6 +171,7 @@ def complete_code(
 
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(enumerate(dataloader)):
+        print(batch["task_id"])
         with torch.no_grad():
             if mode in ["humaneval", "code-to-text", "conala", "spider", "concode"] or (mode == "apps" and setup != "finetuning"):
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
