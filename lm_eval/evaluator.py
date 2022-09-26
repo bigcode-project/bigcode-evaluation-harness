@@ -99,8 +99,8 @@ class Evaluator:
             dataset = load_dataset(
                 "code_x_glue_ct_code_to_text", self.args.language, split="test"
             )
-            # the evaluation set has 14918 examples, we select the first 2000
-            dataset = dataset.select([i for i in range(2000)])
+            # we select the first 1200 samples from the test set
+            dataset = dataset.select([i for i in range(self.args.code_to_text_data_size)])
             generations = parallel_generations(
                 self.accelerator,
                 self.model,

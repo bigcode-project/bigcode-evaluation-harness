@@ -57,6 +57,12 @@ class EvalArguments:
             "help": "The number of Concode text-to-code tasks to run. If not specified all tasks are evaluated."
         },
     )
+    code_to_text_data_size: Optional[int] = field(
+        default=1200,
+        metadata={
+            "help": "The number of samples to use from the code-to-text test dataset."
+        },
+    )
     include_tests_mbpp: Optional[bool] = field(
         default=True,
         metadata={"help": "Whether to include test cases in the prompt for MBPP."},
