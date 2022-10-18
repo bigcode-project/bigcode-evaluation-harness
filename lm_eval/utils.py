@@ -165,9 +165,7 @@ def complete_code(
     """
 
     if mode == "mbpp":
-        MBPP = load_dataset("mbpp", split="test", ignore_verifications=True)
-        # the MBPP evaluation set is task ids 11->510
-        MBPP = MBPP.select([i for i in range(10, 510)])
+        MBPP = load_dataset("mbpp", split="test")
 
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(enumerate(dataloader)):
