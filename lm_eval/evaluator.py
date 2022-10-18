@@ -80,9 +80,8 @@ class Evaluator:
             return generations, references
 
         elif task == "mbpp":
-            dataset = load_dataset("mbpp", split="test", ignore_verifications=True)
+            dataset = load_dataset("mbpp", split="test")
             # the evaluation set is task ids 11->510
-            dataset = dataset.select([i for i in range(10, 510)])
             generations = parallel_generations(
                 self.accelerator,
                 self.model,
