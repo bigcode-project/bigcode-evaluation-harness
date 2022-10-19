@@ -1,5 +1,6 @@
 from tqdm import tqdm
 from mosestokenizer import MosesDetokenizer
+import json
 
 from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
@@ -75,6 +76,14 @@ def get_references_code_to_text(dataset, num_tasks=None):
 def parallel_generations(
     accelerator, model, tokenizer, dataset, mode, args, num_tasks=None
 ):
+    if args.evaluation_alone:
+        # load generated code
+        print("loading generations")
+        # if accelerator.is_main_process:
+        with open(args.generations_path) as fp:
+            generations = json.load(fp)
+        print(f"length gens: {len(generations)}, and inside length: {len(generations[0])}")
+        return generations
 
     set_seed(args.seed, device_specific=True)
 
@@ -114,6 +123,7 @@ def parallel_generations(
             )
 
     n_tasks = num_tasks if num_tasks is not None else len(dataset)
+    print(f"ntasks for generation is {n_tasks}")
     n_copies = args.n_samples // args.batch_size
 
     ds_tokenized = TokenizedDataset(

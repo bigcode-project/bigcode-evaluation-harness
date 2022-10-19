@@ -34,7 +34,7 @@ def parse_args():
     
     parser.add_argument(
         "--model",
-        required=True,
+        default=None,
         help="Model to evaluate, provide repo name Hugging Face hub or local path",
     )
     parser.add_argument(
@@ -88,6 +88,24 @@ def parse_args():
         default=False,
         help="save reference solutions/tests",
     )
+    parser.add_argument(
+        "--generation_alone",
+        type=bool,
+        default=False,
+        help="do code generation but no evaluation",
+    )
+    parser.add_argument(
+        "--evaluation_alone",
+        type=bool,
+        default=False,
+        help="do evaluation of previously generated code",
+    )
+    parser.add_argument(
+        "--generations_path",
+        type=str,
+        default="./generations.json",
+        help="path of previously generated code for the execution_alone mode",
+    )
     return parser.parse_args()
 
 
@@ -111,36 +129,57 @@ def main():
     else:
         task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
 
-    print("Loading the model and tokenizer")
-    model = AutoModelForCausalLM.from_pretrained(args.model, use_auth_token=True)
-    tokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=True)
-    if not tokenizer.eos_token:
-        if tokenizer.bos_token:
-            tokenizer.eos_token = tokenizer.bos_token
-            print("bos_token used as eos_token")
-        else:
-            raise ValueError("No eos_token or bos_token found")
-    tokenizer.pad_token = tokenizer.eos_token
-
-    accelerator = Accelerator()
-    if accelerator.is_main_process:
-        print(f"Selected Tasks: {task_names}")
-
-    evaluator = Evaluator(accelerator, model, tokenizer, args)
     results = {}
-    for task in task_names:
-        results[task] = evaluator.evaluate(task)
 
-    # add info about the model and few shot config
-    results["config"] = {"model": args.model}
+    if args.evaluation_alone:
+        # here we don't generate code but only evaluate previously computed generations
+        print("evaluation only mode")
+        evaluator = Evaluator(None, None, None, args)
+        for task in task_names:
+            results[task] = evaluator.evaluate(task)
+    else:
+        # here we generate code and save it (evaluation is optional but True by default)
+        print("Loading the model and tokenizer")
+        model = AutoModelForCausalLM.from_pretrained(args.model, use_auth_token=True)
+        tokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=True)
+        if not tokenizer.eos_token:
+            if tokenizer.bos_token:
+                tokenizer.eos_token = tokenizer.bos_token
+                print("bos_token used as eos_token")
+            else:
+                raise ValueError("No eos_token or bos_token found")
+        tokenizer.pad_token = tokenizer.eos_token
 
-    dumped = json.dumps(results, indent=2)
-    if accelerator.is_main_process:
-        print(dumped)
+        accelerator = Accelerator()
+        if accelerator.is_main_process:
+            print(f"Selected Tasks: {task_names}")
 
-    if args.output_path:
-        with open(args.output_path, "w") as f:
-            f.write(dumped)
+        evaluator = Evaluator(accelerator, model, tokenizer, args)
+        for task in task_names:
+            if args.generation_alone:
+                print("generation mode only")
+                generations, references = evaluator.generate_text(task)
+                if accelerator.is_main_process:
+                    with open("generations.json", "w") as fp:
+                        json.dump(generations, fp)
+                        print("generations were saved")
+                    if args.save_references:
+                        with open("references.json", "w") as fp:
+                            json.dump(references, fp)
+                            print("references were saved")
+            else:
+                results[task] = evaluator.evaluate(task)
+
+        # add info about the model and few shot config
+        results["config"] = {"model": args.model}
+
+        dumped = json.dumps(results, indent=2)
+        if accelerator.is_main_process:
+            print(dumped)
+
+        if args.output_path:
+            with open(args.output_path, "w") as f:
+                f.write(dumped)
 
 
 if __name__ == "__main__":
