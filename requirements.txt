@@ -1,6 +1,6 @@
-transformers==4.20.0
-accelerate==0.11.0
-datasets==2.3.2
+transformers==4.23.1
+accelerate==0.13.2
+datasets==2.6.1
 evaluate==0.1.2
 pyext==0.7
 mosestokenizer==1.0.0
