@@ -82,7 +82,7 @@ def parallel_generations(
         with open(args.generations_path) as fp:
             generations = json.load(fp)
             if accelerator.is_main_process:
-                print(f"generations loaded, {num_tasks} selected from {len(generations)} with {len(generations[0])} candidates")
+                print(f"generations loaded, {ntasks} selected from {len(generations)} with {len(generations[0])} candidates")
         return generations[:num_tasks]
 
     set_seed(args.seed, device_specific=True)
