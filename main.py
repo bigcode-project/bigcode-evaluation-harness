@@ -89,13 +89,13 @@ def parse_args():
         help="save reference solutions/tests",
     )
     parser.add_argument(
-        "--generation_alone",
+        "--generation_only",
         type=bool,
         default=False,
         help="do code generation but no evaluation",
     )
     parser.add_argument(
-        "--evaluation_alone",
+        "--evaluation_only",
         type=bool,
         default=False,
         help="do evaluation of previously generated code",
@@ -104,7 +104,7 @@ def parse_args():
         "--generations_path",
         type=str,
         default="./generations.json",
-        help="path of previously generated code for the execution_alone mode",
+        help="path of previously generated code for the execution_only mode",
     )
     return parser.parse_args()
 
@@ -129,14 +129,19 @@ def main():
     else:
         task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
 
-    results = {}
+    accelerator = Accelerator()
+    if accelerator.is_main_process:
+        print(f"Selected Tasks: {task_names}")
 
-    if args.evaluation_alone:
+    results = {}
+    if args.evaluation_only:
         # here we don't generate code but only evaluate previously computed generations
-        print("evaluation only mode")
-        evaluator = Evaluator(None, None, None, args)
+        if accelerator.is_main_process:
+            print("evaluation only mode")
+        evaluator = Evaluator(accelerator, None, None, args)
         for task in task_names:
             results[task] = evaluator.evaluate(task)
+
     else:
         # here we generate code and save it (evaluation is optional but True by default)
         print("Loading the model and tokenizer")
@@ -150,14 +155,11 @@ def main():
                 raise ValueError("No eos_token or bos_token found")
         tokenizer.pad_token = tokenizer.eos_token
 
-        accelerator = Accelerator()
-        if accelerator.is_main_process:
-            print(f"Selected Tasks: {task_names}")
-
         evaluator = Evaluator(accelerator, model, tokenizer, args)
         for task in task_names:
-            if args.generation_alone:
-                print("generation mode only")
+            if args.generation_only:
+                if accelerator.is_main_process:
+                    print("generation mode only")
                 generations, references = evaluator.generate_text(task)
                 if accelerator.is_main_process:
                     with open("generations.json", "w") as fp:
@@ -170,16 +172,14 @@ def main():
             else:
                 results[task] = evaluator.evaluate(task)
 
-        # add info about the model and few shot config
         results["config"] = {"model": args.model}
 
-        dumped = json.dumps(results, indent=2)
-        if accelerator.is_main_process:
-            print(dumped)
+    dumped = json.dumps(results, indent=2)
+    if accelerator.is_main_process:
+        print(dumped)
 
-        if args.output_path:
-            with open(args.output_path, "w") as f:
-                f.write(dumped)
+    with open(args.output_path, "w") as f:
+        f.write(dumped)
 
 
 if __name__ == "__main__":

@@ -195,8 +195,8 @@ class Evaluator:
             generations = [l[:self.args.n_samples] for l in generations]
             warnings.warn("Number of tasks wasn't proportional to number of devices, we removed extra predictions")
 
-        if not self.accelerator or self.accelerator.is_main_process:
-            if self.accelerator:
+        if self.accelerator.is_main_process:
+            if not self.args.evaluation_only:
                 if self.args.save_generations:
                     with open("generations.json", "w") as fp:
                         json.dump(generations, fp)
