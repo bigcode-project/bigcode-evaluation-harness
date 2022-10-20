@@ -173,13 +173,13 @@ def main():
                 results[task] = evaluator.evaluate(task)
 
         results["config"] = {"model": args.model}
+    if not args.generation_only:
+        dumped = json.dumps(results, indent=2)
+        if accelerator.is_main_process:
+            print(dumped)
 
-    dumped = json.dumps(results, indent=2)
-    if accelerator.is_main_process:
-        print(dumped)
-
-    with open(args.output_path, "w") as f:
-        f.write(dumped)
+        with open(args.output_path, "w") as f:
+            f.write(dumped)
 
 
 if __name__ == "__main__":
