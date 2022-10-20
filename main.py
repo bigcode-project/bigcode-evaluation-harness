@@ -34,7 +34,7 @@ def parse_args():
     
     parser.add_argument(
         "--model",
-        default=None,
+        default="",
         help="Model to evaluate, provide repo name Hugging Face hub or local path",
     )
     parser.add_argument(
@@ -172,7 +172,7 @@ def main():
             else:
                 results[task] = evaluator.evaluate(task)
 
-        results["config"] = {"model": args.model}
+    results["config"] = {"model": args.model}
     if not args.generation_only:
         dumped = json.dumps(results, indent=2)
         if accelerator.is_main_process:
