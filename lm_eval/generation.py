@@ -76,6 +76,7 @@ def get_references_code_to_text(dataset, num_tasks=None):
 def parallel_generations(
     accelerator, model, tokenizer, dataset, mode, args, num_tasks=None
 ):
+    n_tasks = num_tasks if num_tasks is not None else len(dataset)
     if args.evaluation_only:
         # load generated code
         with open(args.generations_path) as fp:
@@ -121,7 +122,6 @@ def parallel_generations(
                 [EndOfFunctionCriteria(0, EOF_APPS_FEW_SHOT, tokenizer)]
             )
 
-    n_tasks = num_tasks if num_tasks is not None else len(dataset)
     if accelerator.is_main_process:
         print(f"ntasks for generation is {n_tasks}")
     n_copies = args.n_samples // args.batch_size
