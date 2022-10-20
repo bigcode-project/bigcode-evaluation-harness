@@ -1,7 +1,7 @@
 transformers
 accelerate
 datasets==2.6.1
-evaluate=
+evaluate
 pyext==0.7
 mosestokenizer==1.0.0
 huggingface_hub
