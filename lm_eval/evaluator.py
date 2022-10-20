@@ -81,6 +81,7 @@ class Evaluator:
 
         elif task == "mbpp":
             dataset = load_dataset("mbpp", split="test")
+            assert len(dataset) == 500
             # the evaluation set is task ids 11->510
             references = get_references_mbpp(dataset, self.args.num_tasks_mbpp)
             generations = parallel_generations(
