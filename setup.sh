@@ -1,7 +1,3 @@
-echo setup file for evaluation only mode, cloning repo
-git clone https://github.com/loubnabnl/bigcode-evaluation-harness.git
-cd bigcode-evaluation-harness
-
 echo setup on Linux machine with torch preinstalled
 curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
 sudo apt-get install git-lfs
