@@ -34,12 +34,36 @@ Below are the features and tasks of this framework:
 ```bash
 git clone https://github.com/bigcode-collaboration/bigcode-evaluation-harness.git
 cd bigcode-evaluation-harness
+```
+Install [`torch`](https://pytorch.org/get-started/locally/) based on your device type and the other pacakges using:
+```
 pip install -r requirements.txt
 ```
-We use [`accelerate`](https://huggingface.co/docs/accelerate/index) to generate code/text in parallel when multiple GPUs are present. You can configure it using:
+Also make sure you have `git-lfs` installed and are logged in the Hub
+```
+huggingface-cli login
+````
+
+We use [`accelerate`](https://huggingface.co/docs/accelerate/index) to generate code/text in parallel when multiple GPUs are present (multi-GPU mode). You can configure it using:
 
 ```bash
 accelerate config
+```
+
+If you are using the evaluation harness in an evaluation only mode, just use CPU when configuring accelerate in No distributed training mode. For this evaluation only mode, you can find the all these setup instructions in `setup.sh`. When evaluating on a machine whith many workers, you can get a Too many open files error increasing `ulimit` seems to fix this issue.
+```
+ulimit -n 50000
+```
+
+In `setup.sh` we included the code below to download MBPP generations (500 tasks) and run the evaluation.
+```
+cd ..
+# download generations
+git clone https://huggingface.co/datasets/loubnabnl/code-generations-bigcode
+# move generations to evaluation harness
+cp code-generations-bigcode/anylicense-02/generations.json bigcode-evaluation-harness/
+# add --num_tasks_mbpp 4 to this command to test it works on 4 tasks
+accelerate launch  main.py   --tasks mbpp   --prompt_type_mbpp "incoder" --allow_code_execution=True --evaluation_only True   --model gpt2-anyldedup-08  
 ```
 ## Usage
 
