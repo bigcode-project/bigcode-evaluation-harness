@@ -160,6 +160,7 @@ def parallel_generations(
         prompt_type_mbpp=args.prompt_type_mbpp,
         prefix=args.prefix,
         setup=args.setup_apps,
+        postprocess=args.postprocess,
         **gen_kwargs,
     )
     return generations

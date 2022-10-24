@@ -155,6 +155,7 @@ def complete_code(
     language="python",
     prefix="",
     setup="finetuning",
+    postprocess=True,
     **gen_kwargs,
 ):
 
@@ -199,10 +200,13 @@ def complete_code(
                 s, skip_special_tokens=True, clean_up_tokenization_spaces=True
             )
             if mode == "humaneval":
-                code_gens[task].append(
-                    remove_last_block(gen_code[len(prefix) :], EOF_STRINGS)
-                )
-
+                if postprocess:
+                    code_gens[task].append(
+                        remove_last_block(gen_code[len(prefix) :], EOF_STRINGS)
+                    )
+                else:
+                    warnings.warn("model output is not postprocessed, this might lower evaluation scores")
+                    code_gens[task].append(gen_code[len(prefix) :])
             elif mode == "apps":
                 try:
                     if setup != "finetuning":
@@ -226,7 +230,11 @@ def complete_code(
                         MBPP[int(task)], include_tests_mbpp, prefix
                     )
                 output = gen_code[len(prompt) :]
-                code_gens[task].append(first_block(output, MBPP_EOF_STRINGS))
+                if postprocess:
+                    code_gens[task].append(first_block(output, MBPP_EOF_STRINGS))
+                else:
+                    warnings.warn("model output is not postprocessed, this might lower evaluation scores")
+                    code_gens[task].append(output)
 
             elif mode == "code-to-text":
                 # delimiters used in case the prompt = full function body
