@@ -9,9 +9,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
 
-# TODO add folder for example generations + scores for evaluation mode
+# TODO add more tasks
 
-TASKS = ["humaneval", "apps", "mbpp", "code-to-text", "conala", "spider", "concode"]
+TASKS = ["humaneval", "mbpp"]
 TMPDIR = tempfile.mkdtemp()
 TEST_MODEL = "hf-internal-testing/tiny-random-gpt2"
 
@@ -71,7 +71,6 @@ set_seed(args.seed)
 model, tokenizer, accelerator = setup()
 
 
-
 def test_generation():
     args.generation_only = True
     evaluator = Evaluator(accelerator, model, tokenizer, args)
@@ -87,7 +86,6 @@ def test_evaluation():
     # TODO add scores for each task
     args.evaluation_only = True
     args.n_sample = 2
-    TASKS = ["humaneval"]
     for task in TASKS:
         # path to generation examples to evaluate (for which we know the scores)
         args.generations_path = f"tests/data/{task}_eval_gens.json"
