@@ -15,6 +15,7 @@ TASKS = ["humaneval", "mbpp"]
 TMPDIR = tempfile.mkdtemp()
 TEST_MODEL = "hf-internal-testing/tiny-random-gpt2"
 
+
 def update_args(args):
     args.model = "hf-internal-testing/tiny-random-gpt2"
     # the executed code for the tests is safe (see tests/data/*_eval_gens.json)
@@ -24,7 +25,8 @@ def update_args(args):
     args.output_path = TMPDIR
     args.evaluation_only = False
     args.generation_only = False
-    # postprocessing for HumanEval and MBPP makes generations with dummy model not distinctive
+    # postprocessing for HumanEval and MBPP makes generations
+    # with dummy model not distinctive
     args.postprocess = False
 
     args.batch_size = 1
@@ -37,7 +39,7 @@ def update_args(args):
     args.num_tasks_he = 2
     args.num_tasks_apps = 2
     args.num_tasks_mbpp = 2
-    args.num_tasks_code_to_text = 2       
+    args.num_tasks_code_to_text = 2
     args.num_tasks_concode = 2
     args.num_tasks_conala = 2
     args.num_tasks_spider = 2
@@ -60,12 +62,12 @@ def setup():
 def load_generation_examples(task):
     # generations for testing the generation feature of dummy test model
     with open(f"tests/data/{task}_gen_gens.json") as fp:
-        generations = json.load(fp)
+        gens = json.load(fp)
     with open(f"tests/data/{task}_gen_refs.json") as fp:
-        references = json.load(fp)
-    return generations, references
+        refs = json.load(fp)
+    return gens, refs
 
-# TEST SUITE
+
 args = update_args(EvalArguments())
 set_seed(args.seed)
 model, tokenizer, accelerator = setup()
@@ -85,13 +87,11 @@ def test_generation():
 def test_evaluation():
     # TODO add scores for each task
     args.evaluation_only = True
-    args.n_sample = 2
+    args.n_samples = 2
     for task in TASKS:
-        # path to generation examples to evaluate (for which we know the scores)
+        print(f"testing task {task}")
+        # path to generation examples to evaluate
         args.generations_path = f"tests/data/{task}_eval_gens.json"
         evaluator = Evaluator(accelerator, None, None, args)
         results = evaluator.evaluate(task)
-        if task == "humaneval":
-            assert results == {'pass@1': 0.25}
-        else:
-            pass
+        assert results == {"pass@1": 0.25}
