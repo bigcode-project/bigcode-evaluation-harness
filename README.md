@@ -50,7 +50,7 @@ We use [`accelerate`](https://huggingface.co/docs/accelerate/index) to generate 
 accelerate config
 ```
 
-This evaluation harness can also be used in an an evaluation only mode, you can use a Multi-CPU setting. For this mode you can also find an example of setup instructions in `example_eval_setup.sh`, where we configure the environement and evaluate some MBPP generations donwloaded from the hub.
+This evaluation harness can also be used in an an evaluation only mode, you can use a Multi-CPU setting. For this mode you can also find an example of setup instructions in `evaluation_setup.sh`, where we configure the environement and evaluate some MBPP generations donwloaded from the hub.
 
 ## Usage
 You can use this evaluation harness to generate text solutions to code benchmarks with your model, to evaluate (and execute) the solutions or to do both. While it is betetr to use GPUs for the generation, the evaluation only requires CPUs. So it might be beneficial to separate these two steps. By default both generation and evaluation are performed.
@@ -113,7 +113,7 @@ If you want to generate solutions without executing and evaluating the code, set
 
 ### Evaluation only
 
-If you already have the generations in a json file from this evaluation harness and want to evaluate them, set `evaluation_only` to True and specify the path of the generations in `generation_path` argument. You might need to reconfigure `accelerate` to use multiple CPUs.  For this mode you can also find an example of setup instructions in `setup.sh`. 
+If you already have the generations in a json file from this evaluation harness and want to evaluate them, set `evaluation_only` to True and specify the path of the generations in `generation_path` argument. You might need to reconfigure `accelerate` to use multiple CPUs.  For this mode you can also find an example of setup instructions in `evaluation_setup.sh`. 
 
 Below is an example, be mind of specifying arguments proper to the task you are evaluating on, and note that `model` value here only serves for documenting the experiment.
 
