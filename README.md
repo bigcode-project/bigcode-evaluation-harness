@@ -32,7 +32,7 @@ Below are the features and tasks of this framework:
 ## Setup
 
 ```bash
-git clone https://github.com/loubnabnl/bigcode-evaluation-harness.git
+git clone https://github.com/bigcode-project/bigcode-evaluation-harness.git
 cd bigcode-evaluation-harness
 ```
 Install [`torch`](https://pytorch.org/get-started/locally/) based on your device type and the other pacakges using:
