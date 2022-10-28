@@ -18,7 +18,7 @@ is considered correct if it passes some unit tests, a poplular metric for this i
 In this evaluation harness we include tasks with unit tests, but also some tasks with BLEU evaluation, due to the scarcity and evaluation cost of the first type.
 
 Before diving into the tasks, here are some instructions that stand for all the benchmarks:
-  * Adapt `max_length_generation` based on your model's context size, by default it is 2048.
+  * Adapt `max_length_generation` based on your model's context size and task, by default it is 512. This value is enough for tasks like HumanEval and MBPP but some tasks such as APPS require a larger value because the prompts are long, you can use the full model's context size.
   * Adapt the  `batch_size` based on your device memory and `n_samples`, by default it is 1. It should be smaller than `n_samples`, but for multiple generations per problem, the larger the batch size the better, since it makes the generation faster.
   * `allow_code_execution` allows the execution of the model generated (unstrusted) code on your machine, please read carefully the displayed warning before setting it to `True`. 
   * You can adapt the text generation parameter by changing `do_sample`, `top_p` and `temperature` parameters. 
