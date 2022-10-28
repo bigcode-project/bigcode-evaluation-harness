@@ -34,8 +34,8 @@ def parse_args():
     
     parser.add_argument(
         "--model",
-        default="",
-        help="Model to evaluate, provide repo name Hugging Face hub or local path",
+        default="codeparrot/codeparrot-small",
+        help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
     )
     parser.add_argument(
         "--tasks",
@@ -64,7 +64,7 @@ def parse_args():
     parser.add_argument(
         "--max_length_generation",
         type=int,
-        default=2048,
+        default=512,
         help="Maximum length of generated sequence (prompt+generation)",
     )
     parser.add_argument(
