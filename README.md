@@ -32,18 +32,33 @@ Below are the features and tasks of this framework:
 ## Setup
 
 ```bash
-git clone https://github.com/bigcode-collaboration/bigcode-evaluation-harness.git
+git clone https://github.com/bigcode-project/bigcode-evaluation-harness.git
 cd bigcode-evaluation-harness
+```
+Install [`torch`](https://pytorch.org/get-started/locally/) based on your device type and the other pacakges using:
+```
 pip install -r requirements.txt
 ```
-We use [`accelerate`](https://huggingface.co/docs/accelerate/index) to generate code/text in parallel when multiple GPUs are present. You can configure it using:
+Also make sure you have `git-lfs` installed and are logged in the Hub
+```
+huggingface-cli login
+````
+
+We use [`accelerate`](https://huggingface.co/docs/accelerate/index) to generate code/text in parallel when multiple GPUs are present (multi-GPU mode). You can configure it using:
 
 ```bash
 accelerate config
 ```
-## Usage
 
-For details on how to evaluate on the tasks, please refer to the documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). Below are some examples:
+This evaluation harness can also be used in an an evaluation only mode, you can use a Multi-CPU setting. For this mode you can also find an example of setup instructions in `evaluation_setup.sh`, where we configure the environement and evaluate some MBPP generations donwloaded from the hub.
+
+## Usage
+You can use this evaluation harness to generate text solutions to code benchmarks with your model, to evaluate (and execute) the solutions or to do both. While it is betetr to use GPUs for the generation, the evaluation only requires CPUs. So it might be beneficial to separate these two steps. By default both generation and evaluation are performed.
+
+For more details on how to evaluate on the tasks, please refer to the documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). 
+
+### Generation and evaluation
+Below are some examples to generate and evaluate on some tasks.
 
 ```bash
 # to evaluate on HumanEval with pass@1, pass@10, pass@100
@@ -92,6 +107,20 @@ accelerate launch  main.py \
   --batch_size 1 
 ```
 
+### Generation only
+
+If you want to generate solutions without executing and evaluating the code, set `generation_only` to True, in addition to the instructions above. This will save the solutions in a json file in the working directory.
+
+### Evaluation only
+
+If you already have the generations in a json file from this evaluation harness and want to evaluate them, set `evaluation_only` to True and specify the path of the generations in `generation_path` argument. You might need to reconfigure `accelerate` to use multiple CPUs.  For this mode you can also find an example of setup instructions in `evaluation_setup.sh`. 
+
+Below is an example, be mind of specifying arguments proper to the task you are evaluating on, and note that `model` value here only serves for documenting the experiment.
+
+```
+accelerate launch  main.py   --tasks mbpp   --prompt_type_mbpp "incoder" --allow_code_execution=True --evaluation_only True --generations_path generations.json    --model incoder-temperature-08
+```
+
 ## Implementing new tasks
 To implement a new task in this evaluation harness, see the guide in [`docs/guide`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md). The are also contribution guidelines in this [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md)
 
@@ -105,7 +134,3 @@ We provide documentation for the existing benchmarks and how we make the evaluat
 
 ## Acknowledgements
 This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
-
-## To do:
-- [ ] test code-to-text for other languages than python
-- [ ] test APPS one-shot setup

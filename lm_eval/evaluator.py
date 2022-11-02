@@ -67,6 +67,7 @@ class Evaluator:
 
         elif task == "humaneval":
             dataset = load_dataset("openai_humaneval", split="test")
+            references = get_references_humaneval(dataset, self.args.num_tasks_he)
             generations = parallel_generations(
                 self.accelerator,
                 self.model,
@@ -76,12 +77,13 @@ class Evaluator:
                 args=self.args,
                 num_tasks=self.args.num_tasks_he,
             )
-            references = get_references_humaneval(dataset, self.args.num_tasks_he)
             return generations, references
 
         elif task == "mbpp":
             dataset = load_dataset("mbpp", split="test")
+            assert len(dataset) == 500
             # the evaluation set is task ids 11->510
+            references = get_references_mbpp(dataset, self.args.num_tasks_mbpp)
             generations = parallel_generations(
                 self.accelerator,
                 self.model,
@@ -91,7 +93,6 @@ class Evaluator:
                 args=self.args,
                 num_tasks=self.args.num_tasks_mbpp,
             )
-            references = get_references_mbpp(dataset, self.args.num_tasks_mbpp)
             return generations, references
 
         elif task == "code-to-text":
@@ -196,14 +197,15 @@ class Evaluator:
             warnings.warn("Number of tasks wasn't proportional to number of devices, we removed extra predictions")
 
         if self.accelerator.is_main_process:
-            if self.args.save_generations:
-                with open("generations.json", "w") as fp:
-                    json.dump(generations, fp)
-                    print("generations were saved")
-            if self.args.save_references:
-                with open("references.json", "w") as fp:
-                    json.dump(references, fp)
-                    print("references were saved")
+            if not self.args.evaluation_only:
+                if self.args.save_generations:
+                    with open("generations.json", "w") as fp:
+                        json.dump(generations, fp)
+                        print("generations were saved")
+                if self.args.save_references:
+                    with open("references.json", "w") as fp:
+                        json.dump(references, fp)
+                        print("references were saved")
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
             if task == "apps":

@@ -6,7 +6,7 @@ import transformers
 from accelerate import Accelerator
 from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 
-from arguments import EvalArguments
+from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
 
 ALL_TASKS = ["humaneval", "apps", "mbpp", "code-to-text", "conala", "spider", "concode"]
@@ -34,8 +34,8 @@ def parse_args():
     
     parser.add_argument(
         "--model",
-        required=True,
-        help="Model to evaluate, provide repo name Hugging Face hub or local path",
+        default="codeparrot/codeparrot-small",
+        help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
     )
     parser.add_argument(
         "--tasks",
@@ -64,8 +64,14 @@ def parse_args():
     parser.add_argument(
         "--max_length_generation",
         type=int,
-        default=2048,
+        default=512,
         help="Maximum length of generated sequence (prompt+generation)",
+    )
+    parser.add_argument(
+        "--postprocess",
+        type=bool,
+        default=True,
+        help="Postprocess model outputs before execution, only off during genration tests",
     )
     parser.add_argument(
         "--allow_code_execution",
@@ -87,6 +93,24 @@ def parse_args():
         type=bool,
         default=False,
         help="save reference solutions/tests",
+    )
+    parser.add_argument(
+        "--generation_only",
+        type=bool,
+        default=False,
+        help="do code generation but no evaluation",
+    )
+    parser.add_argument(
+        "--evaluation_only",
+        type=bool,
+        default=False,
+        help="do evaluation of previously generated code",
+    )
+    parser.add_argument(
+        "--generations_path",
+        type=str,
+        default="./generations.json",
+        help="path of previously generated code for the execution_only mode",
     )
     return parser.parse_args()
 
@@ -111,34 +135,55 @@ def main():
     else:
         task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
 
-    print("Loading the model and tokenizer")
-    model = AutoModelForCausalLM.from_pretrained(args.model, use_auth_token=True)
-    tokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=True)
-    if not tokenizer.eos_token:
-        if tokenizer.bos_token:
-            tokenizer.eos_token = tokenizer.bos_token
-            print("bos_token used as eos_token")
-        else:
-            raise ValueError("No eos_token or bos_token found")
-    tokenizer.pad_token = tokenizer.eos_token
-
     accelerator = Accelerator()
     if accelerator.is_main_process:
         print(f"Selected Tasks: {task_names}")
 
-    evaluator = Evaluator(accelerator, model, tokenizer, args)
     results = {}
-    for task in task_names:
-        results[task] = evaluator.evaluate(task)
+    if args.evaluation_only:
+        # here we don't generate code but only evaluate previously computed generations
+        if accelerator.is_main_process:
+            print("evaluation only mode")
+        evaluator = Evaluator(accelerator, None, None, args)
+        for task in task_names:
+            results[task] = evaluator.evaluate(task)
 
-    # add info about the model and few shot config
+    else:
+        # here we generate code and save it (evaluation is optional but True by default)
+        print("Loading the model and tokenizer")
+        model = AutoModelForCausalLM.from_pretrained(args.model, use_auth_token=True)
+        tokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=True)
+        if not tokenizer.eos_token:
+            if tokenizer.bos_token:
+                tokenizer.eos_token = tokenizer.bos_token
+                print("bos_token used as eos_token")
+            else:
+                raise ValueError("No eos_token or bos_token found")
+        tokenizer.pad_token = tokenizer.eos_token
+
+        evaluator = Evaluator(accelerator, model, tokenizer, args)
+        for task in task_names:
+            if args.generation_only:
+                if accelerator.is_main_process:
+                    print("generation mode only")
+                generations, references = evaluator.generate_text(task)
+                if accelerator.is_main_process:
+                    with open("generations.json", "w") as fp:
+                        json.dump(generations, fp)
+                        print("generations were saved")
+                    if args.save_references:
+                        with open("references.json", "w") as fp:
+                            json.dump(references, fp)
+                            print("references were saved")
+            else:
+                results[task] = evaluator.evaluate(task)
+
     results["config"] = {"model": args.model}
+    if not args.generation_only:
+        dumped = json.dumps(results, indent=2)
+        if accelerator.is_main_process:
+            print(dumped)
 
-    dumped = json.dumps(results, indent=2)
-    if accelerator.is_main_process:
-        print(dumped)
-
-    if args.output_path:
         with open(args.output_path, "w") as f:
             f.write(dumped)
 
