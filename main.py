@@ -8,8 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
-
-ALL_TASKS = ["humaneval", "apps", "mbpp", "code-to-text", "conala", "spider", "concode"]
+from lm_eval import tasks
 
 
 class MultiChoice:
@@ -31,7 +30,7 @@ class MultiChoice:
 
 def parse_args():
     parser = HfArgumentParser(EvalArguments)
-    
+
     parser.add_argument(
         "--model",
         default="codeparrot/codeparrot-small",
@@ -40,20 +39,8 @@ def parse_args():
     parser.add_argument(
         "--tasks",
         default=None,
-        choices=MultiChoice(ALL_TASKS),
-        help=f"evalution tasks from {ALL_TASKS}",
-    )
-    parser.add_argument(
-        "--language",
-        type=str,
-        default="python",
-        help=f"Language for the code to text task",
-    )
-    parser.add_argument(
-        "--setup_apps",
-        type=str,
-        default="finetuning",
-        help=f"Evaluation setup for APPS: one shot or with a finetuned model(more common)",
+        choices=MultiChoice(tasks.ALL_TASKS),
+        help=f"evalution tasks from {tasks.ALL_TASKS}",
     )
     parser.add_argument(
         "--batch_size",
@@ -68,6 +55,12 @@ def parse_args():
         help="Maximum length of generated sequence (prompt+generation)",
     )
     parser.add_argument(
+        "--num_tasks",
+        type=int,
+        default=None,
+        help="Number of tasks (examples) to solve and evaluate from the benchmark",
+    )
+    parser.add_argument(
         "--postprocess",
         type=bool,
         default=True,
@@ -78,6 +71,18 @@ def parse_args():
         type=bool,
         default=False,
         help="allow code evaluation to execute external/untrusted Python code on your machine",
+    )
+    parser.add_argument(
+        "--generation_only",
+        type=bool,
+        default=False,
+        help="do code generation but no evaluation",
+    )
+    parser.add_argument(
+        "--evaluation_only",
+        type=bool,
+        default=False,
+        help="do evaluation of previously generated code",
     )
     parser.add_argument(
         "--output_path",
@@ -93,18 +98,6 @@ def parse_args():
         type=bool,
         default=False,
         help="save reference solutions/tests",
-    )
-    parser.add_argument(
-        "--generation_only",
-        type=bool,
-        default=False,
-        help="do code generation but no evaluation",
-    )
-    parser.add_argument(
-        "--evaluation_only",
-        type=bool,
-        default=False,
-        help="do evaluation of previously generated code",
     )
     parser.add_argument(
         "--generations_path",
@@ -131,9 +124,9 @@ def main():
     datasets.logging.set_verbosity_error()
 
     if args.tasks is None:
-        task_names = ALL_TASKS
+        task_names = tasks.ALL_TASKS
     else:
-        task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
+        task_names = pattern_match(args.tasks.split(","), tasks.ALL_TASKS)
 
     accelerator = Accelerator()
     if accelerator.is_main_process:
