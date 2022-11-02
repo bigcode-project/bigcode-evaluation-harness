@@ -12,89 +12,10 @@ class EvalArguments:
         default="codeparrot/codeparrot",
         metadata={"help": "Model name in Hugging Face hub or its local path."},
     )
-    num_workers: Optional[int] = field(
-        default=None, metadata={"help": "Number of workers used for code evaluation."}
-    )
-    num_tasks_he: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "The number of human-eval tasks to run. If not specified all tasks are evaluated."
-        },
-    )
-    num_tasks_apps: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "The number of APPS tasks to run. If not specified all tasks are evaluated."
-        },
-    )
-    num_tasks_mbpp: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "The number of APPS tasks to run. If not specified all tasks are evaluated."
-        },
-    )
-    num_tasks_code_to_text: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "The number of Code-to-text tasks to run. If not specified, the first 1000 are evaluated."
-        },
-    )
-    num_tasks_conala: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "The number of CoNaLa text-to-code tasks to run. If not specified all tasks are evaluated."
-        },
-    )
-    num_tasks_spider: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "The number of Spider text-to-code tasks to run. If not specified all tasks are evaluated."
-        },
-    )
-    num_tasks_concode: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "The number of Concode text-to-code tasks to run. If not specified all tasks are evaluated."
-        },
-    )
-    code_to_text_data_size: Optional[int] = field(
-        default=1200,
-        metadata={
-            "help": "The number of samples to use from the code-to-text test dataset."
-        },
-    )
-    include_tests_mbpp: Optional[bool] = field(
-        default=True,
-        metadata={"help": "Whether to include test cases in the prompt for MBPP."},
-    )
-    include_solution_mbpp: Optional[bool] = field(
-        default=False,
-        metadata={
-            "help": "Whether to include a solution in the prompt for MBPP in InCoder style."
-        },
-    )
-    prompt_type_mbpp: Optional[str] = field(
-        default="incoder",
-        metadata={
-            "help": "The type of prompt to use for MBPP. Can be 'incoder' or 'google'."
-        },
-    )
-    prompt_type_code_to_text: Optional[str] = field(
-        default="left",
-        metadata={
-            "help": "The type of prompt to use for code-to-text task, if 'left' we include only left signature else the whole function body is included."
-        },
-    )
     prefix: Optional[str] = field(
         default="",
         metadata={
             "help": "Prefix to add to the generated code. For exmaple InCoder need prefix='<| file ext=.py |>\n'"
-        },
-    )
-    level_apps: Optional[str] = field(
-        default="all",
-        metadata={
-            "help": "The difficulty level to use for APPS, among introductory, interview, competition and all."
         },
     )
     do_sample: Optional[bool] = field(
