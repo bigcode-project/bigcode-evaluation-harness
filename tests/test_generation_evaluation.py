@@ -29,23 +29,13 @@ def update_args(args):
     # with dummy model not distinctive
     args.postprocess = False
 
+    args.num_tasks = 2
     args.batch_size = 1
     args.max_length_generation = 300
     args.do_sample = False
     args.top_p = 0
     args.n_samples = 1
     args.seed = 0
-
-    args.num_tasks_he = 2
-    args.num_tasks_apps = 2
-    args.num_tasks_mbpp = 2
-    args.num_tasks_code_to_text = 2
-    args.num_tasks_concode = 2
-    args.num_tasks_conala = 2
-    args.num_tasks_spider = 2
-
-    args.language = "python"
-    args.setup_apps = "finetuning"
     return args
 
 
@@ -82,6 +72,7 @@ def test_generation():
         true_gens, true_refs = load_generation_examples(task)
         assert generations == true_gens
         assert references == true_refs
+    print("passed gen")
 
 
 def test_evaluation():
@@ -95,3 +86,4 @@ def test_evaluation():
         evaluator = Evaluator(accelerator, None, None, args)
         results = evaluator.evaluate(task)
         assert results == {"pass@1": 0.25}
+    print("passed eval")
