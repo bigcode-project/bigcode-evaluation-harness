@@ -229,12 +229,12 @@ def complete_code(
                     prompt = mbpp_google_prompt(
                         MBPP[int(task)], include_tests_mbpp, prefix
                     )
-                output = gen_code[len(prompt) :]
                 if postprocess:
-                    code_gens[task].append(first_block(output, MBPP_EOF_STRINGS))
+                    gen_code = gen_code[len(prompt) :]
+                    code_gens[task].append(first_block(gen_code, MBPP_EOF_STRINGS))
                 else:
                     warnings.warn("model output is not postprocessed, this might lower evaluation scores")
-                    code_gens[task].append(output)
+                    code_gens[task].append(gen_code)
 
             elif mode == "code-to-text":
                 # delimiters used in case the prompt = full function body
