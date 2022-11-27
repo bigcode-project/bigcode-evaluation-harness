@@ -9,7 +9,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
 
-ALL_TASKS = ["humaneval", "apps", "mbpp", "code-to-text", "conala", "spider", "concode"]
+ALL_TASKS = ["humaneval", "apps", "mbpp", "code-to-text", "conala", "spider", "concode","codexglue-tt"]
 
 
 class MultiChoice:
@@ -160,7 +160,6 @@ def main():
             else:
                 raise ValueError("No eos_token or bos_token found")
         tokenizer.pad_token = tokenizer.eos_token
-
         evaluator = Evaluator(accelerator, model, tokenizer, args)
         for task in task_names:
             if args.generation_only:

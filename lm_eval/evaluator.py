@@ -173,6 +173,29 @@ class Evaluator:
             )
             references = dataset["code"][:n_tasks]
             return generations, references
+        
+        elif task == "codexglue-tt":
+
+            dataset = load_dataset(
+                    "code_x_glue_tt_text_to_text",self.args.translation_task_codexglue_tt,split="test"
+            )
+            
+            generations = parallel_generations(
+                self.accelerator,
+                self.model,
+                self.tokenizer,
+                dataset,
+                mode=task,
+                args=self.args,
+                num_tasks=self.args.num_tasks_codexglue_tt,
+            )
+            n_tasks = (
+                self.args.num_tasks_codexglue_tt
+                if self.args.num_tasks_codexglue_tt is not None
+                else len(dataset)
+            )
+            references = dataset["target"][:n_tasks]
+            return generations, references
 
         else:
             raise ValueError(
@@ -186,6 +209,7 @@ class Evaluator:
             "conala",
             "spider",
             "concode",
+            "codexglue-tt"
         ]:
             print(_WARNING)
             raise ValueError(
@@ -214,7 +238,7 @@ class Evaluator:
                     predictions=generations, k_list=[1, 10, 100], level=self.level_apps
                 )
 
-            elif task in ["conala", "code-to-text", "spider", "concode"]:
+            elif task in ["conala", "code-to-text", "spider", "concode","codexglue-tt"]:
                 bleu = load("bleu")
                 gens = [gen[0] for gen in generations]
                 results = bleu.compute(

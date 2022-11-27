@@ -15,6 +15,7 @@ from lm_eval.prompts import (
     conala_prompt,
     spider_prompt,
     concode_prompt,
+    codexglue_tt_prompt,
 )
 
 
@@ -57,6 +58,7 @@ class TokenizedDataset(IterableDataset):
         prompt_type_mbpp="incoder",
         prompt_type_code_to_text="left",
         language="python",
+        translation_task="zh_en",
         prefix="",
         setup="finetuning",
     ):
@@ -73,6 +75,7 @@ class TokenizedDataset(IterableDataset):
         self.prompt_type_mbpp = prompt_type_mbpp
         self.prompt_type_code_to_text = prompt_type_code_to_text
         self.language = language
+        self.translation_task = translation_task
         self.prefix = prefix
         self.setup = setup
 
@@ -117,7 +120,14 @@ class TokenizedDataset(IterableDataset):
                     prompt_type=self.prompt_type_code_to_text,
                     prefix=self.prefix,
                 )
-
+            
+            elif self.mode == "codexglue-tt":
+                prompt = codexglue_tt_prompt(
+                    self.dataset[task],
+                    trans_task=self.translation_task,
+                    prefix=""
+                )
+    
             prompts.append(prompt)
 
         outputs = self.tokenizer(
@@ -173,6 +183,8 @@ def complete_code(
         with torch.no_grad():
             if mode in ["humaneval", "code-to-text", "conala", "spider", "concode"] or (mode == "apps" and setup != "finetuning"):
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
+            elif mode == "codexglue-tt":
+                gen_kwargs["stopping_criteria"][0].start_length = batch["input_len"]
             generated_tokens = accelerator.unwrap_model(model).generate(
                 input_ids=batch["ids"][:, : batch["input_len"]],
                 num_return_sequences=batch_size,
@@ -259,5 +271,10 @@ def complete_code(
                 output = gen_code.split("Solution:\n", 3)[-1]
                 output = output.split("\n")[0]
                 code_gens[task].append(output)
+            elif mode == "codexglue-tt":
+                output = gen_code.split("\nEnglish:\n", 3)[-1]
+                output = output.split("\n")[0]
+                code_gens[task].append(output)
+
 
     return code_gens

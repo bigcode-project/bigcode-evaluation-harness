@@ -10,6 +10,12 @@ MBPP_EOF_STRINGS = ["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/"]
 TRIPLE_QUOTE = '"""'
 SINGLE_TRIPLE_QUOTE = "'''"
 SPACES4 = " " * 4
+SOURCE_LANG = {
+                "dn_en":"danish",
+                "zh_en":"chinese",
+                "no_en":"norwegian",
+                "lv_en":"latvian",
+            }
 
 
 def truncate_prompt_apps(prompt, tokenizer, max_length, call_format):
@@ -184,6 +190,8 @@ def two_shot_prompt(entry, text, examples):
     return prompt
 
 
+
+
 def conala_prompt(sample, prefix=""):
     """Generate prompts for CoNaLa text-to-code task in a 2-shot setting"""
     with open("lm_eval/few_shot_examples/conala_few_shot_prompts.json", "r") as file:
@@ -215,4 +223,21 @@ def concode_prompt(sample, prefix=""):
     text = prefix + text
     entry = "Answer the following instructions in a one line of Java code:\n"
     prompt = two_shot_prompt(entry, text, examples)
+    return prefix + prompt
+
+def codexglue_tt_prompt(sample,trans_task="zh_en",prefix=""):
+    """Generate prompts for CodeXGlue text-to-text task in a 2-shot setting"""
+    language = SOURCE_LANG[trans_task]
+    with open("lm_eval/few_shot_examples/codexglue_text_to_text_few_shot_prompts.json","r") as file:
+        examples = json.load(file)
+    text = sample["source"]
+    text = prefix + text
+    examples = examples[language]
+    entry = f"Translate the following documentation from {language.title()} to English:\n"
+    src1 = f"\n{language.title()}:\n" + examples["source1"]
+    tgt1 = "\nEnglish:\n" + examples["target1"]
+    src2 = f"\n{language.title()}:\n" + examples["source2"]
+    tgt2 = "\nEnglish:\n" + examples["target2"]
+    examples = entry + src1 + tgt1 + src2 + tgt2
+    prompt = examples + f"\n{language.title()}:\n" + text + "English:\n"
     return prefix + prompt
