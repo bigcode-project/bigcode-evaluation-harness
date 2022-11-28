@@ -75,7 +75,7 @@ class GeneralAPPS(Task):
             code generation from LM
         :param idx: int
             index of doc in the dataset to which the generation belongs
-            (not used for Humaneval-Task)
+            (not used for APPS)
         """
         try:
             generation = generation.split("\nANSWER:", 1)[1]
