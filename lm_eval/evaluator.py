@@ -42,7 +42,6 @@ class Evaluator:
         dataset = task.get_dataset()
         # if args.num_tasks is None, use all samples
         n_tasks = self.args.num_tasks if self.args.num_tasks else len(dataset)
-        # TODO self.args.num_tasks is not defined
         generations = parallel_generations(
             task,
             dataset,
@@ -71,16 +70,15 @@ class Evaluator:
                 "Number of tasks wasn't proportional to number of devices, we removed extra predictions"
             )
 
-        if self.accelerator.is_main_process:
-            if not self.args.evaluation_only:
-                if self.args.save_generations:
-                    with open("generations.json", "w") as fp:
-                        json.dump(generations, fp)
-                        print("generations were saved")
-                if self.args.save_references:
-                    with open("references.json", "w") as fp:
-                        json.dump(references, fp)
-                        print("references were saved")
+        if self.accelerator.is_main_process and not self.args.generations_path:
+            if self.args.save_generations:
+                with open("generations.json", "w") as fp:
+                    json.dump(generations, fp)
+                    print("generations were saved")
+            if self.args.save_references:
+                with open("references.json", "w") as fp:
+                    json.dump(references, fp)
+                    print("references were saved")
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"

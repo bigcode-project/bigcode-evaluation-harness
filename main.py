@@ -78,10 +78,10 @@ def parse_args():
         help="do code generation but no evaluation",
     )
     parser.add_argument(
-        "--evaluation_only",
-        type=bool,
-        default=False,
-        help="do evaluation of previously generated code",
+        "--generations_path",
+        type=str,
+        default=None,
+        help="path of file with previously generated solutions, if provided generation is skipped and only evaluation is done",
     )
     parser.add_argument(
         "--output_path",
@@ -97,12 +97,6 @@ def parse_args():
         type=bool,
         default=False,
         help="save reference solutions/tests",
-    )
-    parser.add_argument(
-        "--generations_path",
-        type=str,
-        default="./generations.json",
-        help="path of previously generated code for the execution_only mode",
     )
     return parser.parse_args()
 
@@ -132,7 +126,7 @@ def main():
         print(f"Selected Tasks: {task_names}")
 
     results = {}
-    if args.evaluation_only:
+    if args.generations_path:
         # here we don't generate code but only evaluate previously computed generations
         if accelerator.is_main_process:
             print("evaluation only mode")
