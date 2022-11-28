@@ -56,11 +56,7 @@ class Evaluator:
 
     def evaluate(self, task_name):
         task = tasks.get_task(task_name)
-        if (
-            task.requires_execution
-            and not self.allow_code_execution
-            and not self.args.generation_only
-        ):
+        if task.requires_execution and not self.allow_code_execution:
             raise ValueError(_WARNING)
 
         generations, references = self.generate_text(task_name)
@@ -70,15 +66,16 @@ class Evaluator:
                 "Number of tasks wasn't proportional to number of devices, we removed extra predictions"
             )
 
-        if self.accelerator.is_main_process and not self.args.generations_path:
-            if self.args.save_generations:
-                with open("generations.json", "w") as fp:
-                    json.dump(generations, fp)
-                    print("generations were saved")
-            if self.args.save_references:
-                with open("references.json", "w") as fp:
-                    json.dump(references, fp)
-                    print("references were saved")
+        if self.accelerator.is_main_process:
+            if not self.args.generations_path:
+                if self.args.save_generations:
+                    with open("generations.json", "w") as fp:
+                        json.dump(generations, fp)
+                        print("generations were saved")
+                if self.args.save_references:
+                    with open("references.json", "w") as fp:
+                        json.dump(references, fp)
+                        print("references were saved")
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
