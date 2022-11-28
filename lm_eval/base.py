@@ -15,12 +15,12 @@ class Task(ABC):
 
     def __init__(self, stop_words=None, requires_execution=True, fewshot_docs=None):
         """
-        :param fewshot_docs: bool
-            wheter to load the fewshot examples or not
         :param stop_words: list
             list of stop words if the generation uses a stopping criteria during generation
         :param requires_execution: bool
             wheter the task requires code execution during evaluation or not
+        :param fewshot_docs: bool
+            wheter to load the fewshot examples or not
         """
         self.stop_words = stop_words
         self.requires_execution = requires_execution

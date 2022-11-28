@@ -8,8 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
-from lm_eval import tasks
-
+from lm_eval.tasks import ALL_TASKS
 
 class MultiChoice:
     def __init__(self, choices):
@@ -39,8 +38,8 @@ def parse_args():
     parser.add_argument(
         "--tasks",
         default=None,
-        choices=MultiChoice(tasks.ALL_TASKS),
-        help=f"evalution tasks from {tasks.ALL_TASKS}",
+        choices=MultiChoice(ALL_TASKS),
+        help=f"evalution tasks from {ALL_TASKS}",
     )
     parser.add_argument(
         "--batch_size",
@@ -124,9 +123,9 @@ def main():
     datasets.logging.set_verbosity_error()
 
     if args.tasks is None:
-        task_names = tasks.ALL_TASKS
+        task_names = ALL_TASKS
     else:
-        task_names = pattern_match(args.tasks.split(","), tasks.ALL_TASKS)
+        task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
 
     accelerator = Accelerator()
     if accelerator.is_main_process:
