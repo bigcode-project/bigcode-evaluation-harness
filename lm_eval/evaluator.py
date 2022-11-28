@@ -40,8 +40,8 @@ class Evaluator:
     def generate_text(self, task_name):
         task = tasks.get_task(task_name)
         dataset = task.get_dataset()
-        # if args.num_tasks is None, use all samples
-        n_tasks = self.args.num_tasks if self.args.num_tasks else len(dataset)
+        # if args.limit is None, use all samples
+        n_tasks = self.args.limit if self.args.limit else len(dataset)
         generations = parallel_generations(
             task,
             dataset,

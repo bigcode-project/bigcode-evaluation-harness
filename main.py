@@ -54,10 +54,10 @@ def parse_args():
         help="Maximum length of generated sequence (prompt+generation)",
     )
     parser.add_argument(
-        "--num_tasks",
+        "--limit",
         type=int,
         default=None,
-        help="Number of tasks (examples) to solve and evaluate from the benchmark",
+        help="Number of samples to solve and evaluate from the benchmark",
     )
     parser.add_argument(
         "--postprocess",
