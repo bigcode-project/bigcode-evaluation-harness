@@ -49,7 +49,7 @@ class TokenizedDataset(IterableDataset):
         if self.n_copies == 1 and self.n_tasks % self.num_devices != 0:
             self.n_copies = 2
             warnings.warn(
-                "n_copies (n_samples/batch_size) was changed from 1 to 2 because n_tasks isn't proportional to num devices "
+                "n_copies (n_samples/batch_size) was changed from 1 to 2 because n_tasks isn't proportional to num devices"
             )
 
         for sample in range(self.n_tasks):

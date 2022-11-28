@@ -79,6 +79,7 @@ class Evaluator:
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
-            os.environ["HF_ALLOW_CODE_EVAL"] = "1"
+            if self.allow_code_execution and task.requires_execution:
+                os.environ["HF_ALLOW_CODE_EVAL"] = "1"
             results = task.process_results(generations, references)
             return results
