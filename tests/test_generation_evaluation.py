@@ -23,13 +23,13 @@ def update_args(args):
     args.save_generations = False
     args.save_references = False
     args.output_path = TMPDIR
-    args.evaluation_only = False
+    args.generations_path = None
     args.generation_only = False
     # postprocessing for HumanEval and MBPP makes generations
     # with dummy model not distinctive
     args.postprocess = False
 
-    args.num_tasks = 2
+    args.limit = 2
     args.batch_size = 1
     args.max_length_generation = 300
     args.do_sample = False
@@ -77,7 +77,6 @@ def test_generation():
 
 def test_evaluation():
     # TODO add scores for each task
-    args.evaluation_only = True
     args.n_samples = 2
     for task in TASKS:
         print(f"testing task {task}")
