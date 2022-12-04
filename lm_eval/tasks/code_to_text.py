@@ -147,7 +147,7 @@ class GeneralCodeToText(Task):
         :param generations: list(list(str))
             list of lists containing generations
         :param references: list(str)
-            list of str containing refrences (not needed for APPS Task)
+            list of str containing references
         """
         bleu = load("bleu")
         gens = [gen[0] for gen in generations]

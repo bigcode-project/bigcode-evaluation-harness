@@ -34,7 +34,7 @@ class Conala(Task):
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         with open(
-            "lm_eval/few_shot_examples/conala_few_shot_prompts.json", "r"
+            "few_shot_examples/conala_few_shot_prompts.json", "r"
         ) as file:
             examples = json.load(file)
         text_column = "rewritten_intent" if doc["rewritten_intent"] else "intent"
@@ -65,7 +65,7 @@ class Conala(Task):
         :param generations: list(list(str))
             list of lists containing generations
         :param references: list(str)
-            list of str containing refrences (not needed for APPS Task)
+            list of str containing references 
         """
         bleu = load("bleu")
         gens = [gen[0] for gen in generations]
