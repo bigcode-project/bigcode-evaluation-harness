@@ -61,7 +61,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         )
 
     if accelerator.is_main_process:
-        print(f"ntasks for generation is {n_tasks}")
+        print(f"number of problems for this task is {n_tasks}")
     n_copies = args.n_samples // args.batch_size
 
     ds_tokenized = TokenizedDataset(

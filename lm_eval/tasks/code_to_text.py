@@ -1,5 +1,8 @@
 """Code to text task from CodeXGlue (documentation generation) for all subsets
-where the whole function body (without docstring) is given as a prompt"""
+where the whole function body (without docstring) is given as a prompt
+
+For Python: there is code_to_text_python_left task which uses only function signature as prompt 
+and can perform better than this setting"""
 
 import re
 import os
@@ -82,7 +85,7 @@ class GeneralCodeToText(Task):
 
     def get_prompt(self, doc):
         """Generate prompts for Code to text benchmark (documentation generation)
-        Prompt = full fucntion body (withoout the docstring) + '\n[Delimiter]Explanation of the code above:\n'
+        Prompt = full function body (withoout the docstring) + '\n[Delimiter]The goal of this function is to:\n'
         where delimiter is ''' for python, =begin for ruby and /* for the rest.
         """
         code = doc["code"]
@@ -99,15 +102,16 @@ class GeneralCodeToText(Task):
             prompt_prefix = prompt_prefix.strip().removesuffix(TRIPLE_QUOTE)
             prompt_prefix = prompt_prefix.strip().removesuffix(SINGLE_TRIPLE_QUOTE)
             prompt = (
-                prompt_prefix + prompt_suffix + '\n"""Explanation of the code above:\n'
+                prompt_prefix + prompt_suffix + '\n"""The goal of this function is to:\n'
             )
+            # The goal of this function is to:
             return prompt
 
         elif self.DATASET_NAME == "Ruby":
-            return code + "\n=begin Explanation of the code above:\n"
+            return code + "\n=begin The goal of this function is to:\n"
 
         else:
-            return code + "\n/* Explanation of the code above:\n"
+            return code + "\n/* The goal of this function is to:\n"
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -130,13 +134,14 @@ class GeneralCodeToText(Task):
             index of doc in the dataset to which the generation belongs
             (not used for this Task)
         """
-        delimiters = {language: "\n/* Explanation of the code above:\n" for language in LANGUAGES}
+        delimiters = {language: "\n/* The goal of this function is to:\n" for language in LANGUAGES}
         delimiters.update(
             {
-                "python": '\n"""Explanation of the code above:\n',
-                "ruby": "\n=begin Explanation of the code above:\n",
+                "python": '\n"""The goal of this function is to:\n',
+                "ruby": "\n=The goal of this function is to:\n",
             }
         )
+        print(f"generation: {generation}")
         output = generation.split(delimiters[self.DATASET_NAME])[1].strip()
         output = output.split("\n")[0]
         return output
