@@ -23,19 +23,17 @@ class Conala(Task):
     @staticmethod
     def two_shot_prompt(entry, text, examples):
         """Two shot prompt format as instructions & solutions"""
-        instrcution1 = "\nInstruction:\n" + examples["instruction1"]
-        solution1 = "\nSolution:\n" + examples["solution1"]
-        instrcution2 = "\nInstruction:\n" + examples["instruction2"]
-        solution2 = "\nSolution:\n" + examples["solution2"]
-        examples = entry + instrcution1 + solution1 + instrcution2 + solution2
-        prompt = examples + "\nInstruction:\n" + text + "\nSolution:\n"
-        return prompt
+        prompt = f"\nInstruction:\n{examples['instruction1']}\
+                   \nSolution:\n{examples['solution1']}\
+                   \nInstruction:\n{examples['instruction2']}\
+                   \nSolution:\n{examples['solution2']}\
+                   \nInstruction:\n{text}\
+                   \nSolution:\n"
+        return entry + prompt
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        with open(
-            "few_shot_examples/conala_few_shot_prompts.json", "r"
-        ) as file:
+        with open("few_shot_examples/conala_few_shot_prompts.json", "r") as file:
             examples = json.load(file)
         text_column = "rewritten_intent" if doc["rewritten_intent"] else "intent"
         text = doc[text_column].strip()
@@ -65,7 +63,7 @@ class Conala(Task):
         :param generations: list(list(str))
             list of lists containing generations
         :param references: list(str)
-            list of str containing references 
+            list of str containing references
         """
         bleu = load("bleu")
         gens = [gen[0] for gen in generations]
