@@ -32,7 +32,7 @@ class EvalArguments:
         default=0.95, metadata={"help": "Top-p parameter used for nucleus sampling."}
     )
     n_samples: Optional[int] = field(
-        default=200,
+        default=1,
         metadata={"help": "Number of completions to generate for each sample."},
     )
     eos: Optional[str] = field(
