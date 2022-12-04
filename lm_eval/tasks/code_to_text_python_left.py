@@ -1,7 +1,11 @@
-"""Code to text task from CodeXGlue (documentation generation) for Python subset in a left only setting:
+"""CodeXGLUE: A Machine Learning Benchmark Dataset for Code Understanding and Generation
+https://arxiv.org/abs/2102.04664
+
+Code to text task from CodeXGlue (documentation generation) for Python subset in a left only setting:
 only the function signature is given as prompt
 
-TODO: implement function signature extraction for other languages in the dataset"""
+TODO: implement function signature extraction for other languages in the dataset
+"""
 
 import re
 import os

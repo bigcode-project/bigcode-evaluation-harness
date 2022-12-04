@@ -1,3 +1,15 @@
+"""Mapping Language to Code in Programmatic Context (Concode)
+https://arxiv.org/abs/1808.09588
+
+CodeXGLUE: A Machine Learning Benchmark Dataset for Code Understanding and Generation
+https://arxiv.org/abs/2102.04664
+
+Java code generation in CodeXGLUE text-to-code dataset (built from Concode dataset)
+Available at https://huggingface.co/datasets/code_x_glue_ct_code_to_text
+2000 samples are available in the test set.
+
+Here we use two-shot evaluation (the original paper evaluates finetuned models)
+"""
 import json
 from evaluate import load
 from lm_eval.base import Task
@@ -18,7 +30,7 @@ class Concode(Task):
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        return self.dataset["validation"]
+        return self.dataset["test"]
 
     @staticmethod
     def two_shot_prompt(entry, text, examples):
@@ -33,7 +45,9 @@ class Concode(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        with open("few_shot_examples/concode_few_shot_prompts.json", "r") as file:
+        with open(
+            "lm_eval/tasks/few_shot_examples/concode_few_shot_prompts.json", "r"
+        ) as file:
             examples = json.load(file)
         text = doc["nl"].split("concode_field_sep")[0].strip()
         if text.endswith("."):

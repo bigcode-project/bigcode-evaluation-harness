@@ -1,3 +1,12 @@
+"""Measuring Coding Challenge Competence With APPS
+https://arxiv.org/abs/2105.09938
+
+APPS is a benchmark for code generation with 10000 problems. With three difficulty levels: introductory, interview and competition.
+It can be used to evaluate the ability of language models to generate code from natural language specifications.
+
+Homepage: https://github.com/hendrycks/apps
+"""
+
 import json
 from evaluate import load
 from lm_eval.base import Task
@@ -49,7 +58,9 @@ class GeneralAPPS(Task):
         starter_code = None if len(doc["starter_code"]) == 0 else doc["starter_code"]
         try:
             input_outpout = json.loads(doc["input_output"])
-            fn_name = None if not input_outpout.get("fn_name") else input_outpout["fn_name"]
+            fn_name = (
+                None if not input_outpout.get("fn_name") else input_outpout["fn_name"]
+            )
         except ValueError:
             fn_name = None
         prompt = "\nQUESTION:\n"

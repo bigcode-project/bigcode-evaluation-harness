@@ -1,3 +1,13 @@
+"""Evaluating Large Language Models Trained on Code
+https://arxiv.org/abs/2107.03374
+
+The HumanEval dataset released by OpenAI includes 164 programming problems with a function signature,
+docstring, body, and several unit tests. 
+They were handwritten to ensure not to be included in the training set of code generation models.
+
+Homepage: https://github.com/openai/human-eval
+"""
+
 import re
 from evaluate import load
 from lm_eval.base import Task

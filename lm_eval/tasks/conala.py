@@ -1,3 +1,14 @@
+"""Learning to Mine Aligned Code and Natural Language Pairs from Stack Overflow
+https://arxiv.org/pdf/1805.08949.pdf
+
+Python Code generation with CoNaLa. It is a benchmark of code and natural language pairs, for the evaluation of code generation tasks. 
+The dataset was crawled from Stack Overflow, automatically filtered, then curated by annotators,
+split into 2,379 training and 500 test examples.
+
+Homepage: https://conala-corpus.github.io/
+Here we use two-shot evaluation (the original paper evaluates finetuned models)
+"""
+
 import json
 from evaluate import load
 from lm_eval.base import Task
@@ -33,7 +44,9 @@ class Conala(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        with open("few_shot_examples/conala_few_shot_prompts.json", "r") as file:
+        with open(
+            "lm_eval/tasks/few_shot_examples/conala_few_shot_prompts.json", "r"
+        ) as file:
             examples = json.load(file)
         text_column = "rewritten_intent" if doc["rewritten_intent"] else "intent"
         text = doc[text_column].strip()

@@ -1,8 +1,12 @@
-"""Code to text task from CodeXGlue (documentation generation) for all subsets
+"""CodeXGLUE: A Machine Learning Benchmark Dataset for Code Understanding and Generation
+https://arxiv.org/abs/2102.04664
+
+Code to text task from CodeXGlue (documentation generation) for all subsets
 where the whole function body (without docstring) is given as a prompt
 
 For Python: there is code_to_text_python_left task which uses only function signature as prompt 
-and can perform better than this setting"""
+and can perform better than this setting
+"""
 
 import re
 import os
@@ -102,7 +106,9 @@ class GeneralCodeToText(Task):
             prompt_prefix = prompt_prefix.strip().removesuffix(TRIPLE_QUOTE)
             prompt_prefix = prompt_prefix.strip().removesuffix(SINGLE_TRIPLE_QUOTE)
             prompt = (
-                prompt_prefix + prompt_suffix + '\n"""The goal of this function is to:\n'
+                prompt_prefix
+                + prompt_suffix
+                + '\n"""The goal of this function is to:\n'
             )
             # The goal of this function is to:
             return prompt
@@ -134,7 +140,10 @@ class GeneralCodeToText(Task):
             index of doc in the dataset to which the generation belongs
             (not used for this Task)
         """
-        delimiters = {language: "\n/* The goal of this function is to:\n" for language in LANGUAGES}
+        delimiters = {
+            language: "\n/* The goal of this function is to:\n"
+            for language in LANGUAGES
+        }
         delimiters.update(
             {
                 "python": '\n"""The goal of this function is to:\n',
