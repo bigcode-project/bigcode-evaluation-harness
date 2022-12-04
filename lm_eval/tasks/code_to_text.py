@@ -130,8 +130,8 @@ class GeneralCodeToText(Task):
             index of doc in the dataset to which the generation belongs
             (not used for this Task)
         """
-        delimiters = {"\n/* Explanation of the code above:\n" for language in LANGUAGES}
-        delimiters = delimiters.update(
+        delimiters = {language: "\n/* Explanation of the code above:\n" for language in LANGUAGES}
+        delimiters.update(
             {
                 "python": '\n"""Explanation of the code above:\n',
                 "ruby": "\n=begin Explanation of the code above:\n",
@@ -147,7 +147,7 @@ class GeneralCodeToText(Task):
         :param generations: list(list(str))
             list of lists containing generations
         :param references: list(str)
-            list of str containing references
+            list of str containing refrences (not needed for APPS Task)
         """
         bleu = load("bleu")
         gens = [gen[0] for gen in generations]
