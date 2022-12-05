@@ -13,18 +13,15 @@ class Task(ABC):
     # The name of a subset within `DATASET_PATH`.
     DATASET_NAME: str = None
 
-    def __init__(self, stop_words=None, requires_execution=True, fewshot_docs=None):
+    def __init__(self, stop_words=None, requires_execution=True):
         """
         :param stop_words: list
             list of stop words if the generation uses a stopping criteria during generation
         :param requires_execution: bool
             wheter the task requires code execution during evaluation or not
-        :param fewshot_docs: bool
-            wheter to load the fewshot examples or not
         """
         self.stop_words = stop_words
         self.requires_execution = requires_execution
-        self.fewshot_docs = fewshot_docs
         self.dataset = load_dataset(path=self.DATASET_PATH, name=self.DATASET_NAME)
 
     @abstractmethod
@@ -34,8 +31,7 @@ class Task(ABC):
 
     def fewshot_examples(self):
         """Loads and returns the few-shot examples for the task if they exist."""
-        if self.fewshot_docs:
-            pass
+        pass
 
     @abstractmethod
     def get_prompt(self, doc):
