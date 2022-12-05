@@ -14,6 +14,18 @@ from evaluate import load
 from lm_eval.base import Task
 
 
+_CITATION = """
+@inproceedings{yin2018learning,
+  title={Learning to mine aligned code and natural language pairs from stack overflow},
+  author={Yin, Pengcheng and Deng, Bowen and Chen, Edgar and Vasilescu, Bogdan and Neubig, Graham},
+  booktitle={2018 IEEE/ACM 15th international conference on mining software repositories (MSR)},
+  pages={476--486},
+  year={2018},
+  organization={IEEE}
+}
+"""
+
+
 class Conala(Task):
     """A task represents an entire benchmark including its dataset, problems,
     answers, generation settings and evaluation methods.

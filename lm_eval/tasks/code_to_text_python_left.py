@@ -2,7 +2,7 @@
 https://arxiv.org/abs/2102.04664
 
 Code to text task from CodeXGlue (documentation generation) for Python subset in a left only setting:
-only the function signature is given as prompt
+only the function signature is given as prompt similarly to Fried et al. (InCoder)
 
 TODO: implement function signature extraction for other languages in the dataset
 """
@@ -12,6 +12,16 @@ import os
 from mosestokenizer import MosesDetokenizer
 from evaluate import load
 from lm_eval.base import Task
+
+
+_CITATION = """
+@article{husain2019codesearchnet,
+  title={Codesearchnet challenge: Evaluating the state of semantic code search},
+  author={Husain, Hamel and Wu, Ho-Hsiang and Gazit, Tiferet and Allamanis, Miltiadis and Brockschmidt, Marc},
+  journal={arXiv preprint arXiv:1909.09436},
+  year={2019}
+}
+"""
 
 
 TRIPLE_QUOTE = '"""'

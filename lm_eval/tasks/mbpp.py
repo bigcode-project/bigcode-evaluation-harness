@@ -15,6 +15,16 @@ from evaluate import load
 from lm_eval.base import Task
 
 
+_CITATION = """
+@article{austin2021program,
+  title={Program Synthesis with Large Language Models},
+  author={Austin, Jacob and Odena, Augustus and Nye, Maxwell and Bosma, Maarten and Michalewski, Henryk and Dohan, David and Jiang, Ellen and Cai, Carrie and Terry, Michael and Le, Quoc and others},
+  journal={arXiv preprint arXiv:2108.07732},
+  year={2021}
+}
+"""
+
+
 class MBPP(Task):
     """A task represents an entire benchmark including its dataset, problems,
     answers, generation settings and evaluation methods.

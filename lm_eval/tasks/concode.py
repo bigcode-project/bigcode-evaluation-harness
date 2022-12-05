@@ -15,6 +15,16 @@ from evaluate import load
 from lm_eval.base import Task
 
 
+_CITATION = """
+@article{iyer2018mapping,
+  title={Mapping language to code in programmatic context},
+  author={Iyer, Srinivasan and Konstas, Ioannis and Cheung, Alvin and Zettlemoyer, Luke},
+  journal={arXiv preprint arXiv:1808.09588},
+  year={2018}
+}
+"""
+
+
 class Concode(Task):
     """A task represents an entire benchmark including its dataset, problems,
     answers, generation settings and evaluation methods.
