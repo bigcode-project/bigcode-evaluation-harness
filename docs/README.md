@@ -199,7 +199,3 @@ These are classification tasks for Java and C, we provide the code to finetune m
 ## How to add a new benchmark
 
 We welcome contribution to add new code benchmarks to this evaluation harness. You can find a step by step guide in [`guide.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md).
-
-## To do:
-- [ ] add execution commands
-- [ ] add links and references
