@@ -81,6 +81,15 @@ def get_prompt(self, doc):
     return ""
 ```
 
+If the prompt involves few-shot examples, you first need to save them in a json `<task_name>_few_shot_prompts.json` in `lm_eval/tasks/few_shot_example` and then load them in `fewshot_examples` method like this:
+
+```python
+def fewshot_examples(self):
+    with open("lm_eval/tasks/few_shot_examples/<task_name>_few_shot_prompts.json", "r") as file:
+        examples = json.load(file)
+    return examples
+```
+
 The prompt will be sent to the languge model, and the generation will be evaluated against ground truth solutions or unit tests. You need to load them from the `doc` in `get_target` method.
 
 ```python

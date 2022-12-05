@@ -42,6 +42,14 @@ class Concode(Task):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
         return self.dataset["test"]
 
+    def fewshot_examples(self):
+        """Loads and returns the few-shot examples for the task if they exist."""
+        with open(
+            "lm_eval/tasks/few_shot_examples/concode_few_shot_prompts.json", "r"
+        ) as file:
+            examples = json.load(file)
+        return examples
+    
     @staticmethod
     def two_shot_prompt(entry, text, examples):
         """Two shot prompt format as instructions & solutions"""
@@ -55,10 +63,7 @@ class Concode(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        with open(
-            "lm_eval/tasks/few_shot_examples/concode_few_shot_prompts.json", "r"
-        ) as file:
-            examples = json.load(file)
+        examples = self.fewshot_examples()
         text = doc["nl"].split("concode_field_sep")[0].strip()
         if text.endswith("."):
             text = text[:-1].strip()
