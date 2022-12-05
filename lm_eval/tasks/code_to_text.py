@@ -1,11 +1,28 @@
-"""Code to text task from CodeXGlue (documentation generation) for all subsets
-where the whole function body (without docstring) is given as a prompt"""
+"""CodeXGLUE: A Machine Learning Benchmark Dataset for Code Understanding and Generation
+https://arxiv.org/abs/2102.04664
+
+Code to text task from CodeXGlue (documentation generation) for all subsets
+where the whole function body (without docstring) is given as a prompt
+
+For Python: there is code_to_text_python_left task which uses only function signature as prompt 
+and can perform better than this setting
+"""
 
 import re
 import os
 from mosestokenizer import MosesDetokenizer
 from evaluate import load
 from lm_eval.base import Task
+
+
+_CITATION = """
+@article{husain2019codesearchnet,
+  title={Codesearchnet challenge: Evaluating the state of semantic code search},
+  author={Husain, Hamel and Wu, Ho-Hsiang and Gazit, Tiferet and Allamanis, Miltiadis and Brockschmidt, Marc},
+  journal={arXiv preprint arXiv:1909.09436},
+  year={2019}
+}
+"""
 
 
 LANGUAGES = ["python", "java", "javascript", "ruby", "php", "go"]
@@ -82,7 +99,7 @@ class GeneralCodeToText(Task):
 
     def get_prompt(self, doc):
         """Generate prompts for Code to text benchmark (documentation generation)
-        Prompt = full fucntion body (withoout the docstring) + '\n[Delimiter]Explanation of the code above:\n'
+        Prompt = full function body (withoout the docstring) + '\n[Delimiter]The goal of this function is to:\n'
         where delimiter is ''' for python, =begin for ruby and /* for the rest.
         """
         code = doc["code"]
@@ -99,15 +116,18 @@ class GeneralCodeToText(Task):
             prompt_prefix = prompt_prefix.strip().removesuffix(TRIPLE_QUOTE)
             prompt_prefix = prompt_prefix.strip().removesuffix(SINGLE_TRIPLE_QUOTE)
             prompt = (
-                prompt_prefix + prompt_suffix + '\n"""Explanation of the code above:\n'
+                prompt_prefix
+                + prompt_suffix
+                + '\n"""The goal of this function is to:\n'
             )
+            # The goal of this function is to:
             return prompt
 
         elif self.DATASET_NAME == "Ruby":
-            return code + "\n=begin Explanation of the code above:\n"
+            return code + "\n=begin The goal of this function is to:\n"
 
         else:
-            return code + "\n/* Explanation of the code above:\n"
+            return code + "\n/* The goal of this function is to:\n"
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -130,13 +150,17 @@ class GeneralCodeToText(Task):
             index of doc in the dataset to which the generation belongs
             (not used for this Task)
         """
-        delimiters = {"\n/* Explanation of the code above:\n" for language in LANGUAGES}
-        delimiters = delimiters.update(
+        delimiters = {
+            language: "\n/* The goal of this function is to:\n"
+            for language in LANGUAGES
+        }
+        delimiters.update(
             {
-                "python": '\n"""Explanation of the code above:\n',
-                "ruby": "\n=begin Explanation of the code above:\n",
+                "python": '\n"""The goal of this function is to:\n',
+                "ruby": "\n=The goal of this function is to:\n",
             }
         )
+        print(f"generation: {generation}")
         output = generation.split(delimiters[self.DATASET_NAME])[1].strip()
         output = output.split("\n")[0]
         return output
@@ -147,7 +171,7 @@ class GeneralCodeToText(Task):
         :param generations: list(list(str))
             list of lists containing generations
         :param references: list(str)
-            list of str containing references
+            list of str containing refrences (not needed for APPS Task)
         """
         bleu = load("bleu")
         gens = [gen[0] for gen in generations]

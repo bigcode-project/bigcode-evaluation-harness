@@ -10,6 +10,7 @@ from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
 from lm_eval.tasks import ALL_TASKS
 
+
 class MultiChoice:
     def __init__(self, choices):
         self.choices = choices
@@ -44,7 +45,7 @@ def parse_args():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=10,
+        default=1,
         help="batch size for evaluation on each worker, can be larger for HumanEval",
     )
     parser.add_argument(
