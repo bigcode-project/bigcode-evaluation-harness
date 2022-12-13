@@ -1,17 +1,11 @@
 from pprint import pprint
 
-from . import apps
-from . import code_to_text
-from . import code_to_text_python_left
-from . import conala
-from . import concode
-from . import humaneval
-from . import mbpp
+from . import apps, codexglue_code_to_text, conala, concode, humaneval, mbpp
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
-    **code_to_text.create_all_tasks(),
-    "code_to_text_python_left": code_to_text_python_left.CodeToTextLeft,
+    **codexglue_code_to_text.create_all_tasks(),
+    "codexglue_code_to_text-python-left": codexglue_code_to_text.LeftCodeToText,
     "conala": conala.Conala,
     "concode": concode.Concode,
     "humaneval": humaneval.HumanEval,
