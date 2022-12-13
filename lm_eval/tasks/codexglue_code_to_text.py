@@ -2,8 +2,8 @@
 https://arxiv.org/abs/2102.04664
 
 Code to text task from CodeXGlue (documentation generation):
-* for all subsets ("python", "java", "javascript", "ruby", "php", "go")where the whole function body (without docstring) is given as a prompt
-* for Python subset where only function signature as prompt (this setting can give better results).
+* for all subsets ("python", "java", "javascript", "ruby", "php", "go") where the whole function body (without docstring) is given as a prompt
+* for Python subset where only function signature is used as a prompt (this setting can give better results).
 """
 
 import os
