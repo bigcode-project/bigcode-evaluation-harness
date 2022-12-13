@@ -42,7 +42,6 @@ class TokenizedDataset(IterableDataset):
             prompts,
             padding=True,
             truncation=True,
-            truncation_side="left",
             return_tensors="pt",
             max_length=self.max_length,
         )

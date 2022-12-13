@@ -139,7 +139,7 @@ def main():
         # here we generate code and save it (evaluation is optional but True by default)
         print("Loading the model and tokenizer")
         model = AutoModelForCausalLM.from_pretrained(args.model, use_auth_token=True)
-        tokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=True)
+        tokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=True, truncation_side="left")
         if not tokenizer.eos_token:
             if tokenizer.bos_token:
                 tokenizer.eos_token = tokenizer.bos_token
