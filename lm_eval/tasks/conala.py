@@ -84,8 +84,7 @@ class Conala(Task):
             index of doc in the dataset to which the generation belongs
             (not used for this task)
         """
-        output = generation.split("Solution:\n", 3)[-1]
-        output = output.split("\n")[0]
+        output = generation.split("Solution:\n", 3)[-1].strip()
         return output
 
     def process_results(self, generations, references):
