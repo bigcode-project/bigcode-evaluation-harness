@@ -15,7 +15,7 @@ class EvalArguments:
     prefix: Optional[str] = field(
         default="",
         metadata={
-            "help": "Prefix to add to the generated code. For exmaple InCoder need prefix='<| file ext=.py |>\n'"
+            "help": "Prefix to add to the prompt. For example InCoder needs prefix='<| file ext=.py |>\n'"
         },
     )
     do_sample: Optional[bool] = field(

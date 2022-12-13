@@ -74,7 +74,7 @@ accelerate launch  main.py \
 ```
 * `limit` represnts the number of problems to solve, if it's not provided all problems in the benchamrk are selected. 
 * `allow_code_execution` is for executing the generated code: read the displayed warning before setting it to `True`. Some tasks don't require code execution such as
-code_to_text-<LANGUAGE>/conala/spider/concode that use bLEU evaluation. In addition, we one generate one candidate solution foreach problem in these tasks, so use `n_samples=1` and `batch_size=1`. 
+code_to_text-<LANGUAGE>/conala/spider/concode that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `batch_size=1`. 
 * For APPS tasks, you can use `n_samples=1` for strict and average accuracies (from the original APPS paper) and `n_samples>1` for pass@k.
 
 ### Generation only
@@ -83,7 +83,7 @@ If you want to generate solutions without executing and evaluating the code, set
 
 ### Evaluation only
 
-If you already have the generations in a json file from this evaluation harness and want to evaluate them, specify the path of the generations in `generation_path` argument. You might need to reconfigure `accelerate` to use multiple CPUs.  For this mode you can also find an example of setup instructions in `evaluation_setup.sh`.
+If you already have the generations in a json file from this evaluation harness and want to evaluate them, specify the path of the generations via the `generation_path` argument. You may need to reconfigure `accelerate` to use multiple CPUs. For this mode you can also find an example of setup instructions in `evaluation_setup.sh`.
 
 Below is an example, be mind of specifying arguments proper to the task you are evaluating on, and note that `model` value here only serves for documenting the experiment.
 

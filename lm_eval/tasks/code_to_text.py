@@ -69,7 +69,7 @@ class GeneralCodeToText(Task):
 
     @staticmethod
     def standardize_docstring_prompt(prefix):
-        """Strips any existing docstring delimiters from the prompt prefix and
+        """Strips any existing docstring delimiters from the prompt prefix
         and adds our own delimiter (triple quote) and whitespace.
         Note an edge cases being handled here:
         - codexglue docstring text sometimes contains the docstring delimiters, inconsistently
@@ -100,7 +100,7 @@ class GeneralCodeToText(Task):
     def get_prompt(self, doc):
         """Generate prompts for Code to text benchmark (documentation generation)
         Prompt = full function body (withoout the docstring) + '\n[Delimiter]The goal of this function is to:\n'
-        where delimiter is ''' for python, =begin for ruby and /* for the rest.
+        where delimiter is  \""" for python, =begin for ruby and /* for the rest.
         """
         code = doc["code"]
 
@@ -120,7 +120,6 @@ class GeneralCodeToText(Task):
                 + prompt_suffix
                 + '\n"""The goal of this function is to:\n'
             )
-            # The goal of this function is to:
             return prompt
 
         elif self.DATASET_NAME == "Ruby":

@@ -59,6 +59,7 @@ class Concode(Task):
                    \nSolution:\n{examples['solution2']}\
                    \nInstruction:\n{text}\
                    \nSolution:\n"
+        assert prompt.count("Solution:\n") == 3, "Splitting operation in postprocess_generation is invalid"
         return entry + prompt
 
     def get_prompt(self, doc):
