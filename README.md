@@ -17,14 +17,13 @@
 
 ## Features
 
-This is a framework to evaluate autoregressive code generation language models. This is a work in progress part of the BigCode project, and is inspired from [EleutherAI/lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluating language models in general. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guide in [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md) and more documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). 
+This is a framework to evaluate autoregressive code generation language models. This is a work in progress part of the BigCode project, and is inspired from [EleutherAI/lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluating language models in general. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guides in [`docs/guide.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md) and [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md) and more documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). 
 
 Below are the features and tasks of this framework:
 
 - Any autoregressive model available on [Hugging Face hub](https://huggingface.co/) can be used, but we recommend using code generation models trained specifically on Code such as [CodeParrot](https://huggingface.co/codeparrot/codeparrot), [InCoder](https://huggingface.co/facebook/incoder-6B) and [CodeGen](https://huggingface.co/Salesforce/codegen-16B-mono).
  - 3 code generation **Python** tasks (with unit tests): [HumanEval](https://huggingface.co/datasets/openai_humaneval), [APPS](https://huggingface.co/datasets/codeparrot/apps) and [MBPP](https://huggingface.co/datasets/mbpp).
 - [CoNaLa](https://huggingface.co/datasets/neulab/conala) for **Python** code generation (2-shot setting and evaluation with BLEU score)
-- [Spider](https://huggingface.co/datasets/spider) for **SQL** code generation (2-shot setting and evaluation with BLEU score)
 - [Concode](https://huggingface.co/datasets/code_x_glue_tc_text_to_code) for **Java** code generation (2-shot setting and evaluation with BLEU score)
 - Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text) (zero-shot & fine-tuning) for 6 languages: **Python, Go, Ruby, Java, JavaScript and PHP.** 
 - 3 multilingual downstream classification tasks: [Java Complexity prediction](https://huggingface.co/datasets/codeparrot/codecomplex), [Java code equivalence prediction](https://huggingface.co/datasets/code_x_glue_cc_clone_detection_big_clone_bench), [C code defect prediction](https://huggingface.co/datasets/code_x_glue_cc_defect_detection).
@@ -35,7 +34,7 @@ Below are the features and tasks of this framework:
 git clone https://github.com/bigcode-project/bigcode-evaluation-harness.git
 cd bigcode-evaluation-harness
 ```
-Install [`torch`](https://pytorch.org/get-started/locally/) based on your device type and the other pacakges using:
+Install [`torch`](https://pytorch.org/get-started/locally/) based on your device type and the other packages using:
 ```
 pip install -r requirements.txt
 ```
@@ -73,8 +72,10 @@ accelerate launch  main.py \
   --allow_code_execution=False 
 ```
 * `limit` represnts the number of problems to solve, if it's not provided all problems in the benchamrk are selected. 
-* `allow_code_execution` is for executing the generated code: read the displayed warning before setting it to `True`. Some tasks don't require code execution such as
-code_to_text-<LANGUAGE>/conala/spider/concode that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `batch_size=1`. 
+* `allow_code_execution` is for executing the generated code: read the displayed warning before setting it to `True`. 
+
+Some tasks don't require code execution such as
+`codexglue_code_to_text-<LANGUAGE>`/`codexglue_code_to_text-python-left`/`conala`/`concode` that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `batch_size=1`. (Note that `batch_size` should always be equal or less than `n_samples`).
 * For APPS tasks, you can use `n_samples=1` for strict and average accuracies (from the original APPS paper) and `n_samples>1` for pass@k.
 
 ### Generation only
@@ -87,7 +88,7 @@ If you already have the generations in a json file from this evaluation harness 
 
 Below is an example, be mind of specifying arguments proper to the task you are evaluating on, and note that `model` value here only serves for documenting the experiment.
 
-```
+```bash
 accelerate launch  main.py   --tasks mbpp  --allow_code_execution=True  --generations_path generations.json  --model incoder-temperature-08
 ```
 
