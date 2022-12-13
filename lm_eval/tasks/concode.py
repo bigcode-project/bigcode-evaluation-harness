@@ -40,7 +40,8 @@ class Concode(Task):
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        return self.dataset["test"]
+        # test split of the dataset doesn't have targets
+        return self.dataset["validation"]
 
     def fewshot_examples(self):
         """Loads and returns the few-shot examples for the task if they exist."""
