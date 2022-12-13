@@ -170,11 +170,11 @@ If you ever get index out of range errors try using a number of problems `limit`
 Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text): is a benchmark for english documentation generation from for 6 programming languages: Python, Go, Ruby, Java, JavaScript and PHP. 
 
 For Python: we do the evaluation in a zero-shot setting. We have two options:
-  * in the first one: we give as a prompt the function signature, that we extract it by splitting at the beginning of the docstring. This task is `code_to_text_python_left`.
-  * in the second one: we include the full fucntion body (withoout the docstring) and add this sentence at the end of the prompt: `'\n"""The goal of this function is to:\n'`. This task is `code_to_text-python`.
+  * in the first one: we give as a prompt the function signature, that we extract it by splitting at the beginning of the docstring. This task is `codexglue_code_to_text-python-left`.
+  * in the second one: we include the full fucntion body (withoout the docstring) and add this sentence at the end of the prompt: `'\n"""The goal of this function is to:\n'`. This task is `codexglue_code_to_text-python`.
 We retrieve the reference solutions from the docstring tokens, similarily to InCoder's approach, since the target docstrings in the dataset include extra context such as argument definitions. We only keep one line in the model generation.
 
-For the other languages (task `code_to_text-<language>`): the docstring is not included in the code so we currently don't extract signatures and use the full function body followed by a comment in that language saying `\n=begin The goal of this function is to:\n` for Ruby, and `\n/* The goal of this function is to:\n` for the rest. This task is still not well tested, please report any bugs you might find.
+For the other languages (task `codexglue_code_to_text-<language>`): the docstring is not included in the code so we currently don't extract signatures and use the full function body followed by a comment in that language saying `\n=begin The goal of this function is to:\n` for Ruby, and `\n/* The goal of this function is to:\n` for the rest. This task is still not well tested, please report any bugs you might find.
 
 For this task we advise using greedy generation. For evaluation we compute the BLEU score.
 
@@ -183,7 +183,7 @@ Below are the commands to run the evaluation:
 accelerate launch  main.py \
   --model <MODEL_NAME> \
   --max_length_generation <MAX_LENGTH> \
-  --tasks code_to_text_python_left \
+  --tasks codexglue_code_to_text-python-left \
   --n_samples 1 \
   --batch_size 1 \
 ```
