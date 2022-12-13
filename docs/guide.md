@@ -1,6 +1,6 @@
 # Guide: adding a new task
 
-Here we provide a step by step guide for adding a new task to the `bigcode-evaluation-harness`. For most tasks one needs to define how the prompts should be made in `lm_eval/prompts.py`, define the generation settings, stopping criteria and postprocessing of model outputs in `lm_eval/utils.py`, and the generation settings with how to load and process the reference solutions in `lm_eval/generation.py`.
+Here we provide a step by step guide for adding a new task to the `bigcode-evaluation-harness` to evaluate code generation language modelse. The process is similar to adding tasks in [lm_evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness), from which this repository is inspired, so this document is based on their [task_guide](https://github.com/EleutherAI/lm-evaluation-harness/edit/master/docs/task_guide.md). The `Task` class is the backbone of all tasks in this framewok.
 
 ## Setup
 
@@ -11,66 +11,137 @@ If you haven't already, fork the main repo, clone it, create a branch with the n
 git clone https://github.com/bigcode-project/bigcode-evaluation-harness.git
 cd bigcode-evaluation-harness
 git checkout -b <task-name>
-pip install -e ".[dev]"
+pip install -r requirements.txt
 ```
 
-## Dataset and metric
+## Creating Your Task File
 
-First add your task to `ALL_TASKS` list in `main.py`. Then go to `lm_eval/evaluator.py`, that's where we load the dataset and run evaluation for each task. in `Evaluator` class, load your dataset and references in `generate_text` method by adding:
+From the `bigcode-evaluation-harness` project root, copy over the `new_task.py` template to `lm_eval/tasks`.
+
+```sh
+cp template/new_task.py lm_eval/tasks/<task-name>.py
+```
+
+## Task Heading
+
+Open the file you've just created and add a multiline docstring on the first line with the following contents:
 
 ```python
-elif task == <TASK>:
-    dataset = load_dataset(<TASK_DATASET>)
-    generations = parallel_generations(
-        self.accelerator,
-        self.model,
-        self.tokenizer,
-        dataset,
-        mode=<TASK>,
-        args=self.args,
-        num_tasks=self.args.num_tasks_<TASK>,
-    )
-    references = get_references_<TASK>(dataset, self.args.num_tasks_<TASK>)
-    return generations, references
+"""
+<Paper title>
+<Paper PDF URL>
+
+<Short description of task>
+
+Homepage: <URL to task's homepage>
+"""
 ```
-We will see later where to implement `get_references_<TASK>`.
 
-And in `evaluate` method of the class, you can either load your own metric and evaluate it on `generations` and `references` lists or add your task to the BLEU evaluation among other tasks such as conala, concode...
+## Data Handling
 
-## Prompts and text generation
+### Downloading your Data
 
-Now the `parallel_generation` function used in `Evaluator`  needs to work for your task. That includes prompt making, model output postprocessing and generation setting.
+All data downloading and management is handled through the HuggingFace (**HF**) [`datasets`](https://github.com/huggingface/datasets) API. So, if your dataset isn't already on the hub (see [catalog](https://huggingface.co/datasets)), please consider adding it to make it accessible to a wider user base by following this [new dataset guide](https://github.com/huggingface/datasets/blob/master/ADD_NEW_DATASET.md).
 
-* Prompts:
-Go to `lm_eval/prompts.py` and implement a function that formats the prompts of your task, it should take as input a datset sample, model prefix and any additional arguments and return the prompt for that sample. In case of few-shot prompts, please save the examples you use in a json file in `lm_eval/few_shot_example`. See `conala_prompt`or `spider_prompt` functions in that file for examples.
-
-* Generation settings:
-Go to `lm_eval/utils.py`, and add these two lines for your task to the class `TokenizedDataset` to call the prompt function you implemented (after having imported it in the file):
+Now, that you have your HF dataset, you need to assign its path and name to your `Task` in the following fields:
 
 ```python
-elif self.mode == <TASK>:
-    prompt = <PROMPT_FUNCTION_NAME>(self.dataset[task], prefix="")
+class TaskName(...):
+    DATASET_PATH = "..."
+    DATASET_NAME = "..."
 ```
 
-`complete_code` function generates the text in parallel and returns the processed model predictions, you need to postprocess the model outputs to remove the prompts and only keep the new generated tokens and also clean the output based on your needs. See the other tasks for examples. Also don't forget to add your task to this list in `complete_code` if you use a stopping criteria during the generation
+where `DATASET_PATH` is the name of the dataset as listed by HF in the `datasets` Hub and `DATASET_NAME` is the name of sub-task of the benchmark. If your task does not contain any data instances/subsets, just set `DATASET_NAME = None`.
+
+Next you need to load the evaluation split of the dataset in `get_dataset` function. For example
 
 ```python
-if mode in ["humaneval", "code-to-text", "conala", "spider", "concode"]:
-    gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
+def get_dataset(self):
+    return self.dataset["test"]
 ```
 
-## Refrences and generation settings
+You might need to redefine some arguments of the class, like `stop_words` which defines the stop words for stopping criteria during the code generation, and `requires_execution` which defines whether the task requires code execution or not.
 
-in `lm_eval/generation.py` implement a function to get the reference solutions from your dataset and given your number of tasks. If you need different generation settings or stopping criteria, add your task's settings in `parallel_generations`.
+```python
+    def __init__(self):
+        super().__init__(
+            stop_words=["\n"],
+            requires_execution=True,
+        )
+```
 
-## Arguments
-Don't forget to add all the new argumets you used to `arguments.py` (for example `num_tasks_<TASK>`)
+### Processing Documents
+
+Then you need to format your document into a single query prompt __without the answer__  to be sent to the Language Model in `get_prompt` method.
+
+It takes a single `doc` example of type `dict` with `str` key-value members.
+
+```python
+def get_prompt(self, doc):
+    return ""
+```
+
+If the prompt involves few-shot examples, you first need to save them in a json `<task_name>_few_shot_prompts.json` in `lm_eval/tasks/few_shot_example` and then load them in `fewshot_examples` method like this:
+
+```python
+def fewshot_examples(self):
+    with open("lm_eval/tasks/few_shot_examples/<task_name>_few_shot_prompts.json", "r") as file:
+        examples = json.load(file)
+    return examples
+```
+
+The prompt will be sent to the languge model, and the generation will be evaluated against ground truth solutions or unit tests. You need to load them from the `doc` in `get_target` method.
+
+```python
+def get_target(self, doc):
+    return ""
+```
+
+### Postprocessing & Evaluation
+
+The solutions generated by the language model often require postprocessing to remove unececessary text and get executable code. This is done in `postprocess_generation` function. It takes as input the model generation `generation` and index of document to which the generation belongs in the dataset `idx` (this is not needed in most cases).
+
+```python
+def postprocess_generation(self, generation, idx):
+    return ""
+```
+
+The evaluation happens in `process_results` function. This function takes as argument the list of generations for all selected problems in the benchmark in `generations` and their refernces in `references` and returns a dictionary of metrics and their values.
+
+```python
+def process_results(self, generations, references):
+    return {}
+```
+
+You need to load your metric and run it. Check Hugging Face `evaluate` [library](https://huggingface.co/docs/evaluate/index) for the available metrics. For example [code_eval](https://huggingface.co/spaces/evaluate-metric/code_eval) for pass@k, [BLEU](https://huggingface.co/spaces/evaluate-metric/bleu) for BLEU score and [apps_metric](https://huggingface.co/spaces/codeparrot/apps_metric) are implemented.
+
+
+### Registering Your Task
+
+Now's a good time to register your task to expose it for usage. All you'll need to do is import your task module in `lm_eval/tasks/__init__.py` and provide an entry in the `TASK_REGISTRY`  dictionary with the key as the name of your benchmark task (in the form it'll be referred to in the command line) and the value as the task class. See how it's done for other tasks in the [file](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/lm_eval/tasks/__init__.py).
+
+## Task submission
+
+### Running Unit Tests
+
+To run the entire test suite, use:
+
+```sh
+pytest
+```
 
 ## Fine-tuning
 Few-shot tasks are easier to conduct, but if you need to add the finetuning script for your task, you can create a folder for it in `finetuning` folder and use a similar training and evaluation script to the other tasks.
 
+## Code formatting
+You can format your changes and perform `black` standard checks
+```sh
+black lm_eval/tasks/<task-name>.py
+```
+
 ## Pull request
-In your Pull Request, please present the task you want to add and a short description of how the prompts are made and how the generations are evaluated. Also specify if your approach follows the orginal paper's approach or if some changes were introduced. Ideally, you can evaluate some public models and compare the scores to the published results and see if they match.
+Please specify in your pull request if you followed the orginal paper's approach to build the prompts or if some changes were introduced (especially if you build few shot examples). Ideally, you can evaluate some public models and compare the scores to the published results and see if they match.
 
 If there are no published results for your task, make sure the evaluation works properly by testing some samples with a good code generation model such as InCoder-1B. During the experiments you have the option to save `generation.json` and `references.json`, take a look to see if the generations are properely cleaned and are somewhat close to the references for match-based evaluations for example.
 
+Now push your work and make a pull request! Thanks for the contribution 🚀.

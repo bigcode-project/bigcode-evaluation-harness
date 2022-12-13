@@ -17,7 +17,7 @@
 
 ## Features
 
-This is a framework to evaluate autoregressive code generation language models. This is a work in progress part of the BigCode project. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guide in [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md) and more documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). 
+This is a framework to evaluate autoregressive code generation language models. This is a work in progress part of the BigCode project, and is inspired from [EleutherAI/lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluating language models in general. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guide in [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md) and more documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). 
 
 Below are the features and tasks of this framework:
 
@@ -61,51 +61,21 @@ For more details on how to evaluate on the tasks, please refer to the documentat
 Below are some examples to generate and evaluate on some tasks.
 
 ```bash
-# to evaluate on HumanEval with pass@1, pass@10, pass@100
-# (allow_code_execution is for executing the generated code: read the displayed warning)
 accelerate launch  main.py \
   --model <MODEL_NAME> \
+  --tasks <TASK_NAME> \
+  --limit <NUMBER_PROBLEMS> \
   --max_length_generation <MAX_LENGTH> \
-  --tasks humaneval \
-  --temperature 0.2 \
-  --n_samples 200 \
+  --temperature <TEMPERATURE> \
+  --do_sample True \
+  --n_samples 100 \
   --batch_size 10 \
   --allow_code_execution=False 
-
-# to evaluate your model on MBPP with pass@1
-accelerate launch  main.py \
-  --model <MODEL_NAME> \
-  --max_length_generation <MAX_LENGTH> \
-  --tasks mbpp \
-  --prompt_type_mbpp "incoder" \
-  --temperature 0.1 \
-  --n_samples 15 \
-  --batch_size 10 \
-  --allow_code_execution=False 
-	
-# to evaluate on APPS
-# to compute average/strict accuracies: use n_samples 1 
-# to compute pass@k: use n_samples != 1 (200)
-accelerate launch  main.py \
-  --model <MODEL_NAME> \
-  --max_length_generation <MAX_LENGTH> \
-  --tasks apps \
-  --level_apps <LEVEL> \
-  --setup_apps <SETUP> \
-  --n_samples 1 \
-  --temperature 0.1 \
-  --batch_size 1 \
-  --allow_code_execution=False 
-
-# to evaluate on another task such as code-to-text/conala/spider/concode with BLEU
-accelerate launch  main.py \
-  --model <MODEL_NAME> \
-  --max_length_generation <MAX_LENGTH> \
-  --tasks <TASK> \
-  --n_samples 1 \
-  --temperature 0.1 \
-  --batch_size 1 
 ```
+* `limit` represnts the number of problems to solve, if it's not provided all problems in the benchamrk are selected. 
+* `allow_code_execution` is for executing the generated code: read the displayed warning before setting it to `True`. Some tasks don't require code execution such as
+code_to_text-<LANGUAGE>/conala/spider/concode that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `batch_size=1`. 
+* For APPS tasks, you can use `n_samples=1` for strict and average accuracies (from the original APPS paper) and `n_samples>1` for pass@k.
 
 ### Generation only
 
@@ -113,12 +83,12 @@ If you want to generate solutions without executing and evaluating the code, set
 
 ### Evaluation only
 
-If you already have the generations in a json file from this evaluation harness and want to evaluate them, set `evaluation_only` to True and specify the path of the generations in `generation_path` argument. You might need to reconfigure `accelerate` to use multiple CPUs.  For this mode you can also find an example of setup instructions in `evaluation_setup.sh`. 
+If you already have the generations in a json file from this evaluation harness and want to evaluate them, specify the path of the generations via the `generation_path` argument. You may need to reconfigure `accelerate` to use multiple CPUs. For this mode you can also find an example of setup instructions in `evaluation_setup.sh`.
 
 Below is an example, be mind of specifying arguments proper to the task you are evaluating on, and note that `model` value here only serves for documenting the experiment.
 
 ```
-accelerate launch  main.py   --tasks mbpp   --prompt_type_mbpp "incoder" --allow_code_execution=True --evaluation_only True --generations_path generations.json    --model incoder-temperature-08
+accelerate launch  main.py   --tasks mbpp  --allow_code_execution=True  --generations_path generations.json  --model incoder-temperature-08
 ```
 
 ## Implementing new tasks
@@ -133,4 +103,4 @@ We provide documentation for the existing benchmarks and how we make the evaluat
 * For some scores of ongoing experiments please refer to [`example_scores/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/master/example_scores/README.md).
 
 ## Acknowledgements
-This repository is inspired from [EleutherAI's LM evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness).
+We thank EleutherAI for their work on the [lm-evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness) from which this repository is inspired.
