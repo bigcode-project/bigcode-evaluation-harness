@@ -18,13 +18,13 @@ is considered correct if it passes some unit tests, a poplular metric for this i
 In this evaluation harness we include tasks with unit tests, but also some tasks with BLEU evaluation, due to the scarcity and evaluation cost of the first type.
 
 Before diving into the tasks, here are some instructions that stand for all the benchmarks:
-  * Adapt `max_length_generation` based on your model's context size, by default it is 2048.
+  * Adapt `max_length_generation` based on your model's context size and task, by default it is 512. This value is enough for tasks like HumanEval and MBPP but some tasks such as APPS require a larger value because the prompts are long, you can use the full model's context size.
   * Adapt the  `batch_size` based on your device memory and `n_samples`, by default it is 1. It should be smaller than `n_samples`, but for multiple generations per problem, the larger the batch size the better, since it makes the generation faster.
   * `allow_code_execution` allows the execution of the model generated (unstrusted) code on your machine, please read carefully the displayed warning before setting it to `True`. 
   * You can adapt the text generation parameter by changing `do_sample`, `top_p` and `temperature` parameters. 
   * Some models, such as [InCoder](https://huggingface.co/facebook/incoder-6B), might require adding a prefix before the prompt to give a hint about the language. To add the prefix for InCoder to indicate Python language for example, set `prefix` argument to `"<| file ext=.py |>\n"`.
   * The generations are saved with `save_generations` that is set to True, you can visualize the postprocessed model generations used for the evaluaion. You also have the option of saving the references, it can be useful for tasks that use BLEU score and actual solutions as references, just set `save_references` to True.
-  * For experimenting, you can choose the number of tasks to evaluate on instead of using the whole test set, try using a number that is proportional to your number of devices.
+  * For experimenting, you can choose the number of tasks to evaluate on instead of using the whole test set with the `limit` argument, try using a number that is proportional to your number of devices.
 
 ## Code generation benchmarks with unit tests
 
@@ -47,22 +47,14 @@ accelerate launch  main.py \
   --allow_code_execution=False 
 ```
 
-If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `num_tasks_he` argument to $n$. 
+If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `limit` argument to $n$. 
 
 ### MBPP
 [MBPP](https://huggingface.co/datasets/mbpp):  consists of around 1,000 crowd-sourced Python programming problems, 
 designed to be solvable by entry level programmers. Each problem consists of a task description in English, code solution 
 and 3 automated test cases. We evaluate on the test set of samples from index 11 to 511.
 
-* Prompts and generation: We use a few-shot setting and propose two different prompts:
-  * Austin et al. (the orginal paper) prompts:
-  ````python
-  prompt = description + "Your code should satisfy these tests:\n"+ tests"
-  ````
-  We also give the option to remove the tests since they are the same unit tests used for the evaluation by 
-  setting the argument `include_tests_mbpp` to `False`
-  * InCoder style prompt: In this case we feed the prompt to the model as a doctring and only include one solution, to help the model catch the 
-  function name which is required in the unit tests.
+* Prompts and generation: We use a few-shot setting in InCoder style prompt: we feed the prompt to the model as a doctring and only include one solution, to help the model catch the function name which is required in the unit tests.
   ```python
   prompt = f'"""\n{description}\n{test_example}\n"""\n'
   ```
@@ -76,14 +68,11 @@ accelerate launch  main.py \
   --model <MODEL_NAME> \
   --max_length_generation <MAX_LENGTH> \
   --tasks mbpp \
-	--prompt_type_mbpp "incoder" \
   --temperature 0.1 \
   --n_samples 15 \
   --batch_size 10 \
   --allow_code_execution=False \
 ```
-
-If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `num_tasks_mbpp` argument to $n$. 
 
 Low temperatures generally work better for small $k$ in pass@k.
 
@@ -140,24 +129,21 @@ of tests that pass for each problem, and the sctrict accuracy, where a problem i
 
 In case of single generations (`n_samples=1`), the first metric is used, but when multiple generations are made the pass@k metric is used.
 
-Below are the commands to run the evaluation with these settings:
+Below are the commands to run the evaluation with these settings for introductory level for example:
 ```python
 # to compute average/strict accuracies: use n_samples 1 
 # to compute pass@k: use n_samples != 1 (200)
 accelerate launch  main.py \
   --model <MODEL_NAME> \
   --max_length_generation <MAX_LENGTH> \
-  --tasks apps \
-  --level_apps <LEVEL> \
-  --setup_apps <SETUP> \
+  --tasks apps-introductory \
   --n_samples 1 \
   --temperature 0.1 \
   --batch_size 1 \
   --allow_code_execution=False 
 ```
-By default <SETUP>="finetuning" and we expect a model [finetuned](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS) on the train split of APPS, otherwise switch to <SETUP>="fewshot" and a one-shot setting will be used (the scores might be very low since APPS is a challenging benchmark).
-
-If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `num_tasks_apps` argument to $n$. 
+We expect a model [finetuned](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS) on the train split of APPS.
+TODO: add fewshot setup for APPS.
 
 ## Code generation benchmarks without unit tests
 
@@ -178,29 +164,28 @@ accelerate launch  main.py \
   --temperature 0.1 \
   --batch_size 1 
 ```
-You can evaluate on the first $n$ samples of a `<TASK>` by setting `num_tasks_<TASK>` to $n$. (If you ever get index out of range errors try using a number of tasks that is proportional to the number of devices you are using).
+If you ever get index out of range errors try using a number of problems `limit` that is proportional to the number of devices you are using.
 
 ## Documentation generation task
 Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text): is a benchmark for english documentation generation from for 6 programming languages: Python, Go, Ruby, Java, JavaScript and PHP. 
 
 For Python: we do the evaluation in a zero-shot setting. We have two options:
-  * in the first one: we give as a prompt the function signature, that we extract it by splitting at the beginning of the docstring. 
-  * in the second one: we include the full fucntion body (withoout the docstring) and add this sentence at the end of the prompt: `'\n"""Explanation of the code above:\n'`.
+  * in the first one: we give as a prompt the function signature, that we extract it by splitting at the beginning of the docstring. This task is `codexglue_code_to_text-python-left`.
+  * in the second one: we include the full fucntion body (withoout the docstring) and add this sentence at the end of the prompt: `'\n"""The goal of this function is to:\n'`. This task is `codexglue_code_to_text-python`.
 We retrieve the reference solutions from the docstring tokens, similarily to InCoder's approach, since the target docstrings in the dataset include extra context such as argument definitions. We only keep one line in the model generation.
 
-For the other languages : the docstring is not included in the code so we currently don't extract signatures and use the full function body followed by a comment in that language saying `\n=begin Explanation of the code above:\n` for Ruby, and `\n/* Explanation of the code above:\n` for the rest. This task is still not well tested, please report any bugs you might find.
+For the other languages (task `codexglue_code_to_text-<language>`): the docstring is not included in the code so we currently don't extract signatures and use the full function body followed by a comment in that language saying `\n=begin The goal of this function is to:\n` for Ruby, and `\n/* The goal of this function is to:\n` for the rest. This task is still not well tested, please report any bugs you might find.
 
-For this task we use greedy generation, and we compute the BLEU score.  We evaluate on the first 1,200 examples from the test set (`code_to_text_data_size=1200`). You can select the language by setting `langauge`argument and choose the prompt type as function signature for Python (it's the case by defaullt) by setting the argument `prompt_type` to `left`.
+For this task we advise using greedy generation. For evaluation we compute the BLEU score.
 
 Below are the commands to run the evaluation:
 ```python
 accelerate launch  main.py \
   --model <MODEL_NAME> \
   --max_length_generation <MAX_LENGTH> \
-  --tasks code_to_text \
-  --language python \
+  --tasks codexglue_code_to_text-python-left \
   --n_samples 1 \
-  --batch_size 1 
+  --batch_size 1 \
 ```
 ## Downstream classification tasks
 
@@ -214,7 +199,3 @@ These are classification tasks for Java and C, we provide the code to finetune m
 ## How to add a new benchmark
 
 We welcome contribution to add new code benchmarks to this evaluation harness. You can find a step by step guide in [`guide.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md).
-
-## To do:
-- [ ] add execution commands
-- [ ] add links and references
