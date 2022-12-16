@@ -1,6 +1,6 @@
 # Guide: adding a new task
 
-Here we provide a step by step guide for adding a new task to the `bigcode-evaluation-harness` to evaluate code generation language modelse. The process is similar to adding tasks in [lm_evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness), from which this repository is inspired, so this document is based on their [task_guide](https://github.com/EleutherAI/lm-evaluation-harness/edit/master/docs/task_guide.md). The `Task` class is the backbone of all tasks in this framewok.
+Here we provide a step by step guide for adding a new task to the `bigcode-evaluation-harness` to evaluate code generation language models. The process is similar to adding tasks in [lm_evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness), from which this repository is inspired, so this document is based on their [task_guide](https://github.com/EleutherAI/lm-evaluation-harness/edit/master/docs/task_guide.md). The `Task` class is the backbone of all tasks in this framewok.
 
 ## Setup
 
