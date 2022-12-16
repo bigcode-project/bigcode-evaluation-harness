@@ -44,23 +44,28 @@ class NewTask(Task):
 
     def get_prompt(self, doc):
         # TODO: build the prompt for the language model from a sample `doc` from the dataset
-        """Builds the prompt for the LM to generate from.
+        """
+        Builds the prompt for the LM to generate from.
         :param doc: dict[str: str]
             sample from the test dataset
-        :return: str"""
+        :return: str
+        """
         return ""
 
     def get_reference(self, doc):
         # TODO: get the reference solution from a sample `doc` from the dataset
-        """Builds the reference solution for the doc (sample from the test dataset).
+        """
+        Builds the reference solution for the doc (sample from the test dataset).
         :param doc: dict[str: str]
             sample from the test dataset
-        :return: str"""
+        :return: str
+        """
         return ""
 
     def postprocess_generation(self, generation, idx):
         # TODO: define the postprocessing for the LM generation
-        """Defines the postprocessing for a LM generation.
+        """
+        Defines the postprocessing for a LM generation.
         :param generation: str
             code generation from LM
         :param idx: int (if needed)
@@ -72,7 +77,8 @@ class NewTask(Task):
     def process_results(self, generations, references):
         # TODO: define how the evaluation score is computed from list of \
         # generations and reference solutions
-        """Takes the list of LM generations and evaluates them against ground truth references,
+        """
+        Takes the list of LM generations and evaluates them against ground truth references,
         returning the metric for the generations.
         We encourage to directly load the metric from `evaluate` library to keep the code concise.
         :param generations: list(list(str))
