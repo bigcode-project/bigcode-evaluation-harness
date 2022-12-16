@@ -9,7 +9,6 @@ Code to text task from CodeXGlue (documentation generation):
 import os
 import re
 
-from evaluate import load
 from mosestokenizer import MosesDetokenizer
 
 from lm_eval.base import Task
