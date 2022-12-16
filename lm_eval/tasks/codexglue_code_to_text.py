@@ -55,10 +55,12 @@ def create_task(language):
 
 
 def compute_codexglue_code_to_text_bleu(gold_and_predicted_items: list[tuple[str, str]]):
-    """ 
+    """
     Compute BLEU scores using codexglue_code_to_text_bleu.computeMaps (codexglue_summarization_evaluator) 
     Multiple references per pred are not allowed.
     A fixed ordering of predictions and references is assumed.
+
+    Taken from: https://github.com/dpfried/lm-evaluation-harness/blob/5d9a6aaaaa929bcad95bb73d85e78fe75eb64b4e/lm_eval/tasks/codexglue_summarization.py#L102
     """
     from lm_eval.tasks.custom_metrics import codexglue_code_to_text_bleu
     predicted_map = {}
