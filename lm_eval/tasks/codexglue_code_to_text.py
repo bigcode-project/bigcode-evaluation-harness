@@ -9,7 +9,6 @@ Code to text task from CodeXGlue (documentation generation):
 import os
 import re
 
-from evaluate import load
 from mosestokenizer import MosesDetokenizer
 
 from lm_eval.base import Task
@@ -52,6 +51,32 @@ def create_task(language):
             super().__init__(language)
 
     return CodeToText
+
+
+def compute_codexglue_code_to_text_bleu(gold_and_predicted_items: list[tuple[str, str]]):
+    """
+    Compute BLEU scores using codexglue_code_to_text_bleu.computeMaps (codexglue_summarization_evaluator) 
+    This uses a specific BLEU tokenization and preprocessing necessary for this task by
+    the original authors of the dataset.
+
+    Taken from: https://github.com/dpfried/lm-evaluation-harness/blob/5d9a6aaaaa929bcad95bb73d85e78fe75eb64b4e/lm_eval/tasks/codexglue_summarization.py#L102
+    """
+    from lm_eval.tasks.custom_metrics import codexglue_code_to_text_bleu
+    predicted_map = {}
+    gold_map = {}
+
+    for ix, (gold_str, predicted_str) in enumerate(gold_and_predicted_items):
+        gold, *rest = gold_str.strip().split('\t')
+        if len(rest) > 0:
+            print(f"warning: gold instance {ix} contains a tab; ignoring text after")
+        gold_map[ix] = [codexglue_code_to_text_bleu.splitPuncts(gold.strip().lower())]
+  
+        pred, *rest = predicted_str.strip().split('\t')
+        if len(rest) > 0:
+            print(f"warning: gold instance {ix} contains a tab; ignoring text after")
+        predicted_map[ix] = [codexglue_code_to_text_bleu.splitPuncts(pred.strip().lower())]
+
+    return codexglue_code_to_text_bleu.bleuFromMaps(gold_map, predicted_map)[0]
 
 
 class GeneralCodeToText(Task):
@@ -169,12 +194,10 @@ class GeneralCodeToText(Task):
         :param references: list(str)
             list of str containing refrences (not needed for APPS Task)
         """
-        bleu = load("bleu")
-        gens = [gen[0] for gen in generations]
-        results = bleu.compute(
-            references=references, predictions=gens, max_order=4, smooth=True
-        )["bleu"]
-        return results
+        bleu_score = compute_codexglue_code_to_text_bleu(
+            (ref, gen[0]) for ref, gen in zip(references, generations)
+        )
+        return bleu_score
 
 
 class LeftCodeToText(GeneralCodeToText):
