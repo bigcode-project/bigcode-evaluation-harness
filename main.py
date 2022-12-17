@@ -8,8 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
-
-ALL_TASKS = ["humaneval", "apps", "mbpp", "code-to-text", "conala", "spider", "concode","codexglue-tt"]
+from lm_eval.tasks import ALL_TASKS
 
 
 class MultiChoice:
@@ -31,41 +30,40 @@ class MultiChoice:
 
 def parse_args():
     parser = HfArgumentParser(EvalArguments)
-    
+
     parser.add_argument(
         "--model",
         default="codeparrot/codeparrot-small",
         help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
     )
     parser.add_argument(
+        "--revision",
+        default=None,
+        help="Model revision to use",
+    )    
+    parser.add_argument(
         "--tasks",
         default=None,
         choices=MultiChoice(ALL_TASKS),
-        help=f"evalution tasks from {ALL_TASKS}",
-    )
-    parser.add_argument(
-        "--language",
-        type=str,
-        default="python",
-        help=f"Language for the code to text task",
-    )
-    parser.add_argument(
-        "--setup_apps",
-        type=str,
-        default="finetuning",
-        help=f"Evaluation setup for APPS: one shot or with a finetuned model(more common)",
+        help=f"Evalution tasks from {ALL_TASKS}",
     )
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=10,
-        help="batch size for evaluation on each worker, can be larger for HumanEval",
+        default=1,
+        help="Batch size for evaluation on each worker, can be larger for HumanEval",
     )
     parser.add_argument(
         "--max_length_generation",
         type=int,
         default=512,
         help="Maximum length of generated sequence (prompt+generation)",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Number of samples to solve and evaluate from the benchmark",
     )
     parser.add_argument(
         "--postprocess",
@@ -77,40 +75,34 @@ def parse_args():
         "--allow_code_execution",
         type=bool,
         default=False,
-        help="allow code evaluation to execute external/untrusted Python code on your machine",
-    )
-    parser.add_argument(
-        "--output_path",
-        type=str,
-        default="evaluation_results.json",
-        help="path to save the results",
-    )
-    parser.add_argument(
-        "--save_generations", type=bool, default=True, help="save code generations"
-    )
-    parser.add_argument(
-        "--save_references",
-        type=bool,
-        default=False,
-        help="save reference solutions/tests",
+        help="Allow code evaluation to execute external/untrusted Python code on your machine",
     )
     parser.add_argument(
         "--generation_only",
         type=bool,
         default=False,
-        help="do code generation but no evaluation",
-    )
-    parser.add_argument(
-        "--evaluation_only",
-        type=bool,
-        default=False,
-        help="do evaluation of previously generated code",
+        help="Do code generation but no evaluation",
     )
     parser.add_argument(
         "--generations_path",
         type=str,
-        default="./generations.json",
-        help="path of previously generated code for the execution_only mode",
+        default=None,
+        help="Path of file with previously generated solutions, if provided generation is skipped and only evaluation is done",
+    )
+    parser.add_argument(
+        "--output_path",
+        type=str,
+        default="evaluation_results.json",
+        help="Path to save the results",
+    )
+    parser.add_argument(
+        "--save_generations", type=bool, default=True, help="Whether to save code generations"
+    )
+    parser.add_argument(
+        "--save_references",
+        type=bool,
+        default=False,
+        help="Whether to save reference solutions/tests",
     )
     return parser.parse_args()
 
@@ -140,7 +132,7 @@ def main():
         print(f"Selected Tasks: {task_names}")
 
     results = {}
-    if args.evaluation_only:
+    if args.generations_path:
         # here we don't generate code but only evaluate previously computed generations
         if accelerator.is_main_process:
             print("evaluation only mode")
@@ -151,8 +143,8 @@ def main():
     else:
         # here we generate code and save it (evaluation is optional but True by default)
         print("Loading the model and tokenizer")
-        model = AutoModelForCausalLM.from_pretrained(args.model, use_auth_token=True)
-        tokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=True)
+        model = AutoModelForCausalLM.from_pretrained(args.model, revision=args.revision, use_auth_token=True)
+        tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision, use_auth_token=True, truncation_side="left")
         if not tokenizer.eos_token:
             if tokenizer.bos_token:
                 tokenizer.eos_token = tokenizer.bos_token
