@@ -62,10 +62,11 @@ class Task(ABC):
     @abstractmethod
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
-        returning the metric for the generations.
+        returning the metric for the generations as in {"metric_name": result}.
         :param generations: list(list(str))
             list of lists containing generations
         :param references: list(str)
             list of str containing refrences
+        :return: dict[str: float]
         """
         pass
