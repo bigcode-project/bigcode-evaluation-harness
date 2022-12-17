@@ -84,8 +84,6 @@ def complete_code(
         with torch.no_grad():
             if task.stop_words:
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
-            elif mode == "codexglue-tt":
-                gen_kwargs["stopping_criteria"][0].start_length = batch["input_len"]
             generated_tokens = accelerator.unwrap_model(model).generate(
                 input_ids=batch["ids"][:, : batch["input_len"]],
                 num_return_sequences=batch_size,

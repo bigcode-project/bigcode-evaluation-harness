@@ -153,6 +153,7 @@ def main():
                 raise ValueError("No eos_token or bos_token found")
         tokenizer.pad_token = tokenizer.eos_token
         evaluator = Evaluator(accelerator, model, tokenizer, args)
+        
         for task in task_names:
             if args.generation_only:
                 if accelerator.is_main_process:
