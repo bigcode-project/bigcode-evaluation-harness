@@ -112,9 +112,8 @@ We thank EleutherAI for their work on the [lm-evaluation harness](https://github
 @software{bigcode-evaluation-harness,
   author       = {Ben Allal, Loubna and
                   Muennighoff, Niklas and
-                  Dey, Manan and
                   Von Werra, Leandro},
-  title = {A framework for the evaluation of autoregressive code generation language models},
+  title = {A framework for the evaluation of code generation models},
   howpublished = {\url{https://github.com/bigcode-project/bigcode-evaluation-harness}},
   year = 2022,
   month = December
