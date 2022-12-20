@@ -105,3 +105,17 @@ We provide documentation for the existing benchmarks and how we make the evaluat
 
 ## Acknowledgements
 We thank EleutherAI for their work on the [lm-evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness) from which this repository is inspired.
+
+## Cite as
+
+```
+@software{bigcode-evaluation-harness,
+  author       = {Ben Allal, Loubna and
+                  Muennighoff, Niklas and
+                  Von Werra, Leandro},
+  title = {A framework for the evaluation of code generation models},
+  howpublished = {\url{https://github.com/bigcode-project/bigcode-evaluation-harness}},
+  year = 2022,
+  month = December
+}
+```
