@@ -17,7 +17,7 @@
 
 ## Features
 
-This is a framework for the evaluation of code generation models. This is a work in progress part of the BigCode project, and is inspired from [EleutherAI/lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluating language models in general. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guides in [`docs/guide.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md) and [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md) and more documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md).
+This is a framework for the evaluation of code generation models. This is a work in progress part of the BigCode project, and is inspired from [EleutherAI/lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluating language models in general. We welcome contributions to fix issues, enhance features and add new benchmarks. You can find a contribution guides in [`docs/guide.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md) and [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md) and more documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). 
 
 Below are the features and tasks of this framework:
 
@@ -105,3 +105,17 @@ We provide documentation for the existing benchmarks and how we make the evaluat
 
 ## Acknowledgements
 We thank EleutherAI for their work on the [lm-evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness) from which this repository is inspired.
+
+## Cite as
+
+```
+@software{bigcode-evaluation-harness,
+  author       = {Ben Allal, Loubna and
+                  Muennighoff, Niklas and
+                  Von Werra, Leandro},
+  title = {A framework for the evaluation of code generation models},
+  howpublished = {\url{https://github.com/bigcode-project/bigcode-evaluation-harness}},
+  year = 2022,
+  month = December
+}
+```
