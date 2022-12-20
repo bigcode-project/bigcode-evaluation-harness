@@ -45,7 +45,7 @@ def parse_args():
         "--tasks",
         default=None,
         choices=MultiChoice(ALL_TASKS),
-        help=f"Evalution tasks from {ALL_TASKS}",
+        help=f"Evaluation tasks from {ALL_TASKS}",
     )
     parser.add_argument(
         "--batch_size",
@@ -69,7 +69,7 @@ def parse_args():
         "--postprocess",
         type=bool,
         default=True,
-        help="Postprocess model outputs before execution, only off during genration tests",
+        help="Postprocess model outputs before execution, only off during generation tests",
     )
     parser.add_argument(
         "--allow_code_execution",
