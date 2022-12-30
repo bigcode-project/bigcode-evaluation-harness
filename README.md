@@ -49,10 +49,10 @@ We use [`accelerate`](https://huggingface.co/docs/accelerate/index) to generate 
 accelerate config
 ```
 
-This evaluation harness can also be used in an an evaluation only mode, you can use a Multi-CPU setting. For this mode you can also find an example of setup instructions in `evaluation_setup.sh`, where we configure the environement and evaluate some MBPP generations donwloaded from the hub.
+This evaluation harness can also be used in an evaluation only mode, you can use a Multi-CPU setting. For this mode you can also find an example of setup instructions in `evaluation_setup.sh`, where we configure the environment and evaluate some MBPP generations donwloaded from the hub.
 
 ## Usage
-You can use this evaluation harness to generate text solutions to code benchmarks with your model, to evaluate (and execute) the solutions or to do both. While it is betetr to use GPUs for the generation, the evaluation only requires CPUs. So it might be beneficial to separate these two steps. By default both generation and evaluation are performed.
+You can use this evaluation harness to generate text solutions to code benchmarks with your model, to evaluate (and execute) the solutions or to do both. While it is better to use GPUs for the generation, the evaluation only requires CPUs. So it might be beneficial to separate these two steps. By default both generation and evaluation are performed.
 
 For more details on how to evaluate on the tasks, please refer to the documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md). 
 
@@ -71,7 +71,7 @@ accelerate launch  main.py \
   --batch_size 10 \
   --allow_code_execution=False 
 ```
-* `limit` represnts the number of problems to solve, if it's not provided all problems in the benchamrk are selected. 
+* `limit` represents the number of problems to solve, if it's not provided all problems in the benchmark are selected. 
 * `allow_code_execution` is for executing the generated code: read the displayed warning before setting it to `True`. 
 
 Some tasks don't require code execution such as
