@@ -9,7 +9,6 @@ Homepage: TODO: Add the URL to the task's Homepage here.
 """
 from lm_eval.base import Task
 
-
 # TODO: Add the BibTeX citation for the task.
 _CITATION = """
 """
@@ -79,7 +78,7 @@ class NewTask(Task):
         # generations and reference solutions
         """
         Takes the list of LM generations and evaluates them against ground truth references,
-        returning the metric for the generations.
+        returning the metric for the generations as in {"metric_name": result}.
         We encourage to directly load the metric from `evaluate` library to keep the code concise.
         :param generations: list(list(str))
             list of lists containing generations

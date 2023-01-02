@@ -11,9 +11,10 @@ Available at https://huggingface.co/datasets/code_x_glue_ct_code_to_text
 Here we use two-shot evaluation (the original paper evaluates finetuned models)
 """
 import json
-from evaluate import load
-from lm_eval.base import Task
 
+from evaluate import load
+
+from lm_eval.base import Task
 
 _CITATION = """
 @article{iyer2018mapping,
@@ -50,7 +51,7 @@ class Concode(Task):
         ) as file:
             examples = json.load(file)
         return examples
-    
+
     @staticmethod
     def two_shot_prompt(entry, text, examples):
         """Two shot prompt format as instructions & solutions"""
@@ -60,7 +61,9 @@ class Concode(Task):
                    \nSolution:\n{examples['solution2']}\
                    \nInstruction:\n{text}\
                    \nSolution:\n"
-        assert prompt.count("Solution:\n") == 3, "Splitting operation in postprocess_generation is invalid"
+        assert (
+            prompt.count("Solution:\n") == 3
+        ), "Splitting operation in postprocess_generation is invalid"
         return entry + prompt
 
     def get_prompt(self, doc):
@@ -100,5 +103,5 @@ class Concode(Task):
         gens = [gen[0] for gen in generations]
         results = bleu.compute(
             references=references, predictions=gens, max_order=4, smooth=True
-        )["bleu"]
+        )
         return results
