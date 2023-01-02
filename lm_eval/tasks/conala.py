@@ -102,5 +102,5 @@ class Conala(Task):
         gens = [gen[0] for gen in generations]
         results = bleu.compute(
             references=references, predictions=gens, max_order=4, smooth=True
-        )["bleu"]
-        return {"bleu": results}
+        )
+        return results
