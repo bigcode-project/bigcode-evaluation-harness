@@ -101,4 +101,4 @@ class Concode(Task):
         results = bleu.compute(
             references=references, predictions=gens, max_order=4, smooth=True
         )["bleu"]
-        return results
+        return {"bleu": results}
