@@ -17,7 +17,7 @@ _CITATION = """
 """
 
 SOURCE_LANG = {
-    "dn_en": "danish",
+    "da_en": "danish",
     "zh_en": "chinese",
     "no_en": "norwegian",
     "lv_en": "latvian",
@@ -26,7 +26,7 @@ SOURCE_LANG = {
 def create_all_tasks():
     """Creates a dictionary of tasks from a list of languages
     :return: {task_name: task}
-        e.g. {codexglue_text_to_text-dn_en: Task, codexglue_text_to_text-zh_en: Task}
+        e.g. {codexglue_text_to_text-da_en: Task, codexglue_text_to_text-zh_en: Task}
     """
     return {
         f"codexglue_text_to_text-{translation_task}": create_task(translation_task)
