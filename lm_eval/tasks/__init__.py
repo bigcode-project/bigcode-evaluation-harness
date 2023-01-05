@@ -1,7 +1,7 @@
 from pprint import pprint
 
-from . import (apps, codexglue_code_refinement, codexglue_code_to_text, codexglue_text_to_text, conala,
-               concode, humaneval, mbpp)
+from . import (apps, codexglue_code_refinement, codexglue_code_to_text,
+               codexglue_text_to_text, conala, concode, humaneval, mbpp)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
