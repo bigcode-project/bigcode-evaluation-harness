@@ -54,12 +54,6 @@ def parse_args():
         help="Batch size for evaluation on each worker, can be larger for HumanEval",
     )
     parser.add_argument(
-        '--num_return_sequences',
-        type=int,
-        default=1,
-        help='The number of independently computed return sequences for each element in the batch'
-    )
-    parser.add_argument(
         "--max_length_generation",
         type=int,
         default=512,
