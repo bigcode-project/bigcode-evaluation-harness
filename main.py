@@ -54,6 +54,12 @@ def parse_args():
         help="Batch size for evaluation on each worker, can be larger for HumanEval",
     )
     parser.add_argument(
+        '--num_return_sequences',
+        type=int,
+        default=1,
+        help='The number of independently computed return sequences for each element in the batch'
+    )
+    parser.add_argument(
         "--max_length_generation",
         type=int,
         default=512,
@@ -151,6 +157,10 @@ def main():
                 print("bos_token used as eos_token")
             else:
                 raise ValueError("No eos_token or bos_token found")
+        # to handle padding tokens while batching, as per 
+        # https://github.com/huggingface/transformers/pull/7552
+        if args.batch_size > 1:
+            tokenizer.padding_side = "left"
         tokenizer.pad_token = tokenizer.eos_token
         evaluator = Evaluator(accelerator, model, tokenizer, args)
         

@@ -49,7 +49,7 @@ class TokenizedDataset(IterableDataset):
         if self.n_copies == 1 and self.n_tasks % self.num_devices != 0:
             self.n_copies = 2
             warnings.warn(
-                "n_copies (n_samples/batch_size) was changed from 1 to 2 because n_tasks isn't proportional to num devices"
+                "n_copies (n_samples/num_return_sequences) was changed from 1 to 2 because n_tasks isn't proportional to num devices"
             )
 
         for sample in range(self.n_tasks):
@@ -58,6 +58,7 @@ class TokenizedDataset(IterableDataset):
                     "ids": outputs.input_ids[sample],
                     "task_id": sample,
                     "input_len": outputs.attention_mask[sample].sum(),
+                    "attention_mask": outputs.attention_mask[sample],
                 }
 
 
@@ -68,7 +69,7 @@ def complete_code(
     tokenizer,
     dataloader,
     n_tasks,
-    batch_size=20,
+    num_return_sequences=20,
     prefix="",
     postprocess=True,
     **gen_kwargs,
@@ -84,13 +85,18 @@ def complete_code(
         with torch.no_grad():
             if task.stop_words:
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
+
+            if batch["ids"].shape[0]==1:
+                batch["ids"] = batch["ids"][:,:batch["input_len"]]
+            
             generated_tokens = accelerator.unwrap_model(model).generate(
-                input_ids=batch["ids"][:, : batch["input_len"]],
-                num_return_sequences=batch_size,
+                input_ids=batch["ids"],
+                attention_mask=batch["attention_mask"],
+                num_return_sequences=num_return_sequences,
                 **gen_kwargs,
             )
-            # each task is generated batch_size times
-            generated_tasks = batch["task_id"].repeat(batch_size)
+            # each task is generated num_return_sequences times
+            generated_tasks = batch["task_id"].repeat(num_return_sequences)
             generated_tokens = accelerator.pad_across_processes(
                 generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
             )
