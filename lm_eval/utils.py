@@ -88,6 +88,7 @@ def complete_code(
 
             if batch["ids"].shape[0]==1:
                 batch["ids"] = batch["ids"][:,:batch["input_len"]]
+                batch["attention_mask"] = batch["attention_mask"][:,:batch["input_len"]]
             
             generated_tokens = accelerator.unwrap_model(model).generate(
                 input_ids=batch["ids"],
