@@ -68,6 +68,7 @@ accelerate launch  main.py \
   --temperature <TEMPERATURE> \
   --do_sample True \
   --n_samples 100 \
+  --num_return_sequences 20 \
   --batch_size 10 \
   --allow_code_execution=False 
 ```
@@ -75,7 +76,7 @@ accelerate launch  main.py \
 * `allow_code_execution` is for executing the generated code: read the displayed warning before setting it to `True`. 
 
 Some tasks don't require code execution such as
-`codexglue_code_to_text-<LANGUAGE>`/`codexglue_code_to_text-python-left`/`conala`/`concode` that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `batch_size=1`. (Note that `batch_size` should always be equal or less than `n_samples`).
+`codexglue_code_to_text-<LANGUAGE>`/`codexglue_code_to_text-python-left`/`conala`/`concode` that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `num_return_sequences=1`. (Note that `num_return_sequences` should always be equal or less than `n_samples`).
 * For APPS tasks, you can use `n_samples=1` for strict and average accuracies (from the original APPS paper) and `n_samples>1` for pass@k.
 
 ### Generation only

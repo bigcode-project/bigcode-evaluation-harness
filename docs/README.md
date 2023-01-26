@@ -43,6 +43,7 @@ accelerate launch  main.py \
   --tasks humaneval \
   --temperature 0.2 \
   --n_samples 200 \
+  --num_return_sequences 20 \
   --batch_size 10 \
   --allow_code_execution=False 
 ```
@@ -70,6 +71,7 @@ accelerate launch  main.py \
   --tasks mbpp \
   --temperature 0.1 \
   --n_samples 15 \
+  --num_return_sequences 15 \
   --batch_size 10 \
   --allow_code_execution=False \
 ```
@@ -139,7 +141,7 @@ accelerate launch  main.py \
   --tasks apps-introductory \
   --n_samples 1 \
   --temperature 0.1 \
-  --batch_size 1 \
+  --batch_size 5 \
   --allow_code_execution=False 
 ```
 We expect a model [finetuned](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS) on the train split of APPS.
