@@ -151,7 +151,12 @@ def main():
                 print("bos_token used as eos_token")
             else:
                 raise ValueError("No eos_token or bos_token found")
-        # to handle padding tokens while batching, as per 
+        
+        if args.n_samples < args.num_return_sequences:
+            raise ValueError("n_samples should always be equal or greater than num_return_sequences ")
+
+        # When padding_side = "right",Padding tokens are considered during decoding. 
+        # so setting it to left - to ignore padding tokens while decoding, as per 
         # https://github.com/huggingface/transformers/pull/7552
         if args.batch_size > 1:
             tokenizer.padding_side = "left"
