@@ -36,7 +36,8 @@ cd bigcode-evaluation-harness
 ```
 Install [`torch`](https://pytorch.org/get-started/locally/) based on your device type and the other packages using:
 ```
-pip install -r requirements.txt
+pip install .
+# use `pip install .[ds1000]` to install extra packages if you want to use DS1000 benchmark (WIP)
 ```
 Also make sure you have `git-lfs` installed and are logged in the Hub
 ```
