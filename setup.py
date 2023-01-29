@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 REQUIRED_PKGS = [
     "transformers==4.26.0",
@@ -46,5 +46,5 @@ setup(
     extras_require=EXTRAS_REQUIRE,
     python_requires=">=3.7.0",
     package_dir={"": "lm_eval"},
-    packages=find_packages("lm_eval"),    
+    packages=find_packages("lm_eval"),
 )
