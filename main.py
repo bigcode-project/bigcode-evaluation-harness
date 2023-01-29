@@ -40,7 +40,17 @@ def parse_args():
         "--revision",
         default=None,
         help="Model revision to use",
-    )    
+    )
+    parser.add_argument(
+        "--use_auth_token",
+        default=False,
+        help="Use the token generated when running `huggingface-cli login` (necessary for private model).",
+    )
+    parser.add_argument(
+        "--trust_remote_code",
+        default=False,
+        help="Use a model with custom code, this requires executing code by the author of the model.",
+    )
     parser.add_argument(
         "--tasks",
         default=None,
@@ -96,7 +106,10 @@ def parse_args():
         help="Path to save the results",
     )
     parser.add_argument(
-        "--save_generations", type=bool, default=True, help="Whether to save code generations"
+        "--save_generations",
+        type=bool,
+        default=True,
+        help="Whether to save code generations",
     )
     parser.add_argument(
         "--save_references",
@@ -143,8 +156,18 @@ def main():
     else:
         # here we generate code and save it (evaluation is optional but True by default)
         print("Loading the model and tokenizer")
-        model = AutoModelForCausalLM.from_pretrained(args.model, revision=args.revision, use_auth_token=True)
-        tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision, use_auth_token=True, truncation_side="left")
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            revision=args.revision,
+            trust_remote_code=args.trust_remote_code,
+            use_auth_token=args.use_auth_token,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            args.model,
+            revision=args.revision,
+            use_auth_token=args.use_auth_token,
+            truncation_side="left",
+        )
         if not tokenizer.eos_token:
             if tokenizer.bos_token:
                 tokenizer.eos_token = tokenizer.bos_token
@@ -162,7 +185,7 @@ def main():
             tokenizer.padding_side = "left"
         tokenizer.pad_token = tokenizer.eos_token
         evaluator = Evaluator(accelerator, model, tokenizer, args)
-        
+
         for task in task_names:
             if args.generation_only:
                 if accelerator.is_main_process:
