@@ -74,6 +74,7 @@ accelerate launch  main.py \
 ```
 * `limit` represents the number of problems to solve, if it's not provided all problems in the benchmark are selected. 
 * `allow_code_execution` is for executing the generated code: read the displayed warning before setting it to `True`. 
+* Some models with custom code on the HF hub like [SantaCoder](https://huggingface.co/bigcode/santacoder) require adding `--trust_remote_code True`
 
 Some tasks don't require code execution such as
 `codexglue_code_to_text-<LANGUAGE>`/`codexglue_code_to_text-python-left`/`conala`/`concode` that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `num_return_sequences=1`. (Note that `num_return_sequences` should always be equal or less than `n_samples`).
