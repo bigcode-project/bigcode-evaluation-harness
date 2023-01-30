@@ -8,7 +8,7 @@ DS-1000 is a code generation benchmark with a thousand data science questions sp
 Homepage: https://ds1000-code-gen.github.io/
 """
 
-import io, itertools, functools, pathlib, requests, warnings, zipfile
+import io, itertools, functools, pathlib, requests, zipfile
 from lm_eval.base import Task
 
 _CITATION = """
@@ -61,7 +61,6 @@ class DS1000General(Task):
         self._data = self._dir / "ds1000_data"
         self._download_source()
         self._download_dataset()
-        self._install_dependencies()
 
     def _download_source(self):
         url = "https://github.com/HKUNLP/DS-1000/blob/main/ds1000.py?raw=true"
@@ -81,39 +80,6 @@ class DS1000General(Task):
             r = requests.get(url, stream=True)
             z = zipfile.ZipFile(io.BytesIO(r.content))
             z.extractall(self._dir)
-            print("Done.")
-
-    def _install_dependencies(self):
-        import pkg_resources
-
-        requirements = [
-            "DateTime==4.7",
-            "gensim==4.2.0",
-            "matplotlib==3.5.2",
-            "numpy==1.21.6",
-            "openai==0.23.0",
-            "pandas==1.3.5",
-            "pandas-datareader==0.10.0",
-            "pathlib==1.0.1",
-            "scikit-learn==1.0.2",
-            "scipy==1.7.3",
-            "seaborn==0.11.2",
-            "statsmodels==0.13.2",
-            "tensorflow==2.10.0",
-            "tokenizers==0.12.1",
-            "torchvision==0.13.1",
-            "tqdm==4.64.1",
-            "xgboost==1.6.2",
-            "Pillow==9.2.0",
-        ]
-        if not all(
-            pkg_resources.working_set.find(pkg_resources.Requirement.parse(r))
-            for r in requirements
-        ):
-            import pip
-
-            print("Installing DS-1000 dependencies...")
-            pip.main(["install", *requirements])
             print("Done.")
 
     @functools.lru_cache()

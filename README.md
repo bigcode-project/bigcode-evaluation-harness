@@ -38,6 +38,10 @@ Install [`torch`](https://pytorch.org/get-started/locally/) based on your device
 ```
 pip install -r requirements.txt
 ```
+To run the `DS-1000` benchmark, additional dependencies must be installed using:
+```
+pip install -e ".[ds1000]"
+```
 Also make sure you have `git-lfs` installed and are logged in the Hub
 ```
 huggingface-cli login
