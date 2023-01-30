@@ -70,11 +70,13 @@ accelerate launch  main.py \
   --n_samples 100 \
   --num_return_sequences 20 \
   --batch_size 10 \
-  --allow_code_execution=False 
+  --allow_code_execution \
+  --save_generations
 ```
 * `limit` represents the number of problems to solve, if it's not provided all problems in the benchmark are selected. 
-* `allow_code_execution` is for executing the generated code: read the displayed warning before setting it to `True`. 
-* Some models with custom code on the HF hub like [SantaCoder](https://huggingface.co/bigcode/santacoder) require adding `--trust_remote_code True`
+* `allow_code_execution` is for executing the generated code: it is off by default, read the displayed warning before calling it to enable execution. 
+* Some models with custom code on the HF hub like [SantaCoder](https://huggingface.co/bigcode/santacoder) require calling `--trust_remote_code`, for private models add `--use_auth_token`.
+* `save_generations` saves the post-processed generations in a json file. You can also save references by calling `--save_references`
 
 Some tasks don't require code execution such as
 `codexglue_code_to_text-<LANGUAGE>`/`codexglue_code_to_text-python-left`/`conala`/`concode` that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `num_return_sequences=1`. (Note that `num_return_sequences` should always be equal or less than `n_samples`).
@@ -82,16 +84,18 @@ Some tasks don't require code execution such as
 
 ### Generation only
 
-If you want to generate solutions without executing and evaluating the code, set `generation_only` to True, in addition to the instructions above. This will save the solutions in a json file in the working directory.
+If you want to generate solutions without executing and evaluating the code, call `--generation_only`, in addition to the instructions above. This will save the solutions in a json file in the working directory. 
+
+This can be useful if you don't want to execute code in the machine you're using for generations for security or efficiency reasons. For instance, you can do the generations on multiple GPUs, but switch to a multiple workers CPU machine for the execution, which can save money and time.
 
 ### Evaluation only
 
-If you already have the generations in a json file from this evaluation harness and want to evaluate them, specify the path of the generations via the `generation_path` argument. You may need to reconfigure `accelerate` to use multiple CPUs. For this mode you can also find an example of setup instructions in `evaluation_setup.sh`.
+If you already have the generations in a json file from this evaluation harness and want to evaluate them, specify the path of the generations via the `generation_path` argument. You may need to reconfigure `accelerate` to use multiple CPUs. For this mode, you can also find an example of setup instructions in `evaluation_setup.sh`.
 
 Below is an example, be mind of specifying arguments proper to the task you are evaluating on, and note that `model` value here only serves for documenting the experiment.
 
 ```bash
-accelerate launch  main.py   --tasks mbpp  --allow_code_execution=True  --generations_path generations.json  --model incoder-temperature-08
+accelerate launch  main.py   --tasks mbpp  --allow_code_execution  --generations_path generations.json  --model incoder-temperature-08
 ```
 
 ## Implementing new tasks
