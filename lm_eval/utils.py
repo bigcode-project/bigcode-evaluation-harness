@@ -34,9 +34,28 @@ class TokenizedDataset(IterableDataset):
 
     def __iter__(self):
         prompts = []
+        infill = []
         for sample in range(self.n_tasks):
-            prompt = self.prefix + self.task.get_prompt(self.dataset[sample])
+            prompt_contents = self.task.get_prompt(self.dataset[sample])
+            if isinstance(prompt_contents, str):
+                infill.append(False)
+                prompt = self.prefix + prompt_contents
+            elif isinstance(prompt_contents, dict):
+                assert set(prompt_contents.keys()) == {"prefix", "suffix"}
+                infill.append(True)
+                prompt = self.prefix + self._make_infill_prompt(**prompt_contents)
+            else:
+                raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
             prompts.append(prompt)
+
+        if not len(set(infill)) == 1:
+            raise ValueError("Mixed infill and completion prompts are not supported.")
+        setattr(self.tokenizer, "infill_mode", infill[0])
+        if self.tokenizer.infill_mode:
+            self.tokenizer.padding_side = "left"
+            return_token_type_ids = False
+        else:
+            return_token_type_ids = None  # default
 
         outputs = self.tokenizer(
             prompts,
@@ -44,6 +63,7 @@ class TokenizedDataset(IterableDataset):
             truncation=True,
             return_tensors="pt",
             max_length=self.max_length,
+            return_token_type_ids=return_token_type_ids,
         )
 
         if self.n_copies == 1 and self.n_tasks % self.num_devices != 0:
@@ -59,6 +79,31 @@ class TokenizedDataset(IterableDataset):
                     "task_id": sample,
                     "input_len": outputs.attention_mask[sample].sum(),
                 }
+
+    def _make_infill_prompt(self, prefix, suffix):
+        """Make a prompt for infilling.
+        Currently supported only for official InCoder and SantaCoder implementations.
+        """
+        model_id = self.tokenizer.name_or_path
+        if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
+            self.tokenizer.add_special_tokens({"pad_token": "<pad>"})
+            return f"{prefix}<|mask:0|>{suffix}<|mask:0|>"
+        elif model_id in ["bigcode/santacoder"]:
+            self.tokenizer.add_special_tokens(
+                {
+                    "additional_special_tokens": [
+                        "<|endoftext|>",
+                        "<fim-prefix>",
+                        "<fim-middle>",
+                        "<fim-suffix>",
+                        "<fim-pad>",
+                    ],
+                    "pad_token": "<|endoftext|>",
+                }
+            )
+            return f"<fim-prefix>{prefix}<fim-suffix>{suffix}<fim-middle>"
+        else:
+            raise ValueError(f"Infilling not yet supported for: {model_id}")
 
 
 def complete_code(
@@ -104,12 +149,51 @@ def complete_code(
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
 
+    def strip_left_padding(tokens, pad_token_id):
+        """Strip left padding from tokens."""
+        for i, token in enumerate(tokens):
+            if token != pad_token_id:
+                return tokens[i:]
+        return tokens
+
+    def parse_infill(code, tokenizer):
+        """Reorder infill code and remove remaining special tokens."""
+        model_id = tokenizer.name_or_path
+        if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
+            start, end, middle = code.split("<|mask:0|>")
+            middle = middle.split("<|endofmask|>")[0]
+            code = "\n".join([start, middle, end])
+        elif model_id in ["bigcode/santacoder"]:
+            prefix, rest = code.split("<fim-suffix>")
+            suffix, middle = rest.split("<fim-middle>")
+            middle = middle.split("<|endoftext|>")[0]
+            code = "\n".join([prefix, middle, suffix])
+        else:
+            raise ValueError(f"Infilling not yet supported for: {model_id}")
+        for k, v in tokenizer.special_tokens_map.items():
+            if k == "additional_special_tokens":
+                for t in v:
+                    code = code.replace(t, "")
+            else:
+                code = code.replace(v, "")
+        return code
+
     code_gens = [[] for _ in range(n_tasks)]
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
-            gen_code = tokenizer.decode(
-                s, skip_special_tokens=True, clean_up_tokenization_spaces=True
-            )
+            if tokenizer.infill_mode:
+                gen_code = parse_infill(
+                    tokenizer.decode(
+                        strip_left_padding(s, tokenizer.pad_token_id),
+                        skip_special_tokens=False,
+                        clean_up_tokenization_spaces=False,
+                    ),
+                    tokenizer,
+                )
+            else:
+                gen_code = tokenizer.decode(
+                    s, skip_special_tokens=True, clean_up_tokenization_spaces=True
+                )
             if postprocess:
                 code_gens[sample].append(
                     task.postprocess_generation(gen_code[len(prefix) :], int(sample))

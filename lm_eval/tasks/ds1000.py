@@ -23,15 +23,15 @@ _CITATION = """
 
 
 def get_tasks():
-    def _get_task(key):
+    def get_task(key, mode):
         class DS1000(DS1000General):
             def __init__(self):
-                super().__init__(key)
+                super().__init__(key, mode)
 
         return DS1000
 
     return {
-        f"ds1000-{key.lower()}": _get_task(key)
+        f"ds1000-{key.lower()}-{mode.lower()}": get_task(key, mode)
         for key in [
             "All",
             "Numpy",
@@ -42,6 +42,7 @@ def get_tasks():
             "Tensorflow",
             "Pytorch",
         ]
+        for mode in ["Completion", "Insertion"]
     }
 
 
@@ -49,12 +50,13 @@ class DS1000General(Task):
     DATASET_PATH = None
     DATASET_NAME = None
 
-    def __init__(self, key):
+    def __init__(self, key, mode):
         super().__init__(
-            stop_words=["</code>", "END SOLUTION", "\n\n"],
+            stop_words=["</code>", "END SOLUTION"],
             requires_execution=True,
         )
         self._key = key
+        self._mode = mode
         self._dir = pathlib.Path(__file__).parent / "ds"
         self._dir.mkdir(parents=True, exist_ok=True)
         self._src = self._dir / "ds1000.py"
@@ -87,7 +89,7 @@ class DS1000General(Task):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
         from .ds.ds1000 import DS1000Dataset
 
-        data = DS1000Dataset(self._data, mode="Completion").data
+        data = DS1000Dataset(self._data, mode=self._mode).data
         if self._key == "All":
             dataset = list(itertools.chain(*data.values()))
         else:
@@ -99,9 +101,15 @@ class DS1000General(Task):
         Builds the prompt for the LM to generate from.
         :param doc: dict[str: str]
             sample from the test dataset
-        :return: str
+        :return: str | dict[str: str]
         """
-        return doc["prompt"]
+        if self._mode == "Completion":
+            return doc["prompt"]
+        elif self._mode == "Insertion":
+            prefix, suffix = doc["prompt"].split("[insert]")
+            return {"prefix": prefix, "suffix": suffix}
+        else:
+            raise ValueError(f"Invalid mode: {self._mode}")
 
     def get_reference(self, doc):
         """
@@ -121,7 +129,7 @@ class DS1000General(Task):
             index of doc in the dataset to which the generation belongs
         :return: str
         """
-        processed = generation.split("<code>")[-1]
+        processed = generation.split("BEGIN SOLUTION\n<code>")[-1]
         for stop in self.stop_words:
             try:
                 processed = processed.split(stop)[0]
