@@ -22,16 +22,16 @@ _CITATION = """
 """
 
 
-def get_tasks():
-    def get_task(key, mode):
-        class DS1000(DS1000General):
+def create_all_tasks():
+    def create_task(key, mode):
+        class DS1000(GeneralDS1000):
             def __init__(self):
                 super().__init__(key, mode)
 
         return DS1000
 
     return {
-        f"ds1000-{key.lower()}-{mode.lower()}": get_task(key, mode)
+        f"ds1000-{key.lower()}-{mode.lower()}": create_task(key, mode)
         for key in [
             "All",
             "Numpy",
@@ -46,7 +46,7 @@ def get_tasks():
     }
 
 
-class DS1000General(Task):
+class GeneralDS1000(Task):
     DATASET_PATH = None
     DATASET_NAME = None
 
