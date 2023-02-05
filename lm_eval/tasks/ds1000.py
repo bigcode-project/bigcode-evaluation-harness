@@ -8,7 +8,7 @@ DS-1000 is a code generation benchmark with a thousand data science questions sp
 Homepage: https://ds1000-code-gen.github.io/
 """
 
-import io, itertools, functools, pathlib, requests, zipfile
+import io, itertools, functools, pathlib, requests, warnings, zipfile
 from lm_eval.base import Task
 
 _CITATION = """
@@ -65,8 +65,9 @@ class GeneralDS1000(Task):
         self._download_dataset()
 
     def _download_source(self):
-        url = "https://github.com/HKUNLP/DS-1000/blob/main/ds1000.py?raw=true"
+        url = "https://github.com/HKUNLP/DS-1000/blob/49c1c543ada8b58138181333cdc62e613204efcf/ds1000.py?raw=true"
         if not self._src.exists():
+            warnings.warn(f"The source code for DS-1000 is being saved to {self._src}.")
             print("Downloading source code...")
             r = requests.get(url, stream=True)
             with open(self._src, "wb") as f:
@@ -76,8 +77,9 @@ class GeneralDS1000(Task):
             print("Done.")
 
     def _download_dataset(self):
-        url = "https://github.com/HKUNLP/DS-1000/blob/main/ds1000_data.zip?raw=true"
+        url = "https://github.com/HKUNLP/DS-1000/blob/49c1c543ada8b58138181333cdc62e613204efcf/ds1000_data.zip?raw=true"
         if not (self._data).exists():
+            warnings.warn(f"The dataset for DS-1000 is being saved to {self._data}.")
             print("Downloading dataset...")
             r = requests.get(url, stream=True)
             z = zipfile.ZipFile(io.BytesIO(r.content))
