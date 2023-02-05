@@ -52,7 +52,6 @@ class TokenizedDataset(IterableDataset):
             raise ValueError("Mixed infill and completion prompts are not supported.")
         setattr(self.tokenizer, "infill_mode", infill[0])
         if self.tokenizer.infill_mode:
-            self.tokenizer.padding_side = "left"
             return_token_type_ids = False
         else:
             return_token_type_ids = None  # default
@@ -137,13 +136,6 @@ def complete_code(
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
 
-    def strip_left_padding(tokens, pad_token_id):
-        """Strip left padding from tokens."""
-        for i, token in enumerate(tokens):
-            if token != pad_token_id:
-                return tokens[i:]
-        return tokens
-
     def parse_infill(code, tokenizer):
         """Reorder infill code and remove remaining special tokens."""
         model_id = tokenizer.name_or_path
@@ -170,9 +162,7 @@ def complete_code(
             if tokenizer.infill_mode:
                 gen_code = parse_infill(
                     tokenizer.decode(
-                        strip_left_padding(s, tokenizer.pad_token_id),
-                        skip_special_tokens=False,
-                        clean_up_tokenization_spaces=False,
+                        s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                     ),
                     tokenizer,
                 )
