@@ -107,6 +107,8 @@ class GeneralDS1000(Task):
             return doc["prompt"]
         elif self._mode == "Insertion":
             prefix, suffix = doc["prompt"].split("[insert]")
+            prefix = f"{prefix.strip()}\n"
+            suffix = f"\n{suffix.strip()}\n"
             return {"prefix": prefix, "suffix": suffix}
         else:
             raise ValueError(f"Invalid mode: {self._mode}")
