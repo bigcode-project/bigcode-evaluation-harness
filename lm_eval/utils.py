@@ -89,18 +89,6 @@ class TokenizedDataset(IterableDataset):
             self.tokenizer.add_special_tokens({"pad_token": "<pad>"})
             return f"{prefix}<|mask:0|>{suffix}<|mask:0|>"
         elif model_id in ["bigcode/santacoder"]:
-            self.tokenizer.add_special_tokens(
-                {
-                    "additional_special_tokens": [
-                        "<|endoftext|>",
-                        "<fim-prefix>",
-                        "<fim-middle>",
-                        "<fim-suffix>",
-                        "<fim-pad>",
-                    ],
-                    "pad_token": "<|endoftext|>",
-                }
-            )
             return f"<fim-prefix>{prefix}<fim-suffix>{suffix}<fim-middle>"
         else:
             raise ValueError(f"Infilling not yet supported for: {model_id}")
