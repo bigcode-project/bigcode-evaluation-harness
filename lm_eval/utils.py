@@ -139,30 +139,30 @@ def complete_code(
 
     def strip_left_padding(tokens, pad_token_id):
         """Strip left padding from tokens."""
-        num_non_pad = tokens.eq(pad_token_id).sum()
-        return tokens[num_non_pad:]
+        for i, token in enumerate(tokens):
+            if token != pad_token_id:
+                return tokens[i:]
+        return tokens
 
     def parse_infill(code, tokenizer):
         """Reorder infill code and remove remaining special tokens."""
         model_id = tokenizer.name_or_path
         if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
-            start, end, middle = code.split("<|mask:0|>")
-            middle = middle.split("<|endofmask|>")[0]
-            code = "\n".join([start, middle, end])
+            prefix, suffix, infill = code.split("<|mask:0|>")
+            infill = infill.split("<|endofmask|>")[0]
         elif model_id in ["bigcode/santacoder"]:
             prefix, rest = code.split("<fim-suffix>")
-            suffix, middle = rest.split("<fim-middle>")
-            middle = middle.split("<|endoftext|>")[0]
-            code = "\n".join([prefix, middle, suffix])
+            suffix, infill = rest.split("<fim-middle>")
+            infill = infill.split("<|endoftext|>")[0]
         else:
             raise ValueError(f"Infilling not yet supported for: {model_id}")
         for k, v in tokenizer.special_tokens_map.items():
             if k == "additional_special_tokens":
                 for t in v:
-                    code = code.replace(t, "")
+                    infill = infill.replace(t, "")
             else:
-                code = code.replace(v, "")
-        return code
+                infill = infill.replace(v, "")
+        return infill
 
     code_gens = [[] for _ in range(n_tasks)]
     for sample, generated_tokens in gen_token_dict.items():
