@@ -139,10 +139,8 @@ def complete_code(
 
     def strip_left_padding(tokens, pad_token_id):
         """Strip left padding from tokens."""
-        for i, token in enumerate(tokens):
-            if token != pad_token_id:
-                return tokens[i:]
-        return tokens
+        num_non_pad = tokens.eq(pad_token_id).sum()
+        return tokens[num_non_pad:]
 
     def parse_infill(code, tokenizer):
         """Reorder infill code and remove remaining special tokens."""
