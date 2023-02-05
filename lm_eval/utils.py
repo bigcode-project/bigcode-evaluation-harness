@@ -112,7 +112,7 @@ def complete_code(
     """
 
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
-    for step, batch in tqdm(enumerate(dataloader)):
+    for step, batch in tqdm(enumerate(dataloader), total=n_tasks):
         with torch.no_grad():
             if task.stop_words:
                 gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
