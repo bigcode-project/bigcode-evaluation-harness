@@ -71,8 +71,18 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
         answers.append(eval_answers[0])
 
     scores = []
+    # Number of code generated failed execution.
+    errored = 0
     for ans, ref in zip(answers, references):
-        score = 1 if abs(float(ans) - float(ref)) < 1e-3 else 0
+        try:
+            score = 1 if abs(float(ans) - float(ref)) < 1e-3 else 0
+        except ValueError as e:
+            warnings.warn(
+                f"""ValueError - {e} during scoring answer - {ans}, defaulting evaluation score for this answer to 0"""
+            )
+            errored += 1
+            score = 0
+
         scores.append(score)
 
-    return {"Accuracy": sum(scores) / len(scores)}
+    return {"Accuracy": sum(scores) / len(scores),"num_failed_execution":errored}
