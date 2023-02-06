@@ -143,11 +143,6 @@ class Gsm8k(Task):
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
         _answer_delim = "#### "
-        # TODO: remove
-        if _answer_delim not in doc["answer"]:
-            import pdb
-
-            pdb.set_trace()
         target = doc["answer"].split(_answer_delim)[-1]
         return self.parse_target(target)
 
