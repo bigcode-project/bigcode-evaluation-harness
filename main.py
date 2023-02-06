@@ -43,12 +43,12 @@ def parse_args():
     )
     parser.add_argument(
         "--use_auth_token",
-        default=False,
+        action="store_true",
         help="Use the token generated when running `huggingface-cli login` (necessary for private model).",
     )
     parser.add_argument(
         "--trust_remote_code",
-        default=False,
+        action="store_true",
         help="Use a model with custom code, this requires executing code by the author of the model.",
     )
     parser.add_argument(
@@ -77,20 +77,17 @@ def parse_args():
     )
     parser.add_argument(
         "--postprocess",
-        type=bool,
-        default=True,
-        help="Postprocess model outputs before execution, only off during generation tests",
+        action="store_false",
+        help="Postprocess model outputs before execution, always on except during generation tests",
     )
     parser.add_argument(
         "--allow_code_execution",
-        type=bool,
-        default=False,
+        action="store_true",
         help="Allow code evaluation to execute external/untrusted Python code on your machine",
     )
     parser.add_argument(
         "--generation_only",
-        type=bool,
-        default=False,
+        action="store_true",
         help="Do code generation but no evaluation",
     )
     parser.add_argument(
@@ -107,14 +104,12 @@ def parse_args():
     )
     parser.add_argument(
         "--save_generations",
-        type=bool,
-        default=True,
+        action="store_true",
         help="Whether to save code generations",
     )
     parser.add_argument(
         "--save_references",
-        type=bool,
-        default=False,
+        action="store_true",
         help="Whether to save reference solutions/tests",
     )
     return parser.parse_args()
