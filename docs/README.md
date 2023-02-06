@@ -213,7 +213,7 @@ PAL uses two types of few shot evaluation -
 - `greedy` - samples one generation by greedy decoding and evaluated against reference answers
 - `majority_voting` - samples k (k=40 in paper) generations and takes majority voted answer to evaluate against the reference.
 
-**Task signature** : `pal-{task}-{evaluation_type}` (eg: `pal-gsm8k-greedy`,`pal-gsmhard-majority_voting`)
+**Task signature** : `pal-{dataset_name}-{evaluation_type}` (eg: `pal-gsm8k-greedy`,`pal-gsmhard-majority_voting`)
 
 Commands to run the evaluation:
 
