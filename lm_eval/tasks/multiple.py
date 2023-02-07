@@ -83,13 +83,10 @@ class GeneralMultiPLE(Task):
     def __init__(self, language):
         self.language = language
         self.DATASET_NAME = f"humaneval-{language}"
-        # TODO: fix this
-        stop_words = [
-            "\ndef",
-            "\n#",
-            "\nif",
-            "\nclass",
-        ]  # self.get_dataset()[0]["stop_tokens"]
+        # we need the dataset to get stop words for each language
+        self.dataset = load_dataset(GeneralMultiPLE.DATASET_PATH, self.DATASET_NAME)
+        stop_words = self.dataset["test"][0]["stop_tokens"]
+        print("stop w:", stop_words)
         super().__init__(
             stop_words=stop_words,
             requires_execution=True,
