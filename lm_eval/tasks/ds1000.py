@@ -9,6 +9,7 @@ Homepage: https://ds1000-code-gen.github.io/
 """
 
 import io, itertools, functools, pathlib, requests, warnings, zipfile
+import tqdm
 from lm_eval.base import Task
 
 _CITATION = """
@@ -153,7 +154,8 @@ class GeneralDS1000(Task):
         """
         dataset = self.get_dataset()
         num_correct = 0
-        for i, ref in enumerate(references):
+        print("Scoring generations...")
+        for i, ref in tqdm.tqdm(enumerate(references), total=len(references)):
             test = [doc for doc in dataset if doc["reference_code"] == ref][0]
             for gen in generations[i]:
                 is_correct = test.test(gen)
