@@ -52,8 +52,7 @@ class GeneralDS1000(Task):
 
     def __init__(self, key, mode):
         super().__init__(
-            stop_words=["</code>", "END SOLUTION"],
-            requires_execution=True,
+            stop_words=["</code>", "END SOLUTION"], requires_execution=True,
         )
         self._key = key
         self._mode = mode
@@ -160,5 +159,7 @@ class GeneralDS1000(Task):
                 is_correct = test.test(gen)
                 if is_correct:
                     num_correct += 1
-                    break
-        return {f"pass@{len(generations[0])} accuracy": num_correct / len(references)}
+        accuracy = num_correct / len(references) / len(generations[0])
+        return {
+            f"pass@1 accuracy (averaged over {len(generations[0])} samples)": accuracy
+        }
