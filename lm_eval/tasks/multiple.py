@@ -19,10 +19,10 @@ import numpy as np
 from tqdm import tqdm
 
 from lm_eval.base import Task
-from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import evaluate_problem
-from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import (
-    for_file,
-)
+from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import \
+    evaluate_problem
+from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import \
+    for_file
 
 _CITATION = """
 @article{cassano2022scalable,
@@ -84,7 +84,12 @@ class GeneralMultiPLE(Task):
         self.language = language
         self.DATASET_NAME = f"humaneval-{language}"
         # TODO: fix this
-        stop_words = ["\ndef", "\n#", "\nif", "\nclass"]#self.get_dataset()[0]["stop_tokens"]
+        stop_words = [
+            "\ndef",
+            "\n#",
+            "\nif",
+            "\nclass",
+        ]  # self.get_dataset()[0]["stop_tokens"]
         super().__init__(
             stop_words=stop_words,
             requires_execution=True,
@@ -129,7 +134,7 @@ class GeneralMultiPLE(Task):
         """
         # get prompts and problem names
         prompts_names = [
-            (doc["prompt"], doc["name"])
+            {"prompt": doc["prompt"], "name": doc["name"]}
             for i, doc in enumerate(self.get_dataset())
             if i < len(generations)
         ]
@@ -151,21 +156,15 @@ class GeneralMultiPLE(Task):
             list_files.append(temp_file_name)
             with open(temp_file_name, "wt") as f:
                 json.dump(problem, f)
-            print(
-                f"Saved {len(generation)} generations for {prompt_name['name']} in {temp_file_name}"
-            )
-        print(f"Saved {len(list_files)} problems in {temp_dir} for evaluation")
+        print(
+            f"Saved {len(list_files)} problems in {temp_dir} for evaluation, each has {len(generations[0])}"
+        )
 
         # execute the problems to evaluate them
         output_dir = os.path.join(temp_dir, f"results/")
         max_workers = cpu_count() - 1 if cpu_count() > 1 else 1
-        start_t = time.time()
         for file in tqdm(list_files):
-            print(f"Evaluating {file} with")
             evaluate_problem(output_dir, file, max_workers)  # , temp_dir)
-        end_t = time.time()
-        print(f"Execution took {end_t - start_t} seconds")
-        print(f"Execution results saved in {output_dir}")
 
         # compute pass@k scores
         result_array = np.array(
@@ -181,6 +180,5 @@ class GeneralMultiPLE(Task):
         print(f"{name},10,{result[1]:.2f}")
         print(f"{name},100,{result[2]:.2f}")
         results = {f"pass@{k}": v for k, v in zip([1, 10, 100], result)}
-        # print but add .2f to the values in the dict
         print({k: f"{v:.2f}" for k, v in results.items()})
         return results
