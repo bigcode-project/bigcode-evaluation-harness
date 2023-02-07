@@ -55,6 +55,7 @@ def get_test_results_json_path(
     suffixes = ".results.json"
     problem_name = problem_json_path[: -len(".json")]
     if input_dir:
+        raise ValueError("input dir given")
         return Path(output_dir) / (
             problem_json_path.relative_to(input_dir).parent / (problem_name + suffixes)
         )
@@ -68,19 +69,20 @@ def evaluate_problem(
         problem = json.load(f)
     if len(problem["completions"]) == 0:
         return
-
     test_results_path = get_test_results_json_path(
         output_dir, problem_json_path, input_dir
     )
     test_results_path.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
 
-    if not test_results_path.exists():
-        test_results = problem.copy()
-        del test_results["completions"]
-        test_results["results"] = []
-    else:
-        with open(test_results_path, "r") as f:
-            test_results = json.load(f)
+    # code is commented because:
+    # if results exist from any previous run they will be taken mistakingly?
+    # if not test_results_path.exists():
+    test_results = problem.copy()
+    del test_results["completions"]
+    test_results["results"] = []
+    # else:
+    #    with open(test_results_path, "r") as f:
+    #        test_results = json.load(f)
 
     num_problems = len(problem["completions"])
 

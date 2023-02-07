@@ -20,10 +20,10 @@ from datasets import load_dataset
 from tqdm import tqdm
 
 from lm_eval.base import Task
-from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import evaluate_problem
-from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import (
-    for_file,
-)
+from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import \
+    evaluate_problem
+from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import \
+    for_file
 
 _CITATION = """
 @article{cassano2022scalable,
@@ -87,7 +87,6 @@ class GeneralMultiPLE(Task):
         # we need the dataset to get stop words for each language
         self.dataset = load_dataset(GeneralMultiPLE.DATASET_PATH, self.DATASET_NAME)
         stop_words = self.dataset["test"][0]["stop_tokens"]
-        print("stop w:", stop_words)
         super().__init__(
             stop_words=stop_words,
             requires_execution=True,
@@ -159,10 +158,9 @@ class GeneralMultiPLE(Task):
         )
 
         # execute the problems to evaluate them
-        output_dir = os.path.join(temp_dir, f"results/")
         max_workers = cpu_count() - 1 if cpu_count() > 1 else 1
         for file in tqdm(list_files):
-            evaluate_problem(output_dir, file, max_workers)  # , temp_dir)
+            evaluate_problem(temp_dir, file, max_workers)
 
         # compute pass@k scores
         result_array = np.array(
