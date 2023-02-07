@@ -1,10 +1,8 @@
 import os
 import re
-import subprocess
-import sys
 from pathlib import Path
 
-from safe_subprocess import run
+from .safe_subprocess import run
 
 ENABLE_SYNTAX_CHECK = False
 

@@ -6,19 +6,9 @@ for problem_evaluator.py.
 import tempfile
 from pathlib import Path
 
-import eval_cpp
-import eval_dlang
-import eval_java
-import eval_javascript
-import eval_julia
-import eval_lua
-import eval_php
-import eval_python
-import eval_r
-import eval_racket
-import eval_ruby
-import eval_rust
-import eval_swift
+from . import (eval_cpp, eval_dlang, eval_java, eval_javascript, eval_julia,
+               eval_lua, eval_php, eval_python, eval_r, eval_racket, eval_ruby,
+               eval_rust, eval_swift)
 
 EVALUATORS = {
     "rb": (eval_ruby.eval_script, ".rb"),

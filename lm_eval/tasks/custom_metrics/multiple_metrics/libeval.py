@@ -3,7 +3,7 @@ import signal
 import subprocess
 from typing import List
 
-import generic_eval
+from . import generic_eval
 
 
 def testing_mail(x, y, z):

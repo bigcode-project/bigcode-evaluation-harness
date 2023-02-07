@@ -16,11 +16,13 @@ from pathlib import Path
 from time import time
 
 import numpy as np
-from custom_metrics.multiple_metrics.evaluation import evaluate_problem
-from custom_metrics.multiple_metrics.single_experiment_pass_k import for_file
 from tqdm import tqdm
 
 from lm_eval.base import Task
+from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import evaluate_problem
+from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import (
+    for_file,
+)
 
 _CITATION = """
 @article{cassano2022scalable,
@@ -79,8 +81,10 @@ class GeneralMultiPLE(Task):
     DATASET_NAME = None
 
     def __init__(self, language):
+        self.language = language
         self.DATASET_NAME = f"humaneval-{language}"
-        stop_words = self.get_dataset()[0]["stop_tokens"]
+        # TODO: fix this
+        stop_words = ["\ndef", "\n#", "\nif", "\nclass"]#self.get_dataset()[0]["stop_tokens"]
         super().__init__(
             stop_words=stop_words,
             requires_execution=True,
@@ -123,33 +127,45 @@ class GeneralMultiPLE(Task):
         :param references: list(str)
             list of str containing refrences
         """
-
-        # create a temp json file for each problem
-        prompts = [doc["prompt"] for doc in self.get_dataset()][: len(generations)]
+        # get prompts and problem names
+        prompts_names = [
+            (doc["prompt"], doc["name"])
+            for i, doc in enumerate(self.get_dataset())
+            if i < len(generations)
+        ]
+        # a common temp dir for all the problems
+        temp_dir = tempfile.gettempdir()
         list_files = []
-        for i, (prompt, generation, reference) in enumerate(
-            zip(prompts, generations, references)
+        for (prompt_name, generation, reference) in zip(
+            prompts_names, generations, references
         ):
             problem = {
-                "prompt": prompt,
+                "name": prompt_name["name"],
+                "language": self.language,
+                "prompt": prompt_name["prompt"],
                 "completions": generation,
                 "tests": reference,
-                "language": self.language,
             }
-            temp_dir = tempfile.gettempdir()
-            temp_file_name = os.path.join(temp_dir, f"problem-{i}.json")
+            # create a temp json file for each problem
+            temp_file_name = os.path.join(temp_dir, f"{prompt_name['name']}.json")
             list_files.append(temp_file_name)
             with open(temp_file_name, "wt") as f:
                 json.dump(problem, f)
+            print(
+                f"Saved {len(generation)} generations for {prompt_name['name']} in {temp_file_name}"
+            )
+        print(f"Saved {len(list_files)} problems in {temp_dir} for evaluation")
 
         # execute the problems to evaluate them
         output_dir = os.path.join(temp_dir, f"results/")
         max_workers = cpu_count() - 1 if cpu_count() > 1 else 1
         start_t = time.time()
         for file in tqdm(list_files):
-            evaluate_problem(output_dir, file, max_workers, temp_dir)
+            print(f"Evaluating {file} with")
+            evaluate_problem(output_dir, file, max_workers)  # , temp_dir)
         end_t = time.time()
         print(f"Execution took {end_t - start_t} seconds")
+        print(f"Execution results saved in {output_dir}")
 
         # compute pass@k scores
         result_array = np.array(

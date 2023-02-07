@@ -2,8 +2,8 @@ import os
 import tempfile
 from pathlib import Path
 
-from generic_eval import main
-from safe_subprocess import run
+from .generic_eval import main
+from .safe_subprocess import run
 
 LANG_NAME = "Java"
 LANG_EXT = ".java"

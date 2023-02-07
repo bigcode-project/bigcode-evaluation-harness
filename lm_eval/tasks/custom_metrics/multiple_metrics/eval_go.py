@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from sys import exit
 
-from generic_eval import main as gmain
+from .generic_eval import main as gmain
 
 
 def eval_script(path: Path):

@@ -1,9 +1,8 @@
 import os
 import subprocess
-import tempfile
 from pathlib import Path
 
-from generic_eval import main
+from .generic_eval import main
 
 LANG_NAME = "Rust"
 LANG_EXT = ".rs"

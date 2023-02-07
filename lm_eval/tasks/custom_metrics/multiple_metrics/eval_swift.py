@@ -2,7 +2,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from safe_subprocess import run
+from .safe_subprocess import run
 
 
 def eval_script(path: Path):

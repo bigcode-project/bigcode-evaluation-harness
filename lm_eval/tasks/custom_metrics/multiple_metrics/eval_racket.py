@@ -4,8 +4,7 @@ Evaluates a generated Racket program (.rkt).
 import os
 from pathlib import Path
 
-from libeval import run_without_exn
-from safe_subprocess import run
+from .safe_subprocess import run
 
 
 def eval_script(path: Path):

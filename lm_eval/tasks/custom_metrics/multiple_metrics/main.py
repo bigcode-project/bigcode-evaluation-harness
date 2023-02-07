@@ -9,8 +9,9 @@ from pathlib import Path
 from threading import Lock
 from typing import Optional
 
-from containerized_eval import eval_string_script
 from tqdm import tqdm
+
+from .containerized_eval import eval_string_script
 
 # Get working directory
 WORKING_DIR = Path(__file__).parent.parent

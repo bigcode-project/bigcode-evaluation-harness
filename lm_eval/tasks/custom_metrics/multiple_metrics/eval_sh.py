@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from safe_subprocess import run
+from .safe_subprocess import run
 
 LANG_NAME = "bash"
 LANG_EXT = ".sh"
