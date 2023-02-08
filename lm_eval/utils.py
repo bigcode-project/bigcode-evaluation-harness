@@ -142,11 +142,11 @@ def complete_code(
         """Reorder infill code and remove remaining special tokens."""
         model_id = tokenizer.name_or_path
         if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
-            prefix, suffix, infill = code.split("<|mask:0|>")
+            prefix, suffix, infill = code.split("<|mask:0|>", 2)
             infill = infill.split("<|endofmask|>")[0]
         elif model_id in ["bigcode/santacoder"]:
-            prefix, rest = code.split("<fim-suffix>")
-            suffix, infill = rest.split("<fim-middle>")
+            prefix, rest = code.split("<fim-suffix>", 1)
+            suffix, infill = rest.split("<fim-middle>", 1)
             infill = infill.split("<|endoftext|>")[0]
         else:
             raise ValueError(f"Infilling not yet supported for: {model_id}")
