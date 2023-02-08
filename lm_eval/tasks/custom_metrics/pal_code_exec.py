@@ -56,9 +56,10 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
             result = future.result()
             results[result["task_id"]].append((result["completion_id"], result))
 
-    answers = []
+    answers = [None]*len(results)
     for result in results.values():
         result.sort()
+        task_id = result[0][1]['task_id']
         eval_answers = [r[1]["result"] for r in result]
         if majority_voting:
             counter = Counter(eval_answers)
@@ -68,7 +69,7 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
             warnings.warn(
                 f"Multiple generations found for a task without setting `majority_voting` to True, defaulting answers from first generation"
             )
-        answers.append(eval_answers[0])
+        answers[task_id] = eval_answers[0]
 
     scores = []
     # Number of code generated failed execution.
@@ -85,4 +86,4 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
 
         scores.append(score)
 
-    return {"Accuracy": sum(scores) / len(scores),"num_failed_execution":errored}
+    return {"accuracy": sum(scores) / len(scores),"num_failed_execution":errored}
