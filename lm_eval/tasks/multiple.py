@@ -172,9 +172,5 @@ class GeneralMultiPLE(Task):
             if temp_dir.split("/")[-1] != ""
             else temp_dir.split("/")[-2]
         )
-        print(f"{name},1,{result[0]:.2f}")
-        print(f"{name},10,{result[1]:.2f}")
-        print(f"{name},100,{result[2]:.2f}")
         results = {f"pass@{k}": v for k, v in zip([1, 10, 100], result)}
-        print({k: f"{v:.2f}" for k, v in results.items()})
         return results
