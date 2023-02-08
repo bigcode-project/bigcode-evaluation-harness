@@ -13,6 +13,7 @@ This task implements PAL methodology to evaluate GSM-8k and GSM-Hard benchmarks.
 import os, re, json
 from evaluate import load
 from lm_eval.base import Task
+from typing import Union
 from lm_eval.tasks.custom_metrics.pal_code_exec import compute
 from enum import Enum
 
@@ -34,7 +35,7 @@ _CITATION = """
 """
 
 
-class EvaluationType(Enum):
+class EvaluationType(str,Enum):
     """Possible values for evaluation type argument"""
 
     GREEDY = "greedy"
@@ -72,9 +73,9 @@ class Gsm8k(Task):
     POST_SCRIPT = "print(solution())"
     SPLIT = "test"
 
-    def __init__(self, evaluation_type: str = EvaluationType.GREEDY):
+    def __init__(self, evaluation_type: Union[str,EvaluationType] = EvaluationType.GREEDY):
         """
-        :param evaluation_type: str
+        :param evaluation_type: Union[str,EvaluationType]
             Type of evaluation to perform. Authors of PAL had originally evaluated the generations on greedy and majority voting methods.
             Values can be `greedy` or `majority_voting`
             greedy: One Generation is sampled using greedy decoding and evaluated against references
