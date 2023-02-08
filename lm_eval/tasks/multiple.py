@@ -60,7 +60,7 @@ LANGUAGES = [
 def create_all_tasks():
     """Creates a dictionary of tasks from a list of levels
     :return: {task_name: task}
-        e.g. {multiple-python: Task, multiple-java: Task}
+        e.g. {multiple-py: Task, multiple-java: Task}
     """
     return {f"multiple-{language}": create_task(language) for language in LANGUAGES}
 
@@ -148,13 +148,13 @@ class GeneralMultiPLE(Task):
                 "completions": generation,
                 "tests": reference,
             }
-            # create a temp json file for each problem
+            # each problem is save in a json file
             temp_file_name = os.path.join(temp_dir, f"{prompt_name['name']}.json")
             list_files.append(temp_file_name)
             with open(temp_file_name, "wt") as f:
                 json.dump(problem, f)
         print(
-            f"Saved {len(list_files)} problems in {temp_dir} for evaluation, each has {len(generations[0])}"
+            f"Saved {len(list_files)} problems in {temp_dir} for evaluation, each problem has {len(generations[0])} completions"
         )
 
         # execute the problems to evaluate them
