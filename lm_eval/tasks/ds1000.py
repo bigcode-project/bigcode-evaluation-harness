@@ -53,10 +53,13 @@ class GeneralDS1000(Task):
 
     def __init__(self, key, mode):
         super().__init__(
-            stop_words=["</code>", "END SOLUTION"], requires_execution=True,
+            stop_words=["</code>", "# SOLUTION END"], requires_execution=True
         )
         self._key = key
         self._mode = mode
+        if self._key == "Matplotlib" and self._mode == "Insertion":
+            warnings.warn("Insertion not supported for Matplotlib. Running Completion.")
+            self._mode = "Completion"
         self._dir = pathlib.Path(__file__).parent / "ds"
         self._dir.mkdir(parents=True, exist_ok=True)
         self._src = self._dir / "ds1000.py"
@@ -93,6 +96,11 @@ class GeneralDS1000(Task):
 
         data = DS1000Dataset(self._data, mode=self._mode).data
         if self._key == "All":
+            if self._mode == "Insertion":
+                warnings.warn(
+                    "Insertion not supported for Matplotlib. Only running others."
+                )
+                data = {k: v for k, v in data.items() if k != "Matplotlib"}
             dataset = list(itertools.chain(*data.values()))
         else:
             dataset = data[self._key]
@@ -133,13 +141,11 @@ class GeneralDS1000(Task):
             index of doc in the dataset to which the generation belongs
         :return: str
         """
-        processed = generation.split("BEGIN SOLUTION\n<code>")[-1]
+        for start in ["BEGIN SOLUTION\n<code>", "# SOLUTION START"]:
+            generation = generation.split(start)[-1]
         for stop in self.stop_words:
-            try:
-                processed = processed.split(stop)[0]
-            except IndexError:
-                continue
-        return processed.strip()
+            generation = generation.split(stop)[0]
+        return generation.strip()
 
     def process_results(self, generations, references):
         """
