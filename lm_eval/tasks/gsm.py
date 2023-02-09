@@ -127,6 +127,7 @@ class Gsm8k(Task):
     def parse_target(txt):
         def _is_num(txt):
             try:
+                txt = txt.replace(",","")
                 float(txt)
             except ValueError:
                 return False
@@ -134,6 +135,7 @@ class Gsm8k(Task):
 
         txt = txt.strip()
         if _is_num(txt):
+            txt = txt.replace(",","")
             try:
                 num = int(txt)
             except ValueError:
