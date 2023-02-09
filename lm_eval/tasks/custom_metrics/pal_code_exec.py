@@ -72,14 +72,14 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
         answers[task_id] = eval_answers[0]
 
     scores = []
-    # Number of code generated failed execution.
+    # Number of code generated that failed execution.
     errored = 0
-    for ans, ref in zip(answers, references):
+    for task_id,(ans, ref) in enumerate(zip(answers, references)):
         try:
             score = 1 if abs(float(ans) - float(ref)) < 1e-3 else 0
         except ValueError as e:
             warnings.warn(
-                f"""ValueError - {e} during scoring answer - {ans}, defaulting evaluation score for this answer to 0"""
+                f"""ValueError - {e} during scoring task_id- {task_id},answer - {ans},reference -{ref}\ndefaulting evaluation score for this answer to 0"""
             )
             errored += 1
             score = 0
