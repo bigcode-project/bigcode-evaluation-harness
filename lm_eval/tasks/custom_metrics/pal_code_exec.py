@@ -29,8 +29,20 @@ with:
 """
 
 
-def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting=False):
-    """Returns the scores"""
+def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting=False, answer_symbol=None):
+    """
+    Returns the scores
+
+    :param majority_voting: bool
+        Takes majority voted answer to evaluate against the reference , defaults to False
+
+    :param answer_symbol: str
+        If speficifed the result of execution is fetched from the program's global context,
+        the program is expected to have the variable name mentioned in `answer_symbol` that is available in globals.
+        if not specified, the result are fetched from the stdout of the execution
+        defaults to None.
+    
+    """
 
     if os.getenv("HF_ALLOW_CODE_EVAL", 0) != "1":
         raise ValueError(_WARNING)
@@ -47,6 +59,8 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
         for task_id, candidates in enumerate(predictions):
             for candidate in candidates:
                 args = (candidate, timeout, task_id, completion_id[task_id])
+                if answer_symbol:
+                    args += (answer_symbol,)
                 future = executor.submit(run_program, *args)
                 futures.append(future)
                 completion_id[task_id] += 1

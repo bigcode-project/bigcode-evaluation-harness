@@ -249,7 +249,8 @@ accelerate launch  main.py \
   --tasks pal-gsm8k-greedy \
   --n_samples 1 \
   --batch_size 1 \
-  --do_sample False
+  --do_sample False \
+  --allow_code_execution
 ```
 
 **Majority Voting**
@@ -262,7 +263,8 @@ accelerate launch  main.py \
   --n_samples 40 \
   --batch_size 1 \
   --temperature 0.7 \
-  --top_p 0.95
+  --top_p 0.95 \
+  --allow_code_execution
 ```
 
 ## How to add a new benchmark
