@@ -141,11 +141,12 @@ class GeneralDS1000(Task):
             index of doc in the dataset to which the generation belongs
         :return: str
         """
-        for start in ["BEGIN SOLUTION\n<code>", "# SOLUTION START"]:
-            try:
-                generation = generation.split(start, 1)[-1]
-            except IndexError:
-                pass
+        if self._mode == "Completion":
+            for start in ["BEGIN SOLUTION\n<code>", "# SOLUTION START"]:
+                try:
+                    generation = generation.split(start, 1)[-1]
+                except IndexError:
+                    pass
         for stop in self.stop_words:
             generation = generation.split(stop)[0]
         return generation.strip()
