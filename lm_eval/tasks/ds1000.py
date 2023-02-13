@@ -142,7 +142,10 @@ class GeneralDS1000(Task):
         :return: str
         """
         for start in ["BEGIN SOLUTION\n<code>", "# SOLUTION START"]:
-            generation = generation.split(start)[-1]
+            try:
+                generation = generation.split(start, 1)[-1]
+            except IndexError:
+                pass
         for stop in self.stop_words:
             generation = generation.split(stop)[0]
         return generation.strip()
