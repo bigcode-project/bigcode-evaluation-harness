@@ -5,6 +5,8 @@ import torch
 from torch.utils.data import IterableDataset
 from tqdm import tqdm
 
+INFILL_MODE = False
+
 
 class TokenizedDataset(IterableDataset):
     """Tokenize and preprocess the dataset
@@ -50,8 +52,9 @@ class TokenizedDataset(IterableDataset):
 
         if not len(set(infill)) == 1:
             raise ValueError("Mixed infill and completion prompts are not supported.")
-        setattr(self.tokenizer, "infill_mode", infill[0])
-        if self.tokenizer.infill_mode:
+        global INFILL_MODE
+        INFILL_MODE = infill[0]
+        if INFILL_MODE:
             return_token_type_ids = False
         else:
             return_token_type_ids = None  # default
@@ -161,7 +164,7 @@ def complete_code(
     code_gens = [[] for _ in range(n_tasks)]
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
-            if tokenizer.infill_mode:
+            if INFILL_MODE:
                 gen_code = parse_infill(
                     tokenizer.decode(
                         s, skip_special_tokens=False, clean_up_tokenization_spaces=False
