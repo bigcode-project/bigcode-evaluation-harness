@@ -1,4 +1,5 @@
 from collections import defaultdict
+import math
 import warnings
 
 import torch
@@ -116,7 +117,10 @@ def complete_code(
 
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(
-        enumerate(dataloader), total=n_tasks * dataloader.dataset.n_copies
+        enumerate(dataloader),
+        total=math.ceil(
+            n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
+        ),
     ):
         with torch.no_grad():
             if task.stop_words:
