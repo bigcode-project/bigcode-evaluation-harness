@@ -67,8 +67,6 @@ def evaluate_problem(
 ):
     with open(problem_json_path, "r") as f:
         problem = json.load(f)
-    if len(problem["completions"]) == 0:
-        return
     test_results_path = get_test_results_json_path(
         output_dir, problem_json_path, input_dir
     )
