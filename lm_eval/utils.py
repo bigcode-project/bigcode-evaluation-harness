@@ -97,7 +97,7 @@ def complete_code(
                 **gen_kwargs,
             )
             # each task is generated num_return_sequences times
-            generated_tasks = batch["task_id"].repeat(num_return_sequences)
+            generated_tasks = batch["task_id"].repeat_interleave(num_return_sequences)
             generated_tokens = accelerator.pad_across_processes(
                 generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
             )
