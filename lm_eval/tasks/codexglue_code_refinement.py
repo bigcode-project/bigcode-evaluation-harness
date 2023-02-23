@@ -86,19 +86,19 @@ class CodexGLUECodeRefinement(Task):
     @staticmethod
     def two_shot_prompt(entry, text, examples):
         """Two shot prompt format as Buggy Version of Java Code & Fixed Version of Java Code"""
-        prompt = f"\nBuggy Version of Java Code:\n{examples['buggy version of java code1']}\
-                   \nFixed Version of Java Code:\n{examples['fixed version of java code1']}\
-                   \nBuggy Version of Java Code:\n{examples['buggy version of java code2']}\
-                   \nFixed Version of Java Code:\n{examples['fixed version of java code2']}\
-                   \nBuggy Version of Java Code:\n{text}\
-                   \nFixed Version of Java Code:\n"
+        prompt = f"\nBuggy function:\n{examples['buggy version of java code1']}\
+                   \nFixed function:\n{examples['fixed version of java code1']}\
+                   \nBuggy function:\n{examples['buggy version of java code2']}\
+                   \nFixed function:\n{examples['fixed version of java code2']}\
+                   \nBuggy function:\n{text}\
+                   \nFixed function:\n"
         return entry + prompt
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         func_length = FUNCTION_LENGTH[self.DATASET_NAME]
         text = doc["buggy"]
-        entry = f"Convert this {func_length} sized buggy version of Java function's code into it's correct version:\n"
+        entry = "Fix this  buggy Java function:\n"
         examples = self.fewshot_examples()
         examples = examples[func_length]
         prompt = self.two_shot_prompt(entry, text, examples)
@@ -116,7 +116,7 @@ class CodexGLUECodeRefinement(Task):
             index of doc in the dataset to which the generation belongs
             (not used for this task)
         """
-        output = generation.split("\nFixed Version of Java Code:\n", 3)[-1].strip()
+        output = generation.split("\nFixed function:\n", 3)[-1].strip()
         return output
 
     def process_results(self, generations, references):
