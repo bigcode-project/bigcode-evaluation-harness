@@ -32,7 +32,7 @@ class GeneralODEX(Task):
         self.DATASET_NAME = lang
         super().__init__(
             stop_words=["###", "\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
-            requires_execution=False,
+            requires_execution=True,
         )
 
     def get_dataset(self):
