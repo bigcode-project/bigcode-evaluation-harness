@@ -8,11 +8,9 @@ https://github.com/zorazrw/multilingual-conala
 """
 import re
 from typing import List
+from evaluate import load
 from lm_eval.base import Task
 
-import evaluate
-
-bleu_eval_metric = evaluate.load("bleu")
 
 _CITATION = """
 @article{wang2022mconala,
@@ -22,6 +20,22 @@ _CITATION = """
   year={2022}
 }
 """
+
+
+def create_task(lang):
+    class MCoNaLa(GeneralMCoNaLa):
+        def __init__(self):
+            super().__init__(lang)
+
+    return MCoNaLa
+
+
+def create_all_tasks():
+    """Creates a dictionary of tasks from multiple languages
+    :return: {language: task}
+        e.g. {es: Task, ja: Task, ru: Task}
+    """
+    return {f"mconala-{lang}": create_task(lang) for lang in ["es", "ja", "ru"]}
 
 
 def tokenize_for_bleu_eval(code: str) -> List[str]:
@@ -92,6 +106,8 @@ class GeneralMCoNaLa(Task):
             list of str containing refrences
         :return: dict[str: float]
         """
+        bleu_eval_metric = load("bleu")
+
         generations = [
             " ".join(tokenize_for_bleu_eval(gen_list[0])) for gen_list in generations
         ]
@@ -103,19 +119,3 @@ class GeneralMCoNaLa(Task):
             smooth=True,
         )
         return bleu_score
-
-
-def create_task(lang):
-    class MCoNaLa(GeneralMCoNaLa):
-        def __init__(self):
-            super().__init__(lang)
-
-    return MCoNaLa
-
-
-def create_all_tasks():
-    """Creates a dictionary of tasks from multiple languages
-    :return: {language: task}
-        e.g. {es: Task, ja: Task, ru: Task}
-    """
-    return {f"mconala-{lang}": create_task(lang) for lang in ["es", "ja", "ru"]}
