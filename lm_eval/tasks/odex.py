@@ -9,7 +9,6 @@ https://github.com/zorazrw/odex
 """
 import os
 
-os.environ["HF_ALLOW_CODE_EVAL"] = "1"
 
 from evaluate import load
 from lm_eval.base import Task
