@@ -7,9 +7,6 @@ with 439, 90, 164, and 252 samples in English, Spanish, Japanese, and Russian.
 
 Homepage: https://github.com/zorazrw/odex
 """
-import os
-
-
 from evaluate import load
 from lm_eval.base import Task
 
@@ -21,6 +18,21 @@ _CITATION = """
          year={2022}
 }
 """
+
+def create_task(lang):
+    class ODEX(GeneralODEX):
+        def __init__(self):
+            super().__init__(lang)
+
+    return ODEX
+
+
+def create_all_tasks():
+    """Creates a dictionary of tasks from multiple languages
+    :return: {language: task}
+        e.g. {en: Task, en: Task, ja: Task, ru: Task}
+    """
+    return {f"odex-{lang}": create_task(lang) for lang in ["en", "es", "ja", "ru"]}
 
 
 class GeneralODEX(Task):
@@ -91,19 +103,3 @@ class GeneralODEX(Task):
             predictions=generations,
         )
         return results
-
-
-def create_task(lang):
-    class ODEX(GeneralODEX):
-        def __init__(self):
-            super().__init__(lang)
-
-    return ODEX
-
-
-def create_all_tasks():
-    """Creates a dictionary of tasks from multiple languages
-    :return: {language: task}
-        e.g. {en: Task, en: Task, ja: Task, ru: Task}
-    """
-    return {f"odex-{lang}": create_task(lang) for lang in ["en", "es", "ja", "ru"]}
