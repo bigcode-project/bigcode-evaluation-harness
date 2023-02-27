@@ -44,8 +44,13 @@ To run the `DS-1000` benchmark, additional constraints must be resolved.
 pip install -e ".[ds1000]" # installs all additional dependencies except PyTorch
 # torch==1.12.1 required. Download version with relevant GPU support etc., e.g.,
 pip install torch==1.12.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
+
 # to suppress any tensorflow optimization warnings, 
 # precede call to "accelerate launch" with "TF_CPP_MIN_LOG_LEVEL=3"
+
+# if you encounter CUDA OOM error on dataset loading,
+# please open an issue with your hardware and env info.
+# we are working with the authors to resolve this.
 ```
 Also make sure you have `git-lfs` installed and are logged in the Hub
 ```
