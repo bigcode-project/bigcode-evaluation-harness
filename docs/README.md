@@ -201,16 +201,16 @@ These are reasoning tasks involving mathematical , symbolic and procedural reaso
 
 #### PAL - Program-aided Language Models
 
-In PAL,Large Language Model solves reasoning problems by generating reasoning chains with code. PAL datasets that are currently supported:
+In PAL, Large Language Models solve reasoning problems by generating reasoning chains with code. PAL datasets that are currently supported:
 
 * [GSM8K](https://huggingface.co/datasets/gsm8k) - Grade School Math 8K
 * [GSM-HARD](https://huggingface.co/datasets/reasoning-machines/gsm-hard) - Created by replacing the numbers in the questions of GSM8K with larger numbers 
 
-Model is prompted with few shot examples of questions and reasoning steps as code. Following the prompt, Model is expected to generate reasoning steps for a new question as code.The code is executed to get the model predicted answer to the solution.
+The model is prompted with few-shot examples of questions and reasoning steps as code. It then generates reasoning steps for a new question as Python code, which is executed to get the model's predicted answer.
 
-PAL uses two types of few shot evaluation - 
+PAL uses two types of few-shot evaluation - 
 
-- `greedy` - samples one generation by greedy decoding and evaluated against reference answers
+- `greedy` - samples one generation by greedy decoding and evaluates against reference answers
 - `majority_voting` - samples k (k=40 in paper) generations and takes majority voted answer to evaluate against the reference.
 
 **Task signature** : `pal-{dataset_name}-{evaluation_type}` (eg: `pal-gsm8k-greedy`,`pal-gsmhard-majority_voting`)
