@@ -67,15 +67,13 @@ def evaluate_problem(
 ):
     with open(problem_json_path, "r") as f:
         problem = json.load(f)
-    if len(problem["completions"]) == 0:
-        return
     test_results_path = get_test_results_json_path(
         output_dir, problem_json_path, input_dir
     )
     test_results_path.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
 
-    # code is commented because:
-    # if results exist from any previous run they will be taken mistakingly?
+    # TODO: remove or fix, code is commented because:
+    # if results exist from any previous run they will be taken mistakingly in the else?
     # if not test_results_path.exists():
     test_results = problem.copy()
     del test_results["completions"]
@@ -96,12 +94,6 @@ def evaluate_problem(
     # In case we have previously computed results, warm the cache with them
     for already_computed in test_results["results"]:
         CACHE[already_computed["program"]] = already_computed
-
-    # for index in range(min_problem, num_problems):
-    #    program = problem["completions"][index] + "\n" + problem["tests"]
-    #    print(
-    #        f'Full problem to execute for {problem["name"]} at completion_id {index} is:\n{program}'
-    #    )
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for j in executor.map(
