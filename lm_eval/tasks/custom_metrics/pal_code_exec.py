@@ -29,7 +29,14 @@ with:
 """
 
 
-def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting=False, answer_symbol=None):
+def compute(
+    predictions,
+    references,
+    num_workers=4,
+    timeout=3.0,
+    majority_voting=False,
+    answer_symbol=None,
+):
     """
     Returns the scores
 
@@ -41,7 +48,7 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
         the program is expected to have the variable name mentioned in `answer_symbol` that is available in globals.
         if not specified, the result are fetched from the stdout of the execution
         defaults to None.
-    
+
     """
 
     if os.getenv("HF_ALLOW_CODE_EVAL", 0) != "1":
@@ -70,11 +77,19 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
             result = future.result()
             results[result["task_id"]].append((result["completion_id"], result))
 
-    answers = [None]*len(results)
+    answers = [None] * len(results)
     for result in results.values():
         result.sort()
-        task_id = result[0][1]['task_id']
-        eval_answers = [r[1]["result"] for r in result]
+        task_id = result[0][1]["task_id"]
+        # filtering the failed generations to avoid influencing majority voting
+        eval_answers = [
+            r[1]["result"]
+            for r in result
+            if isinstance(r[1]["result"], str)
+            and not r[1]["result"].startswith("failed:")
+        ]
+        # if all generations are failed - default to empty str for soring
+        eval_answers = [""] if len(eval_answers) == 0 else eval_answers
         if majority_voting:
             counter = Counter(eval_answers)
             eval_answers = [counter.most_common()[0][0]]
@@ -88,7 +103,7 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
     scores = []
     # Number of code generated that failed execution.
     errored = 0
-    for task_id,(ans, ref) in enumerate(zip(answers, references)):
+    for task_id, (ans, ref) in enumerate(zip(answers, references)):
         try:
             score = 1 if abs(float(ans) - float(ref)) < 1e-3 else 0
         except ValueError as e:
@@ -100,4 +115,4 @@ def compute(predictions, references, num_workers=4, timeout=3.0, majority_voting
 
         scores.append(score)
 
-    return {"accuracy": sum(scores) / len(scores),"num_failed_execution":errored}
+    return {"accuracy": sum(scores) / len(scores), "num_failed_execution": errored}

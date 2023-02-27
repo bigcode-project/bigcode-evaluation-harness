@@ -33,7 +33,8 @@ _CITATION = """
   year={2021}
 }
 """
-
+# Number of few shot examples to consider
+NUM_SHOTS = 2
 
 class EvaluationType(str,Enum):
     """Possible values for evaluation type argument"""
@@ -105,14 +106,12 @@ class Gsm8k(Task):
         return examples
 
     @staticmethod
-    def two_shot_prompt(entry, text, examples):
+    def few_shot_prompt(entry, text, examples):
         """Two shot prompt format as source & target language documentation"""
-        prompt = f"#Q: {examples['question1']}\n\n# solution in Python:\n\
-                   \n{examples['solution1']}\n\
-                   \n\n#Q: {examples['question2']}\n\n# solution in Python:\n\
-                   \n{examples['solution2']}\n\
-                   \n\n#Q: {text}\n\n# solution in Python:\n\
-                   \ndef solution():\n"
+        prompt = ''
+        for question,solution in zip(examples['questions'][:NUM_SHOTS],examples['solutions'][:NUM_SHOTS]):
+            prompt += f'''#Q: {question}\n\n# solution in Python:\n\ndef solution():\n    """{question}"""\n{solution}\n\n'''
+        prompt += f"""#Q: {text}\n\n# solution in Python:\n\ndef solution():"""
         return entry + prompt
 
     def get_prompt(self, doc):
@@ -120,7 +119,7 @@ class Gsm8k(Task):
         text = doc["question"]
         entry = f""
         examples = self.fewshot_examples()
-        prompt = self.two_shot_prompt(entry, text, examples)
+        prompt = self.few_shot_prompt(entry, text, examples)
         return prompt
 
     @staticmethod
@@ -200,7 +199,7 @@ class GsmHard(Gsm8k):
         text = doc["input"]
         entry = ""
         examples = self.fewshot_examples()
-        prompt = self.two_shot_prompt(entry, text, examples)
+        prompt = self.few_shot_prompt(entry, text, examples)
         return prompt
 
     def get_reference(self, doc):
