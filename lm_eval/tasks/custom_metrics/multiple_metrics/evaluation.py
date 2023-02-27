@@ -72,28 +72,12 @@ def evaluate_problem(
     )
     test_results_path.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
 
-    # TODO: remove or fix, code is commented because:
-    # if results exist from any previous run they will be taken mistakingly in the else?
-    # if not test_results_path.exists():
     test_results = problem.copy()
     del test_results["completions"]
     test_results["results"] = []
-    # else:
-    #    with open(test_results_path, "r") as f:
-    #        test_results = json.load(f)
 
     num_problems = len(problem["completions"])
-
-    if len(test_results["results"]) == num_problems:
-        return
-    elif len(test_results["results"]) > num_problems:
-        print(f"ERROR more results than completions for {problem_json_path}")
-        return
-
     min_problem = len(test_results["results"])
-    # In case we have previously computed results, warm the cache with them
-    for already_computed in test_results["results"]:
-        CACHE[already_computed["program"]] = already_computed
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for j in executor.map(
