@@ -111,6 +111,21 @@ class GeneralMultiPLE(Task):
         # last string should be ""
         return "".join(string_list[:-2])
 
+    @staticmethod
+    def _stop_at_stop_token(decoded_string, stop_tokens):
+        """
+        Produces the prefix of decoded_string that ends at the first occurrence of
+        a stop_token.
+        WARNING: the decoded_string *must not* include the prompt, which may have stop tokens
+        itself.
+        """
+        min_stop_index = len(decoded_string)
+        for stop_token in stop_tokens:
+            stop_index = decoded_string.find(stop_token)
+            if stop_index != -1 and stop_index < min_stop_index:
+                min_stop_index = stop_index
+        return decoded_string[:min_stop_index]
+
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
         :param generation: str
@@ -119,7 +134,9 @@ class GeneralMultiPLE(Task):
             index of doc in the dataset to which the generation belongs
             (not used for this task)
         """
-        return self.remove_last_block(generation, self.stop_words)
+        prompt = self.get_prompt(self.get_dataset()[idx])
+        completion = generation[len(prompt) :]
+        return prompt + self._stop_at_stop_token(completion, self.stop_words)
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -172,9 +189,5 @@ class GeneralMultiPLE(Task):
             if temp_dir.split("/")[-1] != ""
             else temp_dir.split("/")[-2]
         )
-        print(f"{name},1,{result[0]:.2f}")
-        print(f"{name},10,{result[1]:.2f}")
-        print(f"{name},100,{result[2]:.2f}")
-        results = {f"pass@{k}": v for k, v in zip([1, 10, 100], result)}
-        print({k: f"{v:.2f}" for k, v in results.items()})
+        results = {f"pass@{k}": v for k, v in zip([1, 10, 100], result) if k <= len(generations[0])}
         return results
