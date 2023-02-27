@@ -36,7 +36,7 @@ def run_program(program, timeout, task_id, completion_id, answer_symbol=None):
         p.kill()
 
     if not result:
-        result.append("timed out")
+        result.append("failed: timed out")
 
     return dict(
         task_id=task_id,
@@ -73,7 +73,7 @@ def unsafe_execute(program, result, timeout, answer_symbol=None):
                 program_io.seek(0)
                 result.append(program_io.readlines()[-1].strip())
         except TimeoutException:
-            result.append("timed out")
+            result.append("failed: timed out")
         except BaseException as e:
             result.append(f"failed: {e}")
 
