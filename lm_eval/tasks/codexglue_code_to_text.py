@@ -8,6 +8,7 @@ Code to text task from CodeXGlue (documentation generation):
 
 import os
 import re
+import typing
 
 from mosestokenizer import MosesDetokenizer
 
@@ -53,7 +54,7 @@ def create_task(language):
     return CodeToText
 
 
-def compute_codexglue_code_to_text_bleu(gold_and_predicted_items: list[tuple[str, str]]):
+def compute_codexglue_code_to_text_bleu(gold_and_predicted_items: typing.List[typing.Tuple[str, str]]):
     """
     Compute BLEU scores using codexglue_code_to_text_bleu.computeMaps (codexglue_summarization_evaluator) 
     This uses a specific BLEU tokenization and preprocessing necessary for this task by
