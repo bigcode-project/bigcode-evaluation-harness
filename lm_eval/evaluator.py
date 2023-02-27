@@ -52,6 +52,12 @@ class Evaluator:
             args=self.args,
         )
         references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
+        if len(generations[0]) != self.args.n_samples and not self.args.generations_path:
+            generations = [l[: self.args.n_samples] for l in generations]
+            if self.accelerator.is_main_process:
+                warnings.warn(
+                    "Number of tasks wasn't proportional to number of devices, we removed extra predictions"
+                )
         return generations, references
 
     def evaluate(self, task_name):
@@ -60,11 +66,6 @@ class Evaluator:
             raise ValueError(_WARNING)
 
         generations, references = self.generate_text(task_name)
-        if len(generations[0]) != self.args.n_samples:
-            generations = [l[: self.args.n_samples] for l in generations]
-            warnings.warn(
-                "Number of tasks wasn't proportional to number of devices, we removed extra predictions"
-            )
 
         if self.accelerator.is_main_process:
             if not self.args.generations_path:
