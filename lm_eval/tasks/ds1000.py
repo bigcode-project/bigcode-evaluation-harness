@@ -8,8 +8,17 @@ DS-1000 is a code generation benchmark with a thousand data science questions sp
 Homepage: https://ds1000-code-gen.github.io/
 """
 
-import io, itertools, fcntl, functools, pathlib, requests, warnings, zipfile
+import fcntl
+import functools
+import io
+import itertools
+import pathlib
+import warnings
+import zipfile
+
+import requests
 import tqdm
+
 from lm_eval.base import Task
 
 _CITATION = """
