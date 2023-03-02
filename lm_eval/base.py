@@ -26,7 +26,9 @@ class Task(ABC):
         try:
             self.dataset = load_dataset(path=self.DATASET_PATH, name=self.DATASET_NAME)
         except:
-            warn("No HF Dataset specified. Task instance must provide own dataset.")
+            warn(
+                "This task will use a locally downloaded dataset, not from the HF hub."
+            )
 
     @abstractmethod
     def get_dataset(self):
