@@ -30,7 +30,7 @@ ds1000_requirements = [
 setup(
     description="A framework for the evaluation of autoregressive code generation language models.",
     long_description=readme,
-    license="MIT",
+    license="Apache 2.0",
     packages=["lm_eval"],
     install_requires=requirements,
     extras_require={"ds1000": ds1000_requirements},
