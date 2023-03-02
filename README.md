@@ -48,9 +48,9 @@ pip install torch==1.12.1+cu116 --extra-index-url https://download.pytorch.org/w
 # to suppress any tensorflow optimization warnings, 
 # precede call to "accelerate launch" with "TF_CPP_MIN_LOG_LEVEL=3"
 
-# if you encounter CUDA OOM error on dataset loading,
-# please open an issue with your hardware and env info.
-# we are working with the authors to resolve this.
+# on some systems, tensorflow will attempt to allocate all GPU memory
+# to its process at import which will raise a CUDA out-of-memory error
+# setting "export TF_FORCE_GPU_ALLOW_GROWTH=true" resolves this
 ```
 Also make sure you have `git-lfs` installed and are logged in the Hub
 ```
