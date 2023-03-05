@@ -10,9 +10,8 @@ import os
 import re
 import typing
 
-from mosestokenizer import MosesDetokenizer
-
 from lm_eval.base import Task
+from mosestokenizer import MosesDetokenizer
 
 _CITATION = """
 @article{husain2019codesearchnet,
