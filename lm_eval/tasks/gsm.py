@@ -10,13 +10,16 @@ reasoning chains of text and code.This offloads the execution of the code to a p
 This task implements PAL methodology to evaluate GSM-8k and GSM-Hard benchmarks.
 """
 
-import os, re, json
-from evaluate import load
-from lm_eval.base import Task
-from typing import Union
-from lm_eval.tasks.custom_metrics.pal_code_exec import compute
+import json
+import os
+import re
 from enum import Enum
+from typing import Union
 
+from evaluate import load
+
+from lm_eval.base import Task
+from lm_eval.tasks.custom_metrics.pal_metric.pal_code_exec import compute
 
 _CITATION = """
 @article{gao2022pal,
@@ -34,9 +37,10 @@ _CITATION = """
 }
 """
 # Number of few shot examples to consider
-NUM_SHOTS = 2
+NUM_SHOTS = 8
 
-class EvaluationType(str,Enum):
+
+class EvaluationType(str, Enum):
     """Possible values for evaluation type argument"""
 
     GREEDY = "greedy"
@@ -74,7 +78,9 @@ class Gsm8k(Task):
     POST_SCRIPT = "print(solution())"
     SPLIT = "test"
 
-    def __init__(self, evaluation_type: Union[str,EvaluationType] = EvaluationType.GREEDY):
+    def __init__(
+        self, evaluation_type: Union[str, EvaluationType] = EvaluationType.GREEDY
+    ):
         """
         :param evaluation_type: Union[str,EvaluationType]
             Type of evaluation to perform. Authors of PAL had originally evaluated the generations on greedy and majority voting methods.
@@ -82,7 +88,7 @@ class Gsm8k(Task):
             greedy: One Generation is sampled using greedy decoding and evaluated against references
             majority_voting: Predicted answer is selected from multiple generations based on majority voting and evaluated.
         """
-        stop_words = ["\n\n"]
+        stop_words = ["\n\n\n"]
         requires_execution = True
         if evaluation_type == EvaluationType.MAJORITY_VOTING:
             self.majority_voting = True
@@ -108,10 +114,12 @@ class Gsm8k(Task):
     @staticmethod
     def few_shot_prompt(entry, text, examples):
         """Two shot prompt format as source & target language documentation"""
-        prompt = ''
-        for question,solution in zip(examples['questions'][:NUM_SHOTS],examples['solutions'][:NUM_SHOTS]):
-            prompt += f'''#Q: {question}\n\n# solution in Python:\n\ndef solution():\n    """{question}"""\n{solution}\n\n'''
-        prompt += f"""#Q: {text}\n\n# solution in Python:\n\ndef solution():"""
+        prompt = ""
+        for question, solution in zip(
+            examples["questions"][:NUM_SHOTS], examples["solutions"][:NUM_SHOTS]
+        ):
+            prompt += f'''Q: {question}\n\n# solution in Python:\n\n\ndef solution():\n    """{question}"""\n{solution}\n\n\n\n\n\n'''
+        prompt += f"""Q: {text}\n\n# solution in Python:\n\n\n"""
         return entry + prompt
 
     def get_prompt(self, doc):
@@ -126,7 +134,7 @@ class Gsm8k(Task):
     def parse_target(txt):
         def _is_num(txt):
             try:
-                txt = txt.replace(",","")
+                txt = txt.replace(",", "")
                 float(txt)
             except ValueError:
                 return False
@@ -134,7 +142,7 @@ class Gsm8k(Task):
 
         txt = txt.strip()
         if _is_num(txt):
-            txt = txt.replace(",","")
+            txt = txt.replace(",", "")
             try:
                 num = int(txt)
             except ValueError:
@@ -156,7 +164,7 @@ class Gsm8k(Task):
             index of doc in the dataset to which the generation belongs
             (not used for this task)
         """
-        output = generation.split("# solution in Python:", 3)[-1].strip()
+        output = generation.split("# solution in Python:", NUM_SHOTS + 1)[-1].strip()
         if "Q:" in output:
             output = output.split("Q:")[0]
         output += "\n" + self.POST_SCRIPT
@@ -184,7 +192,7 @@ class GsmHard(Gsm8k):
     # the default split of GSMHARD - actually taken from test split of GSM dataset
     SPLIT = "train"
 
-    def __init__(self,evaluation_type:str=EvaluationType.GREEDY):
+    def __init__(self, evaluation_type: str = EvaluationType.GREEDY):
         """
         :param evaluation_type: str
             Type of evaluation to perform. Authors of PAL had originally evaluated the generations on greedy and majority voting methods.

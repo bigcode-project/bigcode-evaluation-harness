@@ -1,10 +1,9 @@
-import evaluate
 import os
+import warnings
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from lm_eval.tasks.executors.python_executor import run_program
-import numpy as np
-import warnings
+
+from lm_eval.tasks.custom_metrics.pal_metric.python_executor import run_program
 
 # adapted from https://github.com/huggingface/evaluate/blob/main/metrics/code_eval/code_eval.py
 
