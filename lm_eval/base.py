@@ -1,5 +1,6 @@
 from abc import abstractmethod, ABC
 from datasets import load_dataset
+from warnings import warn
 
 
 class Task(ABC):
@@ -22,7 +23,12 @@ class Task(ABC):
         """
         self.stop_words = stop_words
         self.requires_execution = requires_execution
-        self.dataset = load_dataset(path=self.DATASET_PATH, name=self.DATASET_NAME)
+        try:
+            self.dataset = load_dataset(path=self.DATASET_PATH, name=self.DATASET_NAME)
+        except:
+            warn(
+                "This task will use a locally downloaded dataset, not from the HF hub."
+            )
 
     @abstractmethod
     def get_dataset(self):

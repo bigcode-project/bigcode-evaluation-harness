@@ -2,6 +2,7 @@ from pprint import pprint
 
 from . import apps, codexglue_code_to_text, conala, concode, humaneval, mbpp, codexglue_text_to_text, multiple
 
+
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
     **codexglue_code_to_text.create_all_tasks(),
@@ -10,6 +11,7 @@ TASK_REGISTRY = {
     "codexglue_code_to_text-python-left": codexglue_code_to_text.LeftCodeToText,
     "conala": conala.Conala,
     "concode": concode.Concode,
+    **ds1000.create_all_tasks(),
     "humaneval": humaneval.HumanEval,
     "mbpp": mbpp.MBPP,
 }
