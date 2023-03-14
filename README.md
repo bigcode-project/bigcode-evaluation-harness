@@ -115,12 +115,26 @@ This creates an image called `evaluation-harness-multiple`.
 ### Evaluating inside a container
 Suppose you generated text with the `bigcode/santacoder` model and saved it in `generations.json` with:
 ```bash
-accelerate launch  main.py    --model bigcode/santacoder    --tasks multiple-java   --max_length_generation 650  --temperature 0.8    --do_sample True    --n_samples 200    --batch_size 120   --generation_only True
+accelerate launch  main.py \
+    --model bigcode/santacoder  \
+    --tasks multiple-java  \
+    --max_length_generation 650 \
+    --temperature 0.8   \
+    --do_sample True  \
+    --n_samples 200  \
+    --batch_size 120  \
+    --generation_only
 ```
 
-To run the container (here from image `evaluation-harness`) to evaluate on `generations.json`, or another file mount it with `-v`, specify the number of problems `--limit` and `n_samples` if it were used during generation and allow code execution with `--allow_code_execution`:
+To run the container (here from image `evaluation-harness`) to evaluate on `generations.json`, or another file mount it with `-v`, specify `n_samples` and allow code execution with `--allow_code_execution` (and add the number of problems `--limit`  if it was used during generation):
 ```bash
-$ sudo docker run -v $(pwd)/generations_py.json:/app/generations_py.json:ro -it evaluation-harness-multiple python3 main.py --model bigcode/santacoder --tasks multiple-py --generations_path /app/generations_py.json --allow_code_execution  --temperature 0.8 --n_samples 200
+$ sudo docker run -v $(pwd)/generations_py.json:/app/generations_py.json:ro -it evaluation-harness-multiple python3 main.py \
+    --model bigcode/santacoder \
+    --tasks multiple-py \
+    --generations_path /app/generations_py.json \
+    --allow_code_execution  \
+    --temperature 0.8 \
+    --n_samples 200
 ```
 
 ## Implementing new tasks
