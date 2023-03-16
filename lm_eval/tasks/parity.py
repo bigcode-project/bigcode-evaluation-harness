@@ -7,7 +7,7 @@ import itertools
 
 def mutate_code(
     n_bugs: int = 5, task: str = "parity", mutate_method="prompt"
-) -> tuple[str, str]:
+):
     """
     From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/utils/code_eval.py
     
