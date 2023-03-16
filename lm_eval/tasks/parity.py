@@ -29,7 +29,7 @@ def mutate_code(
         "prompt": [
             "# A buggy implementation\n#!/usr/bin/python3\n",
             "",  # placeholder for the context, e.g., the buggy code
-            "\n# Fixed bugs\ndef",
+            "\n# Fixed bugs\ndef parity_fixed(", # Modified to add the function name
         ],
     }
     mutation_template = mutation_templates[mutate_method]
@@ -57,9 +57,6 @@ def parity_reference(b1, b2, b3, b4):
     bit_sum = sum([b1, b2, b3, b4])
     return bit_sum % 2
 
-parity_test_data = "assert " + " and ".join([
-    f"(parity_reference{i} == parity{i})" for i in itertools.product(range(2), repeat=4)
-])
 
 class Parity(Task):
     def __init__(self):
@@ -67,6 +64,16 @@ class Parity(Task):
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
             requires_execution=True,
         )
+        self.mutate_method = "prompt"
+
+        if self.mutate_method == "diff":
+            self.parity_tests = "assert " + " and ".join([
+                f"({parity_reference(*i)} == parity{i})" for i in itertools.product(range(2), repeat=4)
+            ])
+        else:
+            self.parity_tests = "assert " + " and ".join([
+                f"({parity_reference(*i)} == parity_fixed{i})" for i in itertools.product(range(2), repeat=4)
+            ])
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -74,7 +81,7 @@ class Parity(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        return mutate_code(n_bugs=doc, task="parity", mutate_method="prompt")[0]
+        return mutate_code(n_bugs=doc, task="parity", mutate_method=self.mutate_method)[0]
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -107,7 +114,7 @@ class Parity(Task):
         """
         code_metric = load("code_eval")
         results, _ = code_metric.compute(
-            references=[parity_test_data for _ in generations],
+            references=[self.parity_tests for _ in generations],
             predictions=generations,
         )
         return results
