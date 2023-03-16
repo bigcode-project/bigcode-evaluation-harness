@@ -1,6 +1,5 @@
 """Parity bug fixing task."""
 
-
 import re
 from evaluate import load
 from lm_eval.base import Task
@@ -58,16 +57,11 @@ def parity_reference(b1, b2, b3, b4):
     bit_sum = sum([b1, b2, b3, b4])
     return bit_sum % 2
 
-
-parity_test_data = [
-    # i: parity_reference(*i) for i in itertools.product(range(2), repeat=4)
-    f"assert parity_reference({*i}) == parity({*i})" for i in itertools.product(range(2), repeat=4)
-]
+parity_test_data = "assert " + " and ".join([
+    f"(parity_reference{i} == parity{i})" for i in itertools.product(range(2), repeat=4)
+])
 
 class Parity(Task):
-
-    # DATASET_PATH = "openai_humaneval"
-
     def __init__(self):
         super().__init__(
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
@@ -113,7 +107,7 @@ class Parity(Task):
         """
         code_metric = load("code_eval")
         results, _ = code_metric.compute(
-            references=parity_test_data,
+            references=[parity_test_data for _ in generations],
             predictions=generations,
         )
         return results
