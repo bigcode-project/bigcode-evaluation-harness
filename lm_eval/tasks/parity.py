@@ -114,10 +114,12 @@ class Parity(Task):
         """
         code_metric = load("code_eval")
         out = {}
-        for num_bugs in self.get_dataset():
+        bugs = self.get_dataset()
+        assert len(generations) == len(bugs)
+        for num_bugs in bugs:
             results, _ = code_metric.compute(
-                references=[self.parity_tests for _ in generations],
-                predictions=generations,
+                references=[self.parity_tests],
+                predictions=[generations[num_bugs - 1]],
             )
             out[num_bugs + "_bugs"] = results
         return out
