@@ -65,7 +65,12 @@ class PythonBugs(Task):
         super().__init__(
             # Correct code always starts with `def ...` and is a single function, so stop everything else
             # Since a function always has a tab, stop when the first line does not have a tab
-            stop_words=["\nclass", "\n#", "\ndef", "\nassert", '\n"', "\nprint", "\nif"],
+            stop_words=[
+                "\nclass", "\n#", "\ndef", "\nassert", '\n"', "\nprint", "\nif",
+                # Special cases for edit
+                "<commit_before>", "<commit_msg>", "<commit_after>",
+            ],
+            ],
             requires_execution=True,
         )
         self.max_length_multiplier = 2.25 # Allow 2.25 times the length of the prompt

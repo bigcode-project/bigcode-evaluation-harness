@@ -70,7 +70,11 @@ def parity_reference(b1, b2, b3, b4):
 class Parity(Task):
     def __init__(self):
         super().__init__(
-            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
+            stop_words=[
+                "\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif",
+                # Special cases for edit
+                "<commit_before>", "<commit_msg>", "<commit_after>",
+            ],
             requires_execution=True,
         )
         self.mutate_method = "prompt_carper"
@@ -111,9 +115,11 @@ class Parity(Task):
             code generation from LM
         :param idx: int
             index of doc in the dataset to which the generation belongs
-            (not used for Humaneval-Task)
         """
-        return self.remove_last_block(generation, self.stop_words)
+        doc = self.get_dataset()[idx]
+        prompt = self.get_prompt(doc)
+        output = generation[len(prompt):]        
+        return self.first_block(output, self.stop_words)
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
