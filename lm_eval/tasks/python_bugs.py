@@ -36,15 +36,13 @@ MUTATE_TO_TASK_TO_PROMPT = {
 
 def mutate_code(input_code, task, mutate_method="prompt"):
     """
-    From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/utils/code_eval.py
-    
     Create template for code mutation.
     Args:
-        task: (Optional) the task to be performed.
-        mutate_method: (Optional) 'edit' or 'prompt',
-        corresponding to edit mutation or prompt mutation.
+        input_code: code to be mutated
+        task: task to be performed
+        mutate_method: (Optional) 'edit' or 'prompt'
     Returns:
-        mutated_code
+        template for code mutation
     """
     instruction = MUTATE_TO_TASK_TO_PROMPT[mutate_method][task]
     if mutate_method == "prompt":

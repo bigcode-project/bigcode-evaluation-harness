@@ -16,10 +16,9 @@ def mutate_code(
     Args:
         n_bugs: number of bugs to introduce (from 1 to 5).
         task: (Optional) the task to be performed.
-        mutate_method: (Optional) 'diff' or 'prompt',
-        corresponding to diff mutation or prompt mutation.
+        mutate_method: (Optional) 'diff', 'prompt' or 'edit'.
     Returns:
-        mutated_code, function_string
+        template for code mutation
     """
     mutation_templates = {
         "diff": [
@@ -49,7 +48,7 @@ def mutate_code(
             "{}1,{}2,{}3,{}4])\n    return bit_sum % {}".format(*variables)
         )
         mutation_template[1] = func_str
-        return "".join(mutation_template), func_str
+        return "".join(mutation_template)
     else:
         raise ValueError(f"Unknown task: {task}")
 
@@ -90,7 +89,7 @@ class Parity(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        return mutate_code(n_bugs=doc, task="parity", mutate_method=self.mutate_method)[0]
+        return mutate_code(n_bugs=doc, task="parity", mutate_method=self.mutate_method)
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
