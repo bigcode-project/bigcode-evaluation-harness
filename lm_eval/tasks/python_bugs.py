@@ -21,8 +21,8 @@ _CITATION = """
 }
 """
 
-BIN_OP_PROMPT = "Fix binary operator"
-VAR_MISUSE_PROMPT = "Fix incorrect variable name"
+BIN_OP_PROMPT = "# Fix binary operator\n"
+VAR_MISUSE_PROMPT = "# Fix incorrect variable name\n"
 
 class PythonBugs(Task):
     """A task represents an entire benchmark including its dataset, problems,
@@ -56,11 +56,6 @@ class PythonBugs(Task):
         """Builds the reference solution for the doc (sample from the test dataset)."""
         return doc["correct_code"]
 
-    @staticmethod
-    def first_block(string, stop_words):
-        """Split off first block of code by scanning for class, def etc. on newlines."""
-        return re.split("|".join(stop_words), string)[0].strip()
-
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
         :param generation: str
@@ -68,9 +63,12 @@ class PythonBugs(Task):
         :param idx: int
             index of doc in the dataset to which the generation belongs
         """
-        prompt = self.get_prompt(self.get_dataset()[idx])
-        output = generation[len(prompt) :]
-        return self.first_block(output, self.stop_words)
+        doc = self.get_dataset()[idx]
+        prompt = self.get_prompt(doc)
+        correct_code = self.get_reference(doc)
+        output = generation[len(prompt):]
+        output = output[:len(correct_code)]
+        return output
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -84,8 +82,6 @@ class PythonBugs(Task):
         print("Scoring generations...")
         for i, ref in tqdm.tqdm(enumerate(references), total=len(references)):
             for gen in generations[i]:
-                is_correct = gen == ref
-                if is_correct:
-                    num_correct += 1
+                num_correct += int(gen == ref)
         accuracy = num_correct / len(references) / len(generations[0])
         return {f"mean exact match ({len(generations[0])} samples)": accuracy}
