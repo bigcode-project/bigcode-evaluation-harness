@@ -53,11 +53,7 @@ def mutate_code(input_code, task, mutate_method="prompt"):
         raise ValueError(f"Unknown mutate_method: {mutate_method}")
 
 
-
 class PythonBugs(Task):
-    """A task represents an entire benchmark including its dataset, problems,
-    answers, generation settings and evaluation methods.
-    """
 
     DATASET_PATH = "Muennighoff/python-bugs"
 
@@ -69,7 +65,6 @@ class PythonBugs(Task):
                 "\nclass", "\n#", "\ndef", "\nassert", '\n"', "\nprint", "\nif",
                 # Special cases for edit
                 "<commit_before>", "<commit_msg>", "<commit_after>",
-            ],
             ],
             requires_execution=True,
         )
