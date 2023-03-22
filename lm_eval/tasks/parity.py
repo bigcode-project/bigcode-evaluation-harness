@@ -118,7 +118,7 @@ class Parity(Task):
         bugs = self.get_dataset()
         assert len(generations) == len(bugs)
         for num_bugs in tqdm.tqdm(bugs, total=len(bugs)):
-            key = str(num_bugs) + "_bugs"
+            key = str(num_bugs) + f"bugs pass@1 accuracy ({len(generations[0])} samples)"
             results, _ = code_metric.compute(
                 references=[self.parity_tests for _ in generations[num_bugs - 1]],
                 predictions=[[g] for g in generations[num_bugs - 1]],
