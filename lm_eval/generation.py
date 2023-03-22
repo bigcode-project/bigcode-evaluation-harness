@@ -33,6 +33,17 @@ class EndOfFunctionCriteria(StoppingCriteria):
             )
         return all(done)
 
+class TooLongFunctionCriteria(StoppingCriteria):
+    """Custom `StoppingCriteria` which checks if the generated function is too long by a certain multiplier based off input length."""
+
+    def __init__(self, input_length, multiplier):
+        self.input_length = input_length
+        self.multiplier = multiplier
+
+    def __call__(self, input_ids, scores, **kwargs):
+        """Returns true if generated sequence is too long."""
+        return input_ids.shape[1] > int(self.input_length * self.multiplier)
+        
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
     if args.generations_path:
@@ -55,10 +66,18 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         "top_k": args.top_k,
         "max_length": args.max_length_generation,
     }
+    stopping_criteria = []
     if task.stop_words:
-        gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
-            [EndOfFunctionCriteria(0, task.stop_words, tokenizer)]
+        stopping_criteria.append(
+            EndOfFunctionCriteria(0, task.stop_words, tokenizer)
         )
+    if hasattr(task, max_length_multiplier) and task.max_length_multiplier:
+        # start_length will be adjusted later
+        stopping_criteria.append(
+            TooLongFunctionCriteria(0, task.max_length_multiplier)
+        )
+    if stopping_criteria:
+        gen_kwargs["stopping_criteria"] = StoppingCriteriaList(stopping_criteria)
 
     if accelerator.is_main_process:
         print(f"number of problems for this task is {n_tasks}")

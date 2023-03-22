@@ -89,11 +89,9 @@ class Parity(Task):
         return []
 
     @staticmethod
-    def remove_last_block(string, stop_words):
-        # Remove the last block of the code containing stop_words
-        string_list = re.split("(%s)" % "|".join(stop_words), string)
-        # last string should be ""
-        return "".join(string_list[:-2])
+    def first_block(string, stop_words):
+        """Split off first block of code by scanning for class, def etc. on newlines."""
+        return re.split("|".join(stop_words), string)[0].rstrip()        
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
@@ -118,7 +116,7 @@ class Parity(Task):
         bugs = self.get_dataset()
         assert len(generations) == len(bugs)
         for num_bugs in tqdm.tqdm(bugs, total=len(bugs)):
-            key = str(num_bugs) + f"bugs pass@1 accuracy ({len(generations[0])} samples)"
+            key = f"{num_bugs} bugs pass@1 accuracy ({len(generations[0])} samples)"
             results, _ = code_metric.compute(
                 references=[self.parity_tests for _ in generations[num_bugs - 1]],
                 predictions=[[g] for g in generations[num_bugs - 1]],

@@ -3,6 +3,8 @@ https://proceedings.mlr.press/v162/he22a.html
 
 This dataset is taken from the preprossing done by CarperAI (https://carper.ai/diff-models-a-new-way-to-edit-code).
 It is uploaded here: https://huggingface.co/datasets/Muennighoff/python-bugs
+
+Make sure to run with sufficient context length (512 is not enough for e.g. CodeGen).
 """
 
 import re
@@ -33,9 +35,12 @@ class PythonBugs(Task):
 
     def __init__(self):
         super().__init__(
-            stop_words=["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/"],
+            # Correct code always starts with `def ...` and is a single function, so stop everything else
+            # Since a function always has a tab, stop when the first line does not have a tab
+            stop_words=["\nclass", "\n#", "\ndef", "\nassert", '\n"', "\nprint", "\nif"],
             requires_execution=True,
         )
+        self.max_length_multiplier = 2.5 # Allow 2.5 times the length of the prompt
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
