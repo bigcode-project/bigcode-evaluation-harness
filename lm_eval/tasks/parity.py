@@ -121,6 +121,6 @@ class Parity(Task):
                 references=[self.parity_tests],
                 predictions=[generations[num_bugs - 1]],
             )
-            out[num_bugs + "_bugs"] = results
+            out[str(num_bugs) + "_bugs"] = results
         return out
 
