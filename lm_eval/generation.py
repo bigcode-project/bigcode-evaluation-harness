@@ -71,7 +71,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         stopping_criteria.append(
             EndOfFunctionCriteria(0, task.stop_words, tokenizer)
         )
-    if hasattr(task, max_length_multiplier) and task.max_length_multiplier:
+    if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
         # start_length will be adjusted later
         stopping_criteria.append(
             TooLongFunctionCriteria(0, task.max_length_multiplier)
