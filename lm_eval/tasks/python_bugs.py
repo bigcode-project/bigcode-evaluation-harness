@@ -21,8 +21,8 @@ _CITATION = """
 }
 """
 
-BIN_OP_PROMPT = "# Fix binary operator\n"
-VAR_MISUSE_PROMPT = "# Fix incorrect variable name\n"
+BIN_OP_PROMPT = "# Fix binary operator"
+VAR_MISUSE_PROMPT = "# Fix incorrect variable name"
 
 class PythonBugs(Task):
     """A task represents an entire benchmark including its dataset, problems,
@@ -47,9 +47,9 @@ class PythonBugs(Task):
         # TODO: Special Tokens for commit models
         description = doc["prompt_code"]
         if doc["task"] == "bin-op":
-            prompt = f'{description}\n{BIN_OP_PROMPT}'
+            prompt = f'{description}\n{BIN_OP_PROMPT}\n'
         elif doc["task"] == "var-misuse":
-            prompt = f'{description}\n{VAR_MISUSE_PROMPT}'
+            prompt = f'{description}\n{VAR_MISUSE_PROMPT}\n'
         return prompt
 
     def get_reference(self, doc):
