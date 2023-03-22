@@ -40,7 +40,7 @@ class PythonBugs(Task):
             stop_words=["\nclass", "\n#", "\ndef", "\nassert", '\n"', "\nprint", "\nif"],
             requires_execution=True,
         )
-        self.max_length_multiplier = 2.5 # Allow 2.5 times the length of the prompt
+        self.max_length_multiplier = 2.25 # Allow 2.25 times the length of the prompt
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""

@@ -76,7 +76,7 @@ class Parity(Task):
                 f"({parity_reference(*i)} == parity_fixed{i})" for i in itertools.product(range(2), repeat=4)
             ])
         
-        self.max_length_multiplier = 2.25 # Allow 2.25 times the length of the prompt
+        self.max_length_multiplier = 2 # Allow 2 times the length of the prompt
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
