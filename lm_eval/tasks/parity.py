@@ -77,7 +77,7 @@ class Parity(Task):
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        return [1, 2, 3, 4]
+        return [1, 2, 3, 4, 5]
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
@@ -113,9 +113,12 @@ class Parity(Task):
             list of str containing refrences
         """
         code_metric = load("code_eval")
-        results, _ = code_metric.compute(
-            references=[self.parity_tests for _ in generations],
-            predictions=generations,
-        )
-        return results
+        out = {}
+        for num_bugs in self.get_dataset():
+            results, _ = code_metric.compute(
+                references=[self.parity_tests for _ in generations],
+                predictions=generations,
+            )
+            out[num_bugs + "_bugs"] = results
+        return out
 
