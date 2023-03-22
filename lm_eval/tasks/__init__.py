@@ -14,6 +14,7 @@ TASK_REGISTRY = {
     "humaneval": humaneval.HumanEval,
     "mbpp": mbpp.MBPP,
     "parity": parity.Parity,
+    "python_bugs": python_bugs.PythonBugs,
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))
