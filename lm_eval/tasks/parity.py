@@ -32,6 +32,11 @@ def mutate_code(
             "",  # placeholder for the context, e.g., the buggy code
             "\n# Fixed bugs\ndef parity_fixed(", # Modified to add the function name
         ],
+        "edit": [
+            "<commit_before>",
+            "",  # placeholder for the context, e.g., the buggy code
+            "<commit_msg>Fixed bugs<commit_after>",
+        ],
     }
     mutation_template = mutation_templates[mutate_method]
     if task == "parity":
@@ -48,7 +53,6 @@ def mutate_code(
     else:
         raise ValueError(f"Unknown task: {task}")
 
-# https://huggingface.co/spaces/evaluate-metric/code_eval
 # https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/utils/code_eval.py#L131
 def parity_reference(b1, b2, b3, b4):
     """
@@ -67,7 +71,7 @@ class Parity(Task):
         )
         self.mutate_method = "prompt"
 
-        if self.mutate_method == "diff":
+        if self.mutate_method in ("diff", "edit"):
             self.parity_tests = "assert " + " and ".join([
                 f"({parity_reference(*i)} == parity{i})" for i in itertools.product(range(2), repeat=4)
             ])

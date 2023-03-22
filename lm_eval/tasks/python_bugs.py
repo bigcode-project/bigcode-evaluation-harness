@@ -23,8 +23,38 @@ _CITATION = """
 }
 """
 
-BIN_OP_PROMPT = "# Fix binary operator"
-VAR_MISUSE_PROMPT = "# Fix incorrect variable name"
+MUTATE_TO_TASK_TO_PROMPT = {
+    "prompt": {
+        "bin-op": "# Fix binary operator",
+        "var-misuse": "# Fix incorrect variable name",
+    },
+    "edit": {
+        "bin-op": "Fix binary operator",
+        "var-misuse": "Fix incorrect variable name",
+    },
+}
+
+def mutate_code(input_code, task, mutate_method="prompt"):
+    """
+    From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/utils/code_eval.py
+    
+    Create template for code mutation.
+    Args:
+        task: (Optional) the task to be performed.
+        mutate_method: (Optional) 'edit' or 'prompt',
+        corresponding to edit mutation or prompt mutation.
+    Returns:
+        mutated_code
+    """
+    instruction = MUTATE_TO_TASK_TO_PROMPT[mutate_method][task]
+    if mutate_method == "prompt":
+        return f"{input_code}\n{instruction}\n"
+    if mutate_method == "edit":
+        return f"<commit_before>{input_code}<commit_msg>{instruction}<commit_after>"
+    else:
+        raise ValueError(f"Unknown mutate_method: {mutate_method}")
+
+
 
 class PythonBugs(Task):
     """A task represents an entire benchmark including its dataset, problems,
@@ -41,6 +71,7 @@ class PythonBugs(Task):
             requires_execution=True,
         )
         self.max_length_multiplier = 2.25 # Allow 2.25 times the length of the prompt
+        self.mutate_method = "prompt"
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -49,13 +80,7 @@ class PythonBugs(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        # TODO: Special Tokens for commit models
-        description = doc["prompt_code"]
-        if doc["task"] == "bin-op":
-            prompt = f'{description}\n{BIN_OP_PROMPT}\n'
-        elif doc["task"] == "var-misuse":
-            prompt = f'{description}\n{VAR_MISUSE_PROMPT}\n'
-        return prompt
+        return mutate_code(doc["prompt_code"], doc["task"], self.mutate_method)
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
