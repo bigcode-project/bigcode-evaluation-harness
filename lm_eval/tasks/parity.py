@@ -10,7 +10,7 @@ def mutate_code(
     n_bugs: int = 5, task: str = "parity", mutate_method="prompt"
 ):
     """
-    From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/utils/code_eval.py
+    Modified from https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/utils/code_eval.py
     
     Mutate code to create n bugs. Output the prompt in diff format.
     Args:
@@ -26,15 +26,20 @@ def mutate_code(
             "",  # placeholder for the context, e.g., the buggy code
             "\n<MSG> Fixed bugs",
         ],
+        "prompt_carper": [
+            "# A buggy implementation\n#!/usr/bin/python3\n",
+            "",  # placeholder for the context, e.g., the buggy code
+            "\n# Fixed bugs\ndef",
+        ],
         "prompt": [
             "# A buggy implementation\n#!/usr/bin/python3\n",
             "",  # placeholder for the context, e.g., the buggy code
-            "\n# Fixed bugs\ndef parity_fixed(", # Modified to add the function name
+            "\n# Fix bugs\ndef", # Modified to be in present tense
         ],
         "edit": [
             "<commit_before>",
             "",  # placeholder for the context, e.g., the buggy code
-            "<commit_msg>Fixed bugs<commit_after>",
+            "<commit_msg>Fix bugs<commit_after>",
         ],
     }
     mutation_template = mutation_templates[mutate_method]
@@ -68,16 +73,16 @@ class Parity(Task):
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
             requires_execution=True,
         )
-        self.mutate_method = "prompt"
+        self.mutate_method = "prompt_carper"
 
-        if self.mutate_method in ("diff", "edit"):
-            self.parity_tests = "assert " + " and ".join([
-                f"({parity_reference(*i)} == parity{i})" for i in itertools.product(range(2), repeat=4)
-            ])
-        else:
-            self.parity_tests = "assert " + " and ".join([
-                f"({parity_reference(*i)} == parity_fixed{i})" for i in itertools.product(range(2), repeat=4)
-            ])
+        #if self.mutate_method in ("diff", "edit"):
+        self.parity_tests = "assert " + " and ".join([
+            f"({parity_reference(*i)} == parity{i})" for i in itertools.product(range(2), repeat=4)
+        ])
+        #else:
+        #    self.parity_tests = "assert " + " and ".join([
+        #        f"({parity_reference(*i)} == parity_fixed{i})" for i in itertools.product(range(2), repeat=4)
+        #    ])
         
         # Allow 3 times the length of the prompt, but 
         # allowing the model to e.g. add some comments

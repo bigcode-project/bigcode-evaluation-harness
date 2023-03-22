@@ -67,12 +67,12 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         "max_length": args.max_length_generation,
     }
     stopping_criteria = []
+    # The input_length / start_length set to 0 will be adjusted later
     if task.stop_words:
         stopping_criteria.append(
             EndOfFunctionCriteria(0, task.stop_words, tokenizer)
         )
     if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
-        # start_length will be adjusted later
         stopping_criteria.append(
             TooLongFunctionCriteria(0, task.max_length_multiplier)
         )
