@@ -4,6 +4,7 @@ import re
 from evaluate import load
 from lm_eval.base import Task
 import itertools
+import tqdm
 
 def mutate_code(
     n_bugs: int = 5, task: str = "parity", mutate_method="prompt"
