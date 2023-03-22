@@ -117,10 +117,16 @@ class Parity(Task):
         bugs = self.get_dataset()
         assert len(generations) == len(bugs)
         for num_bugs in bugs:
-            results, _ = code_metric.compute(
-                references=[self.parity_tests],
-                predictions=[generations[num_bugs - 1]],
-            )
-            out[str(num_bugs) + "_bugs"] = results
+            key = str(num_bugs) + "_bugs"
+            out[key] = []
+            for gen in generations[num_bugs - 1]:
+                results, _ = code_metric.compute(
+                    references=[self.parity_tests],
+                    predictions=[[gen]],
+                    k=[1],
+
+                )
+                out[key].append(results["pass@1"])
+            out[key] = len(out[key]) / sum(out[key])
         return out
 
