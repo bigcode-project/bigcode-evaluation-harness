@@ -89,7 +89,7 @@ class Parity(Task):
 
     @staticmethod
     def remove_last_block(string, stop_words):
-        # Remove the last block of the code containing stop_words for HumanEval
+        # Remove the last block of the code containing stop_words
         string_list = re.split("(%s)" % "|".join(stop_words), string)
         # last string should be ""
         return "".join(string_list[:-2])

@@ -8,7 +8,7 @@ It is uploaded here: https://huggingface.co/datasets/Muennighoff/python-bugs
 import re
 from evaluate import load
 from lm_eval.base import Task
-
+import tqdm
 
 _CITATION = """
 @inproceedings{he2022distribution,
@@ -59,7 +59,7 @@ class PythonBugs(Task):
     @staticmethod
     def first_block(string, stop_words):
         """Split off first block of code by scanning for class, def etc. on newlines."""
-        return re.split("|".join(stop_words), string)[0].rstrip()
+        return re.split("|".join(stop_words), string)[0].strip()
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
@@ -80,9 +80,12 @@ class PythonBugs(Task):
         :param references: list(str)
             list of str containing refrences
         """
-        exact_match = load("exact_match")
-        results, _ = exact_match.compute(
-            references=references,
-            predictions=generations,
-        )
-        return results
+        num_correct = 0
+        print("Scoring generations...")
+        for i, ref in tqdm.tqdm(enumerate(references), total=len(references)):
+            for gen in generations[i]:
+                is_correct = gen == ref
+                if is_correct:
+                    num_correct += 1
+        accuracy = num_correct / len(references) / len(generations[0])
+        return {f"mean exact match ({len(generations[0])} samples)": accuracy}
