@@ -78,18 +78,12 @@ class Parity(Task):
             requires_execution=True,
         )
         self.mutate_method = "prompt_carper"
-
-        #if self.mutate_method in ("diff", "edit"):
         self.parity_tests = "assert " + " and ".join([
             f"({parity_reference(*i)} == parity{i})" for i in itertools.product(range(2), repeat=4)
         ])
-        #else:
-        #    self.parity_tests = "assert " + " and ".join([
-        #        f"({parity_reference(*i)} == parity_fixed{i})" for i in itertools.product(range(2), repeat=4)
-        #    ])
         
-        # Allow 3 times the length of the prompt, but 
-        # allowing the model to e.g. add some comments
+        # Allow max 3 times the length of the prompt to
+        # allow the model to e.g. add some comments
         self.max_length_multiplier = 3
 
     def get_dataset(self):
