@@ -41,3 +41,9 @@ class EvalArguments:
     seed: Optional[int] = field(
         default=0, metadata={"help": "Random seed used for evaluation."}
     )
+    num_return_sequences: Optional[int] = field(
+        default=1,
+        metadata={
+            "help":"The number of independently computed return sequences for each element in the batch"
+            }
+    )

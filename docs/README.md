@@ -43,6 +43,7 @@ accelerate launch  main.py \
   --tasks humaneval \
   --temperature 0.2 \
   --n_samples 200 \
+  --num_return_sequences 20 \
   --batch_size 10 \
   --allow_code_execution
 ```
@@ -69,6 +70,7 @@ accelerate launch  main.py \
   --tasks mbpp \
   --temperature 0.1 \
   --n_samples 15 \
+  --num_return_sequences 15 \
   --batch_size 10 \
   --allow_code_execution
 ```

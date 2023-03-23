@@ -86,3 +86,25 @@ def test_evaluation():
         results = evaluator.evaluate(task)
         assert results == {"pass@1": 0.25}
     print("passed eval")
+
+def test_multi_batch_generation():
+    args.n_samples = 1
+    args.batch_size = 2
+    args.limit = 2
+    args.do_sample = False
+    args.generation_only = True
+    args.generations_path = None
+    # Increasing the max_lenth to accomadate pad tokens 
+    # in the final generation
+    args.max_length_generation=356
+    tokenizer.padding_side = "left"
+    evaluator = Evaluator(accelerator, model, tokenizer, args)
+    for task in TASKS:
+        print(f"testing task {task}")
+        generations, references = evaluator.generate_text(task)
+        true_gens, true_refs = load_generation_examples(task)
+        # capping the generation to the max length of true gens
+        for idx,tg in enumerate(true_gens):
+            generations[idx][0] = generations[idx][0][:len(tg[0])]
+        assert generations == true_gens
+        assert references == true_refs

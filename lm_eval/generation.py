@@ -45,7 +45,13 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
                 )
         return generations[:n_tasks]
 
-    set_seed(args.seed, device_specific=True)
+    # When num_return_sequnces and n_samples are same - device specific seed to be disabled
+    # as device placement of a given batch/task could vary during runtime and having device specific seed could introduce 
+    # variation in the results.
+    # When num_return_sequnces < n_samples, device specific seed is required to
+    # generate variations
+    seed_specific_to_device = args.num_return_sequences != args.n_samples
+    set_seed(args.seed, device_specific=seed_specific_to_device)
 
     # Setup generation settings
     gen_kwargs = {
@@ -62,7 +68,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
 
     if accelerator.is_main_process:
         print(f"number of problems for this task is {n_tasks}")
-    n_copies = args.n_samples // args.batch_size
+    n_copies = args.n_samples // args.num_return_sequences
 
     ds_tokenized = TokenizedDataset(
         task,
@@ -75,8 +81,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         prefix=args.prefix,
     )
 
-    # do not confuse args.batch_size, which is actually the num_return_sequences
-    ds_loader = DataLoader(ds_tokenized, batch_size=1)
+    ds_loader = DataLoader(ds_tokenized, batch_size=args.batch_size)
 
     model, ds_loader = accelerator.prepare(model, ds_loader)
     generations = complete_code(
@@ -86,7 +91,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         tokenizer,
         ds_loader,
         n_tasks=n_tasks,
-        batch_size=args.batch_size,
+        num_return_sequences=args.num_return_sequences,
         prefix=args.prefix,
         postprocess=args.postprocess,
         **gen_kwargs,
