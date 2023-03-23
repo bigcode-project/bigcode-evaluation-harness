@@ -81,7 +81,6 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         prefix=args.prefix,
     )
 
-    # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=args.batch_size)
 
     model, ds_loader = accelerator.prepare(model, ds_loader)
