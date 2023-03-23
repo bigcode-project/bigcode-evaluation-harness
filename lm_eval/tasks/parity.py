@@ -118,7 +118,9 @@ class Parity(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        output = generation[len(prompt):]        
+        output = generation[len(prompt):]
+        if self.mutate_method.startswith("prompt"):
+            output = "def" + output # Add def which is in the prompt back to the output
         return self.first_block(output, self.stop_words)
 
     def process_results(self, generations, references):
