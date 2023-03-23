@@ -179,6 +179,14 @@ def complete_code(
                     ),
                     tokenizer,
                 )
+            # Treat eos token as a regular stop word not removing it from the output
+            # If it's removed it may have the effect of removing it in the middle of a
+            # longer generation in case a batch size > 1 is used, which will result in
+            # a wrong generation as it won't be used for splitting lateron
+            elif tokenizer.eos_token in task.stop_words:
+                gen_code = tokenizer.decode(
+                        s, skip_special_tokens=False, clean_up_tokenization_spaces=False
+                )
             else:
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=True, clean_up_tokenization_spaces=True
