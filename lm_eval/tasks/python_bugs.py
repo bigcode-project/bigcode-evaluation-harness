@@ -64,7 +64,7 @@ class PythonBugs(Task):
             stop_words=[
                 "\nclass", "\n#", "\ndef", "\nassert", '\n"', "\nprint", "\nif",
                 # Special cases for edit
-                "<commit_before>", "<commit_msg>", "<commit_after>",
+                "<commit_before>", "<commit_msg>", "<commit_after>", "<|endoftext|>",
             ],
             requires_execution=True,
         )
