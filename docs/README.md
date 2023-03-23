@@ -146,6 +146,29 @@ accelerate launch  main.py \
 We expect a model [finetuned](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS) on the train split of APPS.
 TODO: add few-shot setup for APPS.
 
+### DS-1000
+[DS-1000](https://ds1000-code-gen.github.io/): Code generation benchmark with 1000 data science questions spanning seven Python libraries that (1) reflects diverse, realistic, and practical use cases, (2) has a reliable metric, (3) defends against memorization by perturbing questions.
+
+The task can be specified as `--tasks ds1000-$SUBSET-$MODE`, where subset can include `all` libraries or any of the following subsets: `numpy`, `scipy`, `pandas`, `tensorflow`, `pytorch`, `sklearn`, `matplotlib`. Supported generation modes are `completion` (purely autoregressive) or `insertion` (via fill-in-middle [FIM]).
+
+- Prompts & Generation: prompts include partial code with one or more missing lines. The form of such prompts varies between `completion` and `insertion` modes (`[insert]` token used to reflect FIM region). Default generation args are reflected below.
+- Evaluation: generations are evaluated via execution of unit tests. As in the original manuscript, $pass@1$ is evaluated over each of `num_samples` and the mean pass rate is returned as the metric. Default evaluation args are presented below.
+
+Below is the command to run evaluation on the full benchmark in insertion mode with the arguments that correspond to the original manuscript.
+
+```bash
+export TF_FORCE_GPU_ALLOW_GROWTH=true
+TF_CPP_MIN_LOG_LEVEL=3 accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --batch_size <BATCH_SIZE> \
+  --tasks ds1000-all-insertion \
+  --n_samples 40 \
+  --max_length_generation 1024 \
+  --temperature 0.2 \
+  --top_p 0.95 \
+  --allow_code_execution
+```
+
 ## Code generation benchmarks without unit tests
 
 For these tasks, we do single generations and compare the generated code against reference solutions and compute BLEU score. For the following tasks, we use a two-shot setting where we include 2 inputs and their solutions in the prompt, all preceded by an instruction such as: ` "Answer the following instructions in a one line SQL query:\n"`. The solutions consist of one line so we stop the generation when a new line is generated. 3 languages are present: Python, SQL and Java.

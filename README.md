@@ -38,6 +38,20 @@ Install [`torch`](https://pytorch.org/get-started/locally/) based on your device
 ```
 pip install -r requirements.txt
 ```
+To run the `DS-1000` benchmark, additional constraints must be resolved.
+```
+# python version must be 3.7.10
+pip install -e ".[ds1000]" # installs all additional dependencies except PyTorch
+# torch==1.12.1 required. Download version with relevant GPU support etc., e.g.,
+pip install torch==1.12.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
+
+# to suppress any tensorflow optimization warnings, 
+# precede call to "accelerate launch" with "TF_CPP_MIN_LOG_LEVEL=3"
+
+# on some systems, tensorflow will attempt to allocate all GPU memory
+# to its process at import which will raise a CUDA out-of-memory error
+# setting "export TF_FORCE_GPU_ALLOW_GROWTH=true" resolves this
+```
 Also make sure you have `git-lfs` installed and are logged in the Hub
 ```
 huggingface-cli login
