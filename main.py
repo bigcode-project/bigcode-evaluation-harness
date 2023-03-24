@@ -1,5 +1,6 @@
 import fnmatch
 import json
+import os
 
 import datasets
 import transformers
@@ -146,7 +147,7 @@ def main():
         print(f"Selected Tasks: {task_names}")
 
     results = {}
-    if args.generations_path:
+    if os.path.exists(args.generations_path):
         # here we don't generate code but only evaluate previously computed generations
         if accelerator.is_main_process:
             print("evaluation only mode")
@@ -178,13 +179,15 @@ def main():
         tokenizer.pad_token = tokenizer.eos_token
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
+        generations_path = "generations" if args.generations_path is None else args.generations_path
+
         for task in task_names:
             if args.generation_only:
                 if accelerator.is_main_process:
                     print("generation mode only")
                 generations, references = evaluator.generate_text(task)
                 if accelerator.is_main_process:
-                    with open("generations.json", "w") as fp:
+                    with open(f"{generations_path}.json", "w") as fp:
                         json.dump(generations, fp)
                         print("generations were saved")
                     if args.save_references:
