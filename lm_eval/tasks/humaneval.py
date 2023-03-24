@@ -89,7 +89,7 @@ class HumanEval(Task):
             doc = self.get_dataset()[idx]
             prompt = self.get_prompt(doc)
             generation = generation[len(prompt):]
-        return self.remove_last_block(generation, self.stop_words)
+        return self.first_block(generation, self.stop_words)
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
