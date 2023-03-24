@@ -38,7 +38,7 @@ MUTATE_TO_TASK_TO_PROMPT = {
     },
 }
 
-def mutate_code(input_code, task, mutate_method="prompt_carper"):
+def mutate_code(input_code, task, mutate_method="prompt"):
     """
     Create template for code mutation.
     Args:
@@ -63,7 +63,7 @@ class PythonBugs(Task):
 
     DATASET_PATH = "Muennighoff/python-bugs"
 
-    def __init__(self, mutate_method="prompt_carper"):
+    def __init__(self, mutate_method="prompt"):
         super().__init__(
             # Correct code always starts with `def ...` and is a single function, so stop everything else
             # Since a function always has a tab, stop when the first line does not have a tab

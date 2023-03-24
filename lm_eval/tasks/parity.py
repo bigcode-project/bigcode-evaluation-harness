@@ -68,7 +68,7 @@ def parity_reference(b1, b2, b3, b4):
 
 
 class Parity(Task):
-    def __init__(self, mutate_method="prompt_carper"):
+    def __init__(self, mutate_method="prompt"):
 
         super().__init__(
             stop_words=[
