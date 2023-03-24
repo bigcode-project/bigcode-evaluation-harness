@@ -37,7 +37,12 @@ class HumanEval(Task):
         stop_words = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
         self.mutate_method = mutate_method
         if self.mutate_method == "edit":
-            stop_words.extend(["<commit_before>", "<commit_msg>", "<commit_after>", "<|endoftext|>"])
+            stop_words = [
+                "<commit_before>", 
+                "<commit_msg>", 
+                "<commit_after>", 
+                "<|endoftext|>",
+            ]
 
         super().__init__(
             stop_words=stop_words,
