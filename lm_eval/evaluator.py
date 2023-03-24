@@ -67,9 +67,9 @@ class Evaluator:
             )
 
         if self.accelerator.is_main_process:
-            if not self.args.generations_path:
+            if not os.path.exists(self.args.generations_path):
                 if self.args.save_generations:
-                    with open("generations.json", "w") as fp:
+                    with open(self.args.generations_path, "w") as fp:
                         json.dump(generations, fp)
                         print("generations were saved")
                 if self.args.save_references:

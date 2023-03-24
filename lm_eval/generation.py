@@ -1,5 +1,6 @@
 from tqdm import tqdm
 import json
+import os
 
 from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
@@ -46,7 +47,7 @@ class TooLongFunctionCriteria(StoppingCriteria):
         
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
-    if args.generations_path:
+    if os.path.exists(args.generations_path):
         # load generated code
         with open(args.generations_path) as fp:
             generations = json.load(fp)
