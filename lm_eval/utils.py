@@ -185,7 +185,7 @@ def complete_code(
             # a wrong generation as it won't be used for splitting lateron
             elif tokenizer.eos_token in task.stop_words:
                 gen_code = tokenizer.decode(
-                        s, skip_special_tokens=False, clean_up_tokenization_spaces=False
+                    s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                 )
             else:
                 gen_code = tokenizer.decode(

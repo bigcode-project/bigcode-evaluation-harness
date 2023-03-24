@@ -70,6 +70,8 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
     stopping_criteria = []
     # The input_length / start_length set to 0 will be adjusted later
     if task.stop_words:
+        if tokenizer.eos_token:
+            task.stop_words.append(tokenizer.eos_token)
         stopping_criteria.append(
             EndOfFunctionCriteria(0, task.stop_words, tokenizer)
         )
