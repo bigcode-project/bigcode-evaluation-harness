@@ -112,6 +112,12 @@ def parse_args():
         action="store_true",
         help="Whether to save reference solutions/tests",
     )
+    parser.add_argument(
+        "--mutate_method",
+        type=str,
+        default="prompt",
+        help="Method used to mutate the code, could be edit for commit models",
+    )
     return parser.parse_args()
 
 

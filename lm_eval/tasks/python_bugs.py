@@ -24,17 +24,21 @@ _CITATION = """
 """
 
 MUTATE_TO_TASK_TO_PROMPT = {
+    "prompt_carper": {
+        "bin-op": "# Fixed binary operator",
+        "var-misuse": "# Fixed incorrect variable name",
+    },
     "prompt": {
         "bin-op": "# Fix binary operator",
         "var-misuse": "# Fix incorrect variable name",
-    },
+    },    
     "edit": {
         "bin-op": "Fix binary operator",
         "var-misuse": "Fix incorrect variable name",
     },
 }
 
-def mutate_code(input_code, task, mutate_method="prompt"):
+def mutate_code(input_code, task, mutate_method="prompt_carper"):
     """
     Create template for code mutation.
     Args:
@@ -45,8 +49,10 @@ def mutate_code(input_code, task, mutate_method="prompt"):
         template for code mutation
     """
     instruction = MUTATE_TO_TASK_TO_PROMPT[mutate_method][task]
+    if mutate_method == "prompt_carper":
+        return f"# A buggy implementation\n#!/usr/bin/python3\n{input_code}\n{instruction}\n"
     if mutate_method == "prompt":
-        return f"{input_code}\n{instruction}\n"
+        return f"#!/usr/bin/python3\n# A buggy implementation\n{input_code}\n{instruction}\n"        
     if mutate_method == "edit":
         return f"<commit_before>{input_code}<commit_msg>{instruction}<commit_after>"
     else:
@@ -57,7 +63,7 @@ class PythonBugs(Task):
 
     DATASET_PATH = "Muennighoff/python-bugs"
 
-    def __init__(self):
+    def __init__(self, mutate_method="prompt_carper"):
         super().__init__(
             # Correct code always starts with `def ...` and is a single function, so stop everything else
             # Since a function always has a tab, stop when the first line does not have a tab
@@ -69,7 +75,7 @@ class PythonBugs(Task):
             requires_execution=True,
         )
         self.max_length_multiplier = 2.25 # Allow 2.25 times the length of the prompt
-        self.mutate_method = "prompt"
+        self.mutate_method = mutate_method
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -95,8 +101,9 @@ class PythonBugs(Task):
         prompt = self.get_prompt(doc)
         correct_code = self.get_reference(doc)
         output = generation[len(prompt):]
-        output = output[:len(correct_code)]
-        return output
+        if self.mutate_method.startswith("prompt"):
+            output = "def" + output # Add def which is in the prompt back to the output
+        return output[:len(correct_code)]
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,

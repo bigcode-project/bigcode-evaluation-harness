@@ -1,3 +1,4 @@
+import inspect
 from pprint import pprint
 
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
@@ -20,9 +21,13 @@ TASK_REGISTRY = {
 ALL_TASKS = sorted(list(TASK_REGISTRY))
 
 
-def get_task(task_name):
+def get_task(task_name, mutate_method=None):
     try:
-        return TASK_REGISTRY[task_name]()
+        # Only if the task takes a mutate_method argument, should we pass it
+        if "mutate_method" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
+            return TASK_REGISTRY[task_name](mutate_method=mutate_method)
+        else:
+            return TASK_REGISTRY[task_name]()
     except KeyError:
         print("Available tasks:")
         pprint(TASK_REGISTRY)

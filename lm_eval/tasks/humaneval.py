@@ -32,9 +32,15 @@ class HumanEval(Task):
 
     DATASET_PATH = "openai_humaneval"
 
-    def __init__(self):
+    def __init__(self, mutate_method="prompt"):
+        
+        stop_words = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
+        self.mutate_method = mutate_method
+        if self.mutate_method == "edit":
+            stop_words.extend(["<commit_before>", "<commit_msg>", "<commit_after>", "<|endoftext|>"])
+
         super().__init__(
-            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
+            stop_words=stop_words,
             requires_execution=True,
         )
 
@@ -44,7 +50,15 @@ class HumanEval(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        return doc["prompt"].strip()
+
+        if self.mutate_method == "edit":
+            prompt = "<commit_before>" + doc["prompt"]
+            prompt += "<commit_msg>" + "Complete the function"
+            prompt += "<commit_after>"
+        else:
+            prompt = doc["prompt"]
+        
+        return prompt.strip()
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -67,6 +81,11 @@ class HumanEval(Task):
             index of doc in the dataset to which the generation belongs
             (not used for Humaneval-Task)
         """
+        # If editing, need to remove all prior to the new commit
+        if self.mutate_method == "edit":
+            doc = self.get_dataset()[idx]
+            prompt = self.get_prompt(doc)
+            generation = generation[len(prompt):]
         return self.remove_last_block(generation, self.stop_words)
 
     def process_results(self, generations, references):

@@ -32,7 +32,7 @@ def mutate_code(
             "\n# Fixed bugs\ndef",
         ],
         "prompt": [
-            "# A buggy implementation\n#!/usr/bin/python3\n",
+            "#!/usr/bin/python3\n# A buggy implementation\n", # Fixed order
             "",  # placeholder for the context, e.g., the buggy code
             "\n# Fix bugs\ndef", # Modified to be in present tense
         ],
@@ -68,7 +68,8 @@ def parity_reference(b1, b2, b3, b4):
 
 
 class Parity(Task):
-    def __init__(self):
+    def __init__(self, mutate_method="prompt_carper"):
+
         super().__init__(
             stop_words=[
                 "\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif",
@@ -77,7 +78,7 @@ class Parity(Task):
             ],
             requires_execution=True,
         )
-        self.mutate_method = "prompt_carper"
+        self.mutate_method = mutate_method
         self.parity_tests = "assert " + " and ".join([
             f"({parity_reference(*i)} == parity{i})" for i in itertools.product(range(2), repeat=4)
         ])
