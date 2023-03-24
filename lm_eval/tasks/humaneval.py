@@ -72,11 +72,9 @@ class HumanEval(Task):
         return "\n" + test_func + "\n" + entry_point
 
     @staticmethod
-    def remove_last_block(string, stop_words):
-        # Remove the last block of the code containing stop_words for HumanEval
-        string_list = re.split("(%s)" % "|".join(stop_words), string)
-        # last string should be ""
-        return "".join(string_list[:-2])
+    def first_block(string, stop_words):
+        """Split off first block of code by scanning for class, def etc. on newlines."""
+        return re.split("|".join(stop_words), string)[0].rstrip()
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
