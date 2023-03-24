@@ -50,9 +50,9 @@ def mutate_code(input_code, task, mutate_method="prompt_carper"):
     """
     instruction = MUTATE_TO_TASK_TO_PROMPT[mutate_method][task]
     if mutate_method == "prompt_carper":
-        return f"# A buggy implementation\n#!/usr/bin/python3\n{input_code}\n{instruction}\n"
+        return f"# A buggy implementation\n#!/usr/bin/python3\n{input_code}\n{instruction}\ndef"
     if mutate_method == "prompt":
-        return f"#!/usr/bin/python3\n# A buggy implementation\n{input_code}\n{instruction}\n"        
+        return f"#!/usr/bin/python3\n# A buggy implementation\n{input_code}\n{instruction}\ndef"        
     if mutate_method == "edit":
         return f"<commit_before>{input_code}<commit_msg>{instruction}<commit_after>"
     else:
