@@ -147,7 +147,7 @@ def main():
         print(f"Selected Tasks: {task_names}")
 
     results = {}
-    if os.path.exists(args.generations_path):
+    if args.generations_path and os.path.exists(args.generations_path):
         # here we don't generate code but only evaluate previously computed generations
         if accelerator.is_main_process:
             print("evaluation only mode")
