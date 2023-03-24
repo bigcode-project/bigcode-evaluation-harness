@@ -72,9 +72,12 @@ class HumanEval(Task):
         return "\n" + test_func + "\n" + entry_point
 
     @staticmethod
-    def first_block(string, stop_words):
-        """Split off first block of code by scanning for class, def etc. on newlines."""
-        return re.split("|".join(stop_words), string)[0].rstrip()
+    def remove_last_block(string, stop_words):
+        stop_words = [re.escape(word) for word in stop_words] # Escape e.g. | in <|endoftext|>
+        # Remove the last block of the code containing stop_words for HumanEval
+        string_list = re.split("(%s)" % "|".join(stop_words), string)
+        # last string should be ""
+        return "".join(string_list[:-2])
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
@@ -89,7 +92,7 @@ class HumanEval(Task):
             doc = self.get_dataset()[idx]
             prompt = self.get_prompt(doc)
             generation = generation[len(prompt):]
-        return self.first_block(generation, self.stop_words)
+        return self.remove_last_block(generation, self.stop_words)
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,

@@ -102,6 +102,7 @@ class Parity(Task):
     @staticmethod
     def first_block(string, stop_words):
         """Split off first block of code by scanning for class, def etc. on newlines."""
+        stop_words = [re.escape(word) for word in stop_words] # Escape e.g. | in <|endoftext|>
         return re.split("|".join(stop_words), string)[0].rstrip()        
 
     def postprocess_generation(self, generation, idx):
