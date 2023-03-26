@@ -47,7 +47,7 @@ class TooLongFunctionCriteria(StoppingCriteria):
         
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
-    if os.path.exists(args.generations_path):
+    if args.generations_path and os.path.exists(args.generations_path):
         # load generated code
         with open(args.generations_path) as fp:
             generations = json.load(fp)
