@@ -23,7 +23,7 @@ class QuixBugs(Task):
                 "<commit_after>", 
                 "<|endoftext|>",
             ]
-        elif self.mutate_method == "prompt":
+        elif self.mutate_method.startswith("prompt"):
             # https://arxiv.org/pdf/2111.03922.pdf
             self.stop_words = [
                 "\nclass", "###", "///", "<|endoftext|>"
@@ -53,7 +53,7 @@ class QuixBugs(Task):
             prompt += "\n" + doc["buggy_program"] + "\n"
             prompt += "### fixed function"
         elif self.mutate_method == "prompt":
-            prompt = "# Buggy function\n"
+            prompt = "# Buggy function"
             prompt += "\n" +  doc["buggy_program"] + "\n"
             prompt += "# Fixed function\ndef"
         else:
