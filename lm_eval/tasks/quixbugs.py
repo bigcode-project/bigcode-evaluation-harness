@@ -58,7 +58,7 @@ class QuixBugs(Task):
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
-        return doc["tests"].strip()
+        return (doc["name"], doc["tests"].strip())
         #test_func = doc["test"]
         #entry_point = f"check({doc['entry_point']})"
         #return "\n" + test_func + "\n" + entry_point
@@ -95,8 +95,16 @@ class QuixBugs(Task):
             list of str containing refrences
         """
         code_metric = load("code_eval")
-        results, _ = code_metric.compute(
-            references=references,
-            predictions=generations,
-        )
+        results = {}
+        for i, (gen, (name, ref)) in enumerate(zip(generations, references)):
+            results, _ = code_metric.compute(
+                references=[ref],
+                predictions=[gen],
+            )
+            results[name] = results
+        # Provide average of all metrics computed
+        if results:
+            results["all"] = {
+                k: sum(v[k] for v in results.values()) / len(results) for k in results[list(results.keys())[0]]
+            }
         return results
