@@ -15,6 +15,7 @@ class QuixBugs(Task):
     DATASET_PATH = "Muennighoff/quixbugs"
 
     def __init__(self, mutate_method="prompt"):
+        self.mutate_method = mutate_method
         if self.mutate_method == "edit":
             self.stop_words = [
                 "<commit_before>",
@@ -30,14 +31,13 @@ class QuixBugs(Task):
                 "\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "<|endoftext|>"
             ]
         else:
-            raise ValueError(f"Unknown mutate_method: {mutate_method}")
+            raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
 
         super().__init__(
             stop_words=self.stop_words,
             requires_execution=True,
         )
         self.max_length_multiplier = 2.25 # Allow 2.25 times the length of the prompt
-        self.mutate_method = mutate_method
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
