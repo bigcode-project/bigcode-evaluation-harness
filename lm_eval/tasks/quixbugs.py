@@ -97,11 +97,11 @@ class QuixBugs(Task):
         code_metric = load("code_eval")
         results = {}
         for i, (gen, (name, ref)) in enumerate(zip(generations, references)):
-            results, _ = code_metric.compute(
+            sub_results, _ = code_metric.compute(
                 references=[ref],
                 predictions=[gen],
             )
-            results[name] = results
+            results[name] = sub_results
         # Provide average of all metrics computed
         if results:
             results["all"] = {
