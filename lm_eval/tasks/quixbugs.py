@@ -21,9 +21,14 @@ class QuixBugs(Task):
                 "<commit_msg>", 
                 "<commit_after>", 
                 "<|endoftext|>",
+                "\nprint",
+                "\nif",
+                "\nclass",
             ]
         elif self.mutate_method == "prompt":
-            self.stop_words = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "<|endoftext|>"]
+            self.stop_words = [
+                "\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "<|endoftext|>"
+            ]
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
 
@@ -78,7 +83,7 @@ class QuixBugs(Task):
         prompt = self.get_prompt(doc)
         generation = generation[len(prompt):]
         if self.mutate_method.startswith("prompt"):
-            output = "def" + output # Add def which is in the prompt back to the output        
+            generation = "def" + generation # Add def which is in the prompt back to the output        
         return self.remove_last_block(generation, self.stop_words)
 
     def process_results(self, generations, references):
