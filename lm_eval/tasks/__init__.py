@@ -2,7 +2,7 @@ import inspect
 from pprint import pprint
 
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
-               concode, ds1000, humaneval, mbpp, parity, python_bugs)
+               concode, ds1000, humaneval, mbpp, parity, python_bugs, quixbugs)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
@@ -16,6 +16,7 @@ TASK_REGISTRY = {
     "mbpp": mbpp.MBPP,
     "parity": parity.Parity,
     "python_bugs": python_bugs.PythonBugs,
+    "quixbugs": quixbugs.QuixBugs,
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))
