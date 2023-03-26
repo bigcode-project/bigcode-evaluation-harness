@@ -22,13 +22,11 @@ class QuixBugs(Task):
                 "<commit_msg>", 
                 "<commit_after>", 
                 "<|endoftext|>",
-                "\nprint",
-                "\nif",
-                "\nclass",
             ]
         elif self.mutate_method == "prompt":
+            # https://arxiv.org/pdf/2111.03922.pdf
             self.stop_words = [
-                "\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "<|endoftext|>"
+                "\nclass", "###", "///", "<|endoftext|>"
             ]
         else:
             raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
