@@ -1,9 +1,10 @@
 """Parity bug fixing task."""
 
+import itertools
 import re
+
 from evaluate import load
 from lm_eval.base import Task
-import itertools
 import tqdm
 
 def mutate_code(
