@@ -50,7 +50,10 @@ class QuixBugs(Task):
             prompt += "<commit_msg>" + "Fix bug in " + doc["name"]
             prompt += "<commit_after>"
         elif self.mutate_method == "prompt":
-            prompt = doc["buggy_program"] + "\n# Fix bug in " + doc["name"] + "\ndef"
+            # https://arxiv.org/pdf/2111.03922.pdf, Prenner et al.
+            prompt = "### fix the bug in the following function"
+            prompt += doc["buggy_program"] + "\n"
+            prompt += "### fixed function"
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
 
@@ -100,6 +103,7 @@ class QuixBugs(Task):
             sub_results, _ = code_metric.compute(
                 references=[ref],
                 predictions=[gen],
+                timeout=10, # Levenshtein distance is slow
             )
             results[name] = sub_results
         # Provide average of all metrics computed
