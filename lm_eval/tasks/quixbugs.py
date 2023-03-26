@@ -1,12 +1,17 @@
-"""QuixBugs
-"""
+"""QuixBugs"""
 
 import re
 from evaluate import load
 from lm_eval.base import Task
 
 _CITATION = """
-
+@inproceedings{lin2017quixbugs,
+  title={QuixBugs: A multi-lingual program repair benchmark set based on the Quixey Challenge},
+  author={Lin, Derrick and Koppel, James and Chen, Angela and Solar-Lezama, Armando},
+  booktitle={Proceedings Companion of the 2017 ACM SIGPLAN international conference on systems, programming, languages, and applications: software for humanity},
+  pages={55--56},
+  year={2017}
+}
 """
 
 
@@ -23,13 +28,7 @@ class QuixBugs(Task):
                 "<commit_after>", 
                 "<|endoftext|>",
             ]
-        elif self.mutate_method.startswith("prompt_codex"):
-            # https://arxiv.org/pdf/2111.03922.pdf
-            self.stop_words = [
-                "\nclass", "###", "///", "<|endoftext|>",
-            ]
         elif self.mutate_method.startswith("prompt"):
-            # https://arxiv.org/pdf/2111.03922.pdf
             self.stop_words = [
                 "\ndef",
                 "\nclass",
@@ -40,7 +39,12 @@ class QuixBugs(Task):
                 "###",
                 "///",
                 "<|endoftext|>",
-            ]            
+            ]
+        elif self.mutate_method.startswith("prompt_codex"):
+            # https://arxiv.org/pdf/2111.03922.pdf
+            self.stop_words = [
+                "\nclass", "###", "///", "<|endoftext|>",
+            ]
         else:
             raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
 
@@ -48,7 +52,7 @@ class QuixBugs(Task):
             stop_words=self.stop_words,
             requires_execution=True,
         )
-        self.max_length_multiplier = 2.25 # Allow 2.25 times the length of the prompt
+        self.max_length_multiplier = 3 # Allow 3 times the length of the prompt
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -60,15 +64,15 @@ class QuixBugs(Task):
             prompt = "<commit_before>" + doc["buggy_program"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["name"]
             prompt += "<commit_after>"
+        elif self.mutate_method == "prompt":
+            prompt = "# Buggy function"
+            prompt += "\n" + doc["buggy_program"] + "\n"
+            prompt += "# Fixed function\ndef"            
         elif self.mutate_method == "prompt_codex":
             # https://arxiv.org/pdf/2111.03922.pdf, Prenner et al.
             prompt = "### fix the bug in the following function"
             prompt += "\n" + doc["buggy_program"] + "\n"
             prompt += "### fixed function"
-        elif self.mutate_method == "prompt":
-            prompt = "# Buggy function"
-            prompt += "\n" +  doc["buggy_program"] + "\n"
-            prompt += "# Fixed function\ndef"
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
 
@@ -77,9 +81,6 @@ class QuixBugs(Task):
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
         return (doc["name"], doc["tests"].strip())
-        #test_func = doc["test"]
-        #entry_point = f"check({doc['entry_point']})"
-        #return "\n" + test_func + "\n" + entry_point
 
     @staticmethod
     def remove_last_block(string, stop_words):
@@ -126,4 +127,5 @@ class QuixBugs(Task):
             results["all"] = {
                 k: sum(v[k] for v in results.values()) / len(results) for k in results[list(results.keys())[0]]
             }
+            results["num_correct"] = results["all"]["pass@1"] * (len(results) - 1) # -1 for the all metric
         return results

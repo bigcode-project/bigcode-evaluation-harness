@@ -28,10 +28,11 @@ MUTATE_TO_TASK_TO_PROMPT = {
         "bin-op": "# Fixed binary operator",
         "var-misuse": "# Fixed incorrect variable name",
     },
-    "prompt": {
+    "prompt_present": {
         "bin-op": "# Fix binary operator",
         "var-misuse": "# Fix incorrect variable name",
-    },    
+    },
+    "prompt": MUTATE_TO_TASK_TO_PROMPT["prompt_carper"], # Note that the rest of prompt is still different
     "edit": {
         "bin-op": "Fix binary operator",
         "var-misuse": "Fix incorrect variable name",
@@ -119,4 +120,4 @@ class PythonBugs(Task):
             for gen in generations[i]:
                 num_correct += int(gen == ref)
         accuracy = num_correct / len(references) / len(generations[0])
-        return {f"mean exact match ({len(generations[0])} samples)": accuracy}
+        return {"mean exact match": accuracy}

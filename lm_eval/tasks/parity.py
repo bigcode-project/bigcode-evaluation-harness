@@ -34,7 +34,7 @@ def mutate_code(
         "prompt": [
             "#!/usr/bin/python3\n# A buggy implementation\n", # Fixed order
             "",  # placeholder for the context, e.g., the buggy code
-            "\n# Fix bugs\ndef", # Modified to be in present tense
+            "\n# Fixed bugs\ndef", # Past tense is key
         ],
         "edit": [
             "<commit_before>",
@@ -129,14 +129,11 @@ class Parity(Task):
         """
         code_metric = load("code_eval")
         out = {}
-        bugs = self.get_dataset()
-        assert len(generations) == len(bugs)
-        for num_bugs in tqdm.tqdm(bugs, total=len(bugs)):
-            key = f"{num_bugs} bugs pass@1 accuracy ({len(generations[0])} samples)"
+        # Compute metrics for each number of bugs
+        for idx, gens in tqdm.tqdm(enumerate(generations), total=len(generations)):
             results, _ = code_metric.compute(
-                references=[self.parity_tests for _ in generations[num_bugs - 1]],
-                predictions=[[g] for g in generations[num_bugs - 1]],
-                k=[1],
+                references=[self.parity_tests for _ in gens],
+                predictions=[[g] for g in gens],
             )
-            out[key] = results["pass@1"]
+            out[f"{idx+1} bugs"] = results
         return out
