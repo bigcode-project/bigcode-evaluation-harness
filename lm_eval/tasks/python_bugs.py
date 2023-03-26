@@ -33,7 +33,11 @@ MUTATE_TO_TASK_TO_PROMPT = {
         "bin-op": "# Fix binary operator",
         "var-misuse": "# Fix incorrect variable name",
     },
-    "prompt": MUTATE_TO_TASK_TO_PROMPT["prompt_carper"], # Note that the rest of prompt is still different
+    # Same as prompt_carper, but other parts are still different
+    "prompt": {
+        "bin-op": "# Fixed binary operator",
+        "var-misuse": "# Fixed incorrect variable name",
+    },
     "edit": {
         "bin-op": "Fix binary operator",
         "var-misuse": "Fix incorrect variable name",
