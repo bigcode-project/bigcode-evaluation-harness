@@ -43,16 +43,16 @@ class HumanEvalXBugs(Task):
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         if self.mutate_method == "edit":
-            prompt = "<commit_before>" + doc["buggy_program"]
+            prompt = "<commit_before>" + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"] # TODO Needs to be camel case if Java
             prompt += "<commit_after>"
         elif self.mutate_method == "edit-type":
-            prompt = "<commit_before>" + doc["buggy_program"]
+            prompt = "<commit_before>" + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix " + doc["bug_type"] + " in " + doc["entry_point"]
             prompt += "<commit_after>"
         elif self.mutate_method == "prompt":
             prompt = "# Buggy function"
-            prompt += "\n" + doc["buggy_program"] + "\n"
+            prompt += "\n" + doc["buggy_solution"] + "\n"
             prompt += "# Fixed function\ndef"            
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
