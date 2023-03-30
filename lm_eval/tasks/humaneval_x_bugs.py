@@ -104,7 +104,7 @@ class GeneralHumanEvalXBugs(Task):
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
         # Keep the defining part of the function
-        generation = doc["prompt"] + generation[len(prompt):]
+        generation = doc["prompt"].rstrip() + generation[len(prompt):]
         return self.remove_last_block(generation, self.stop_words)
 
     def process_results(self, generations, references):
