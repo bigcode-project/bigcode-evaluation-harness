@@ -44,7 +44,7 @@ class GeneralHumanEvalXBugs(Task):
         stop_words = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
         self.mutate_method = mutate_method
         if self.mutate_method == "edit":
-            stop_words = [
+            stop_words += [
                 "<commit_before>", 
                 "<commit_msg>", 
                 "<commit_after>", 
