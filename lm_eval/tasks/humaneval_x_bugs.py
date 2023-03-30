@@ -22,10 +22,10 @@ def create_all_tasks():
     return {f"humaneval-x-bugs-{language}": create_task(language) for language in LANGUAGES}
 
 
-def create_task(level):
+def create_task(language):
     class HumanEvalXBugs(GeneralHumanEvalXBugs):
-        def __init__(self):
-            super().__init__(language)
+        def __init__(self, mutate_method="prompt", language=language):
+            super().__init__(language=language)
 
     return HumanEvalXBugs
 
