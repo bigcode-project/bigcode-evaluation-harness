@@ -43,17 +43,17 @@ class HumanEvalXBugs(Task):
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         if self.mutate_method == "edit":
-            prompt = "<commit_before>" + doc["buggy_solution"]
-            prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"] # TODO Needs to be camel case if Java
+            prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
+            prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
             prompt += "<commit_after>"
         elif self.mutate_method == "edit-type":
-            prompt = "<commit_before>" + doc["buggy_solution"]
+            prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix " + doc["bug_type"] + " in " + doc["entry_point"]
             prompt += "<commit_after>"
         elif self.mutate_method == "prompt":
             prompt = "# Buggy function"
-            prompt += "\n" + doc["buggy_solution"] + "\n"
-            prompt += "# Fixed function\ndef"            
+            prompt += "\n" + doc["prompt"] + doc["buggy_solution"] + "\n"
+            prompt += "# Fixed function\ndef"
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
 
@@ -62,8 +62,8 @@ class HumanEvalXBugs(Task):
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
         test_func = doc["test"]
-        entry_point = f"check({doc['entry_point']})"
-        return "\n" + test_func + "\n" + entry_point
+        # check(func_name) is already included
+        return "\n" + test_func
 
     @staticmethod
     def remove_last_block(string, stop_words):
