@@ -13,7 +13,7 @@ TASK_REGISTRY = {
     "concode": concode.Concode,
     **ds1000.create_all_tasks(),
     "humaneval": humaneval.HumanEval,
-    "humaneval_x_bugs": humaneval_x_bugs.HumanEvalXBugs,
+    **humaneval_x_bugs.create_all_tasks(),
     "mbpp": mbpp.MBPP,
     "parity": parity.Parity,
     "python_bugs": python_bugs.PythonBugs,
