@@ -25,7 +25,7 @@ def create_all_tasks():
 def create_task(language):
     class HumanEvalXBugs(GeneralHumanEvalXBugs):
         def __init__(self, mutate_method="prompt", language=language):
-            super().__init__(language=language)
+            super().__init__(mutate_method=mutate_method, language=language)
 
     return HumanEvalXBugs
 
@@ -104,8 +104,7 @@ class GeneralHumanEvalXBugs(Task):
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
         # Keep the defining part of the function
-        cutoff = len(prompt) - len(doc["prompt"])
-        generation = generation[cutoff:]
+        generation = doc["prompt"] + generation[len(prompt):]
         return self.remove_last_block(generation, self.stop_words)
 
     def process_results(self, generations, references):
