@@ -11,16 +11,36 @@ from lm_eval.base import Task
 _CITATION = """
 """
 
-class HumanEvalXBugs(Task):
+LANGUAGES = ["python", "cpp", "js", "java", "go", "rust"]
+
+
+def create_all_tasks():
+    """Creates a dictionary of tasks from a list of levels
+    :return: {task_name: task}
+        e.g. {apps-interview: Task, apps-competitoon: Task}
+    """
+    return {f"humaneval-x-bugs-{language}": create_task(language) for language in LANGUAGES}
+
+
+def create_task(level):
+    class HumanEvalXBugs(GeneralHumanEvalXBugs):
+        def __init__(self):
+            super().__init__(language)
+
+    return HumanEvalXBugs
+
+
+class GeneralHumanEvalXBugs(Task):
     """A task represents an entire benchmark including its dataset, problems,
     answers, generation settings and evaluation methods.
     """
 
     DATASET_PATH = "Muennighoff/humaneval-x-bugs"
-    DATASET_NAME = "python"
+    DATASET_NAME = None
 
-    def __init__(self, mutate_method="prompt"):
+    def __init__(self, mutate_method="prompt", language="python"):
         
+        self.DATASET_NAME = language
         stop_words = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
         self.mutate_method = mutate_method
         if self.mutate_method == "edit":
@@ -45,15 +65,15 @@ class HumanEvalXBugs(Task):
         if self.mutate_method == "edit":
             prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
-            prompt += "<commit_after>"
+            prompt += "<commit_after>" + doc["prompt"]
         elif self.mutate_method == "edit-type":
             prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix " + doc["bug_type"] + " in " + doc["entry_point"]
-            prompt += "<commit_after>"
+            prompt += "<commit_after>" + doc["prompt"]
         elif self.mutate_method == "prompt":
             prompt = "# Buggy function"
             prompt += "\n" + doc["prompt"] + doc["buggy_solution"] + "\n"
-            prompt += "# Fixed function\ndef"
+            prompt += "# Fixed function\n" + doc["prompt"]
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
 
@@ -83,9 +103,9 @@ class HumanEvalXBugs(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        generation = generation[len(prompt):]
-        if self.mutate_method == "prompt":
-            generation = "def" + generation # Add def which is in the prompt back to the output        
+        # Keep the defining part of the function
+        cutoff = len(prompt) - len(doc["prompt"])
+        generation = generation[cutoff:]
         return self.remove_last_block(generation, self.stop_words)
 
     def process_results(self, generations, references):
