@@ -11,8 +11,70 @@ from lm_eval.base import Task
 _CITATION = """
 """
 
+# TODO: Possibly check for gen finished via brackets
+# https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L115
+
 LANGUAGES = ["python", "cpp", "js", "java", "go", "rust"]
 
+
+# Taken from https://huggingface.co/datasets/nuprl/MultiPL-E/ & https://github.com/THUDM/CodeGeeX
+LANGUAGE_TO_STOP_WORDS = {
+    # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L164
+    "python": ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\nassert"],
+    # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L185
+    "cpp": ["\n}"],
+    # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L188
+    "js": ["\n}"],
+    # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L177
+    "go": ["\n//", "\nfunc main(", "struct", "\nfunc"],
+    # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L169
+    "java": ["\n }\n"],
+}
+
+# https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L6
+IMPORT_HELPER = {
+    "python": [
+        "import math",
+        "import re",
+        "import sys",
+        "import copy",
+        "import datetime",
+        "import itertools",
+        "import collections",
+        "import heapq",
+        "import statistics",
+        "import functools",
+        "import hashlib",
+        "import numpy",
+        "import numpy as np",
+        "import string",
+        "from typing import *",
+        "from collections import *",
+    ],
+    "go": [
+        "math",
+        "strings",
+        "fmt",
+        "strconv",
+        "time",
+        "bytes",
+        "regexp",
+        "sort",
+        "math/rand",
+        "crypto/md5",
+    ],
+    "cpp": [
+        "#include<stdlib.h>",
+        "#include<algorithm>",
+        "#include<math.h>",
+        "#include<stdio.h>",
+        "#include<vector>",
+        "#include<string>",
+        "#include<climits>",
+        "#include<cstring>",
+        "#include<iostream>",
+    ],
+}
 
 def create_all_tasks():
     """Creates a dictionary of tasks from a list of levels
@@ -41,7 +103,7 @@ class GeneralHumanEvalXBugs(Task):
     def __init__(self, mutate_method="prompt", language="python"):
         
         self.DATASET_NAME = language
-        stop_words = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
+        stop_words = LANGUAGE_TO_STOP_WORDS[language]
         self.mutate_method = mutate_method
         if self.mutate_method == "edit":
             stop_words += [
@@ -105,7 +167,7 @@ class GeneralHumanEvalXBugs(Task):
         prompt = self.get_prompt(doc)
         # Keep the defining part of the function
         generation = doc["prompt"].rstrip() + generation[len(prompt):]
-        return self.remove_last_block(generation, self.stop_words)
+        return self.remove_last_block(generation, self.stop_words).strip()
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -115,9 +177,51 @@ class GeneralHumanEvalXBugs(Task):
         :param references: list(str)
             list of str containing refrences
         """
-        code_metric = load("code_eval")
+        code_metric = load("Muennighoff/code_eval")
+        language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
+
+        # See https://github.com/THUDM/CodeGeeX/blob/ebeb850f227a90c79de39f7e26b1302f374f3240/codegeex/benchmark/evaluate_humaneval_x.py
+        if language == "python":
+            generations = [
+                [(IMPORT_HELPER["python"] + "\n" + g).strip() for g in gen] for gen in generations
+            ]
+        elif language == "cpp":
+            for gen in generations:
+                for i, g in enumerate(gen):
+                    for s in IMPORT_HELPER["cpp"]:
+                        if s not in g:
+                            gen[i] = s + "\n" + g
+        elif language == "go":
+            ds = self.get_dataset()[:len(generations)]
+            for gen, doc in zip(generations, ds):
+                import_string = doc["import"]
+                test_setup = doc["test_setup"]
+                other_pkgs = []
+                
+                for pkg in IMPORT_HELPER["go"]:
+                    if pkg not in test_setup:
+                        p = pkg.split("/")[-1]
+                        if p + "." in code:
+                            other_pkgs.append(f"\"{pkg}\"")
+                
+                for i, g in enumerate(gen):
+                    gen[i] = g.replace(import_string, "")
+                    if other_pkgs:
+                        import_other_pkgs = "import (\n" + "    ".join([p + "\n" for p in other_pkgs]) + ")"
+                        gen[i] = = test_setup + "\n" +  import_other_pkgs + "\n" + gen[i]
+                    else:
+                        gen[i] = test_setup + "\n" + gen[i]
+        elif language == "rust":
+            ds = self.get_dataset()[:len(generations)]
+            main = "\nfn main(){ \n } \n"
+            for gen, doc in zip(generations, ds):
+                declaration = doc["declaration"]
+                for i, g in enumerate(gen):
+                    gen[i] = main + declaration + g
+
         results, _ = code_metric.compute(
             references=references,
             predictions=generations,
+            language=language,
         )
         return results
