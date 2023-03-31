@@ -1,3 +1,4 @@
+import inspect
 import json
 import os
 import warnings
@@ -45,7 +46,11 @@ class Evaluator:
         references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
 
         if self.args.check_references:
-            return [[ref] for ref in references], references
+            if "get_solution" in inspect.signature(task.get_reference).parameters:
+                solutions = [task.get_reference(dataset[i], get_solution=True) for i in range(n_tasks)]
+            else:
+                solutions = [[ref] for ref in references]
+            return solutions, references
 
         generations = parallel_generations(
             task,

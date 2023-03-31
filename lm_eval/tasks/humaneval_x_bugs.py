@@ -141,11 +141,14 @@ class GeneralHumanEvalXBugs(Task):
 
         return prompt.strip()
 
-    def get_reference(self, doc):
+    def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""
-        test_func = doc["test"]
-        # check(func_name) is already included
-        return "\n" + test_func
+        if get_solution:
+            return doc["prompt"] + doc["canonical_solution"]
+        else:
+            test_func = doc["test"]
+            # check(func_name) is already included
+            return "\n" + test_func
 
     @staticmethod
     def remove_last_block(string, stop_words):
