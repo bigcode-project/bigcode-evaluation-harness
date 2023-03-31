@@ -119,6 +119,11 @@ def parse_args():
         default="prompt",
         help="Method used to mutate the code, could be edit for commit models",
     )
+    parser.add_argument(
+        "--check_references",
+        action="store_true",
+        help="Don't run generation but benchmark groundtruth (useful dor debugging)",
+    )    
     return parser.parse_args()
 
 

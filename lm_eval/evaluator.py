@@ -42,6 +42,11 @@ class Evaluator:
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
         n_tasks = self.args.limit if self.args.limit else len(dataset)
+        references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
+
+        if self.args.check_references:
+            return [[ref] for ref in references], references
+
         generations = parallel_generations(
             task,
             dataset,
@@ -51,7 +56,6 @@ class Evaluator:
             n_tasks=n_tasks,
             args=self.args,
         )
-        references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
         return generations, references
 
     def evaluate(self, task_name):
@@ -83,3 +87,31 @@ class Evaluator:
                 os.environ["HF_ALLOW_CODE_EVAL"] = "1"
             results = task.process_results(generations, references)
             return results
+
+
+class EvaluatorOA(Evaluator):
+    """WIP"""
+    def generate_text(self, task_name):
+        import openai
+        task = tasks.get_task(task_name, self.args.mutate_method)
+        dataset = task.get_dataset()
+        # if args.limit is None, use all samples
+        n_tasks = self.args.limit if self.args.limit else len(dataset)
+        
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+
+        # Model can be "text-davinci-edit-001" or "code-davinci-edit-001"
+        assert self.model in ["text-davinci-edit-001", "code-davinci-edit-001"]
+        assert self.mutate_method == "edit-openai"
+
+        for sample in range(n_tasks):
+            prompt, instruction = self.task.get_prompt(self.dataset[sample])
+            openai.Edit.create(
+                model=self.model,
+                input=prompt,
+                instruction=instruction
+            )
+
+
+        references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
+        return generations, references
