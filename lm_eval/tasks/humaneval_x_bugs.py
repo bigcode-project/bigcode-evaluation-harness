@@ -211,7 +211,7 @@ class GeneralHumanEvalXBugs(Task):
                     gen[i] = g.replace(import_string, "")
                     if other_pkgs:
                         import_other_pkgs = "import (\n" + "    ".join([p + "\n" for p in other_pkgs]) + ")"
-                        gen[i] = test_setup + "\n" +  import_other_pkgs + "\n" + gen[i]
+                        gen[i] = test_setup + "\n" + import_other_pkgs + "\n" + gen[i]
                     else:
                         gen[i] = test_setup + "\n" + gen[i]
         elif language == "rust":

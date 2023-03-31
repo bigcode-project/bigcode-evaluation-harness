@@ -47,7 +47,7 @@ class Evaluator:
 
         if self.args.check_references:
             if "get_solution" in inspect.signature(task.get_reference).parameters:
-                solutions = [task.get_reference(dataset[i], get_solution=True) for i in range(n_tasks)]
+                solutions = [[task.get_reference(dataset[i], get_solution=True)] for i in range(n_tasks)]
             else:
                 solutions = [[ref] for ref in references]
             return solutions, references
