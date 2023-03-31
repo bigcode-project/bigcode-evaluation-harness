@@ -35,7 +35,7 @@ class GeneralHumanEvalXBugs(Task):
     answers, generation settings and evaluation methods.
     """
 
-    DATASET_PATH = "Muennighoff/humaneval-x-bugs"
+    DATASET_PATH = "bigcode/humaneval-x-bugs"
     DATASET_NAME = None
 
     def __init__(self, mutate_method="prompt", language="python"):
