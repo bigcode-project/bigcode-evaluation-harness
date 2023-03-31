@@ -185,8 +185,9 @@ class GeneralHumanEvalXBugs(Task):
 
         # See https://github.com/THUDM/CodeGeeX/blob/ebeb850f227a90c79de39f7e26b1302f374f3240/codegeex/benchmark/evaluate_humaneval_x.py
         if language == "python":
+            python_imports = "\n".join(IMPORT_HELPER["python"])
             generations = [
-                [(IMPORT_HELPER["python"] + "\n" + g).strip() for g in gen] for gen in generations
+                [(python_imports + "\n" + g).strip() for g in gen] for gen in generations
             ]
         elif language == "cpp":
             for gen in generations:
