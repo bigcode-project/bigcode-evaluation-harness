@@ -29,6 +29,7 @@ LANGUAGE_TO_STOP_WORDS = {
     "go": ["\n//", "\nfunc main(", "struct", "\nfunc"],
     # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L169
     "java": ["\n }\n"],
+    "rust": ["\n}"],
 }
 
 LANGUAGE_TO_TIMEOUT = {
@@ -248,10 +249,20 @@ class GeneralHumanEvalXBugs(Task):
                 for i, g in enumerate(gen):
                     gen[i] = main + declaration + g
 
-        results, _ = code_metric.compute(
-            references=references,
-            predictions=generations,
-            language=language,
-            timeout=timeout
-        )
+        for i, (gen, ref) in enumerate(zip(generations, references)):
+          results, log = code_metric.compute(
+              references=[ref],
+              predictions=[gen],
+              language=language,
+              timeout=timeout,
+          )
+          with open("errors.txt", "a") as f:
+              f.write(log[0][0][1]["result"] + "\n")
+          if ("compilation error" in log[0][0][1]["result"]) or (results["pass@1"] != 0):
+              print("XXXXX")
+              print(results)
+              print(log)
+              print(i)
+              print(gen[0])
+              print(ref)        
         return results
