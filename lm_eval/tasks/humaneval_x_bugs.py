@@ -31,6 +31,15 @@ LANGUAGE_TO_STOP_WORDS = {
     "java": ["\n }\n"],
 }
 
+LANGUAGE_TO_TIMEOUT = {
+    "python": 10,
+    "cpp": 10,
+    "js": 10,
+    "java": 10,
+    "go": 10,
+    "rust": 300, # Necessary for first-time compilation of cargo
+}
+
 # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L6
 IMPORT_HELPER = {
     "python": [
@@ -139,12 +148,16 @@ class GeneralHumanEvalXBugs(Task):
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
 
+        # Strip off the final \n as it seems like its easier for small models to generate
+        # \n\t than \t based on experiments from @lvwerra
         return prompt.strip()
 
     def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""
         if get_solution:
             return doc["prompt"] + doc["canonical_solution"]
+            # To check that all buggy solutions result in a 0 score:
+            # return doc["prompt"] + doc["buggy_solution"]
         else:
             test_func = doc["test"]
             # check(func_name) is already included
@@ -168,7 +181,8 @@ class GeneralHumanEvalXBugs(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        # Keep the defining part of the function
+        # Keep the defining part of the function; Strip on the right to maintain same
+        # behavior as with get_prompt
         generation = doc["prompt"].rstrip() + generation[len(prompt):]
         return self.remove_last_block(generation, self.stop_words).strip()
 
@@ -181,6 +195,7 @@ class GeneralHumanEvalXBugs(Task):
             list of str containing refrences
         """
         code_metric = load("Muennighoff/code_eval")
+        timeout = LANGUAGE_TO_TIMEOUT[self.DATASET_NAME]
         language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
 
         # See https://github.com/THUDM/CodeGeeX/blob/ebeb850f227a90c79de39f7e26b1302f374f3240/codegeex/benchmark/evaluate_humaneval_x.py
@@ -196,19 +211,29 @@ class GeneralHumanEvalXBugs(Task):
                         if s not in g:
                             gen[i] = s + "\n" + g
         elif language == "go":
-            ds = self.get_dataset()[:len(generations)]
+            ds = self.get_dataset().select(range(len(generations)))
             for gen, doc in zip(generations, ds):
                 import_string = doc["import"]
                 test_setup = doc["test_setup"]
-                other_pkgs = []
-                
-                for pkg in IMPORT_HELPER["go"]:
-                    if pkg not in test_setup:
-                        p = pkg.split("/")[-1]
-                        if p + "." in code:
-                            other_pkgs.append(f"\"{pkg}\"")
-                
                 for i, g in enumerate(gen):
+                    other_pkgs = []
+                    for pkg in IMPORT_HELPER["go"]:
+                        if pkg not in test_setup:
+                            p = pkg.split("/")[-1]
+                            if p + "." in g:
+                                # The problem is that it could appear in a comment
+                                # For example in problem 158, the docstring is:
+                                # // ... a list of strings.
+                                # but the "strings" package is never used
+                                # Golang throws an error if the package is not used
+                                # Hence search for the package & make sure it's not in a commented line
+                                #other_pkgs.append(f"\"{pkg}\"")
+                                lines = g.split("\n")
+                                for line in lines:
+                                    if p + "." in line and not line.startswith("//"):
+                                        other_pkgs.append(f"\"{pkg}\"")
+                                        break
+
                     gen[i] = g.replace(import_string, "")
                     if other_pkgs:
                         import_other_pkgs = "import (\n" + "    ".join([p + "\n" for p in other_pkgs]) + ")"
@@ -227,5 +252,6 @@ class GeneralHumanEvalXBugs(Task):
             references=references,
             predictions=generations,
             language=language,
+            timeout=timeout
         )
         return results
