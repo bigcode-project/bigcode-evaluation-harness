@@ -242,13 +242,20 @@ class GeneralHumanEvalXBugs(Task):
                     else:
                         gen[i] = test_setup + "\n" + gen[i]
         elif language == "rust":
-            ds = self.get_dataset()[:len(generations)]
+            ds = self.get_dataset().select(range(len(generations)))
             main = "\nfn main(){ \n } \n"
             for gen, doc in zip(generations, ds):
                 declaration = doc["declaration"]
                 for i, g in enumerate(gen):
                     gen[i] = main + declaration + g
 
+        results, _ = code_metric.compute(
+            references=references,
+            predictions=generations,
+            language=language,
+            timeout=timeout,
+        )
+        """
         for i, (gen, ref) in enumerate(zip(generations, references)):
           results, log = code_metric.compute(
               references=[ref],
@@ -265,4 +272,5 @@ class GeneralHumanEvalXBugs(Task):
               print(i)
               print(gen[0])
               print(ref)        
+        """
         return results
