@@ -11,25 +11,21 @@ from lm_eval.base import Task
 _CITATION = """
 """
 
-# TODO: Possibly check for gen finished via brackets
-# https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L115
-
 LANGUAGES = ["python", "cpp", "js", "java", "go", "rust"]
-
 
 # Taken from https://huggingface.co/datasets/nuprl/MultiPL-E/ & https://github.com/THUDM/CodeGeeX
 LANGUAGE_TO_STOP_WORDS = {
     # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L164
     "python": ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\nassert"],
     # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L185
-    "cpp": ["\n}"],
+    "cpp": [],
     # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L188
-    "js": ["\n}"],
+    "js": [],
     # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L177
     "go": ["\n//", "\nfunc main(", "struct", "\nfunc"],
     # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L169
-    "java": ["\n }\n"],
-    "rust": ["\n}"],
+    "java": [],
+    "rust": [],
 }
 
 LANGUAGE_TO_TIMEOUT = {
@@ -37,7 +33,7 @@ LANGUAGE_TO_TIMEOUT = {
     "cpp": 10,
     "js": 10,
     "java": 10,
-    "go": 10,
+    "go": 20,
     "rust": 300, # Necessary for first-time compilation of cargo
 }
 
@@ -113,22 +109,51 @@ class GeneralHumanEvalXBugs(Task):
     def __init__(self, mutate_method="prompt", language="python"):
         
         self.DATASET_NAME = language
-        stop_words = LANGUAGE_TO_STOP_WORDS[language]
         self.mutate_method = mutate_method
+        
+        stop_words = LANGUAGE_TO_STOP_WORDS[language]
         if self.mutate_method.startswith("edit"):
-            stop_words += [
-                "<commit_before>", 
-                "<commit_msg>", 
-                "<commit_after>", 
-                "<|endoftext|>",
-            ]
-        elif self.mutate_method == "instruct":
-            stop_words += ["<|endoftext|>"]
+            stop_words.extend([
+                "<commit_before>",
+                "<commit_msg>",
+                "<commit_after>",
+            ])
+        stop_words.append("<|endoftext|>")
 
         super().__init__(
             stop_words=stop_words,
             requires_execution=True,
         )
+
+    def check_fn(self, code):
+        """
+        Adapted from https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L115
+
+        Checks whether the generated code is finished
+        """
+        if any([w in code for w in self.stop_words]):
+            return True
+
+        if self.DATASET_NAME == "python":
+            for line in code.split("\n"):
+                if len(line.strip()) > 0 and line[0] != ' ' and line[0] != '\t':
+                    return True
+        elif self.DATASET_NAME == "java":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        elif self.DATASET_NAME == "go":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        elif self.DATASET_NAME == "js":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        elif self.DATASET_NAME == "cpp":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        elif self.DATASET_NAME == "rust":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        return False
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -150,7 +175,10 @@ class GeneralHumanEvalXBugs(Task):
             prompt += "# Fixed function\n" + doc["prompt"]
         elif self.mutate_method == "instruct":
             # input_template = "Instructions: {instruction}\nInput: {input} Output: "
-            prompt = f"Instructions: Fix bug in {doc['entry_point']}\nInput: {doc['buggy_solution']} Output:"
+            # https://github.com/SivilTaram/santacoder-finetuning-commit/blob/82a5598d632d299b7350c8b2ffb4af39527befa3/train.py#L115
+            prompt = f"Instructions: Fix bug in {doc['entry_point']}\n"
+            prompt += f"Input: {doc['prompt'] + doc['buggy_solution']} "
+            prompt += f"Output: " + doc["prompt"]
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
         # Strip off the final \n as it seems like its easier for small models to generate
@@ -168,13 +196,35 @@ class GeneralHumanEvalXBugs(Task):
             # check(func_name) is already included
             return "\n" + test_func
 
-    @staticmethod
-    def remove_last_block(string, stop_words):
-        stop_words = [re.escape(word) for word in stop_words] # Escape e.g. | in <|endoftext|>
-        # Remove the last block of the code containing stop_words for HumanEval
-        string_list = re.split("(%s)" % "|".join(stop_words), string)
-        # last string should be ""
-        return "".join(string_list[:-2])
+    def remove_last_block(self, code):
+        """
+        Adapted from https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L151
+        """
+        for w in self.stop_words:
+            if w in code:
+                code = code[:code.rfind(w)]
+
+        if self.DATASET_NAME == "java":
+            main_pos = code.find("public static void main")
+            if main_pos != -1:
+                code = code[:main_pos] + '}'
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+            if code.count('{') + 1 == code.count('}'):
+                code += "\n}"
+        elif self.DATASET_NAME == "go":
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+        elif self.DATASET_NAME == "cpp":
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+        elif self.DATASET_NAME == "js":
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+        elif self.DATASET_NAME == "rust":
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+        return code
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
@@ -186,10 +236,8 @@ class GeneralHumanEvalXBugs(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        # Keep the defining part of the function; Strip on the right to maintain same
-        # behavior as with get_prompt
-        generation = doc["prompt"].rstrip() + generation[len(prompt):]
-        return self.remove_last_block(generation, self.stop_words).strip()
+        # Strip on the right to maintain same behavior as with get_prompt
+        return doc["prompt"].rstrip() + self.remove_last_block(generation[len(prompt):])
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -202,6 +250,19 @@ class GeneralHumanEvalXBugs(Task):
         code_metric = load("Muennighoff/code_eval")
         timeout = LANGUAGE_TO_TIMEOUT[self.DATASET_NAME]
         language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
+
+        # Apply the diff to the input
+        if self.mutate_method == "diff":
+            ds = self.get_dataset().select(range(len(generations)))
+            end_of_diff = re.compile("\n[^ +-@]+")
+            for gen in generations:
+                for i, g in enumerate(gen):
+                    # truncate diff hunk at the first line not starting with " ", "+", "-", or "@"
+                    diff_hunk: str = end_of_diff.split(g)[0]
+                    # apply the diff hunk to the input
+                    # apply_diff(function_str, diff_hunk)
+                    # WIP
+
 
         # See https://github.com/THUDM/CodeGeeX/blob/ebeb850f227a90c79de39f7e26b1302f374f3240/codegeex/benchmark/evaluate_humaneval_x.py
         if language == "python":
@@ -259,22 +320,25 @@ class GeneralHumanEvalXBugs(Task):
             language=language,
             timeout=timeout,
         )
-        """
+        """Debugging help
         for i, (gen, ref) in enumerate(zip(generations, references)):
-          results, log = code_metric.compute(
-              references=[ref],
-              predictions=[gen],
-              language=language,
-              timeout=timeout,
-          )
-          with open("errors.txt", "a") as f:
-              f.write(log[0][0][1]["result"] + "\n")
-          if ("compilation error" in log[0][0][1]["result"]) or (results["pass@1"] != 0):
-              print("XXXXX")
-              print(results)
-              print(log)
-              print(i)
-              print(gen[0])
-              print(ref)        
+            import time
+            starttime = time.time()            
+            results, log = code_metric.compute(
+                references=[ref],
+                predictions=[gen],
+                language=language,
+                timeout=timeout,
+            )
+            print("TOOK: ", time.time() - starttime)
+            with open("errors.txt", "a") as f:
+                f.write(log[0][0][1]["result"] + "\n")
+            if ("compilation error" in log[0][0][1]["result"]) or (results["pass@1"] != 0):
+                print("XXXXX")
+                print(results)
+                print(log)
+                print(i)
+                print(gen[0])
+                print(ref)        
         """
         return results

@@ -153,6 +153,9 @@ def main():
 
     results = {}
     if args.generations_path and os.path.exists(args.generations_path):
+        if args.generation_only:
+            print("generation mode only, skip the evaluation")
+            return
         # here we don't generate code but only evaluate previously computed generations
         if args.generation_only:
             return
@@ -193,7 +196,7 @@ def main():
                     print("generation mode only")
                 generations, references = evaluator.generate_text(task)
                 if accelerator.is_main_process:
-                    with open(generations_path, "w") as fp:
+                    with open(args.generations_path, "w") as fp:
                         json.dump(generations, fp)
                         print("generations were saved")
                     if args.save_references:
