@@ -37,7 +37,7 @@ LANGUAGE_TO_TIMEOUT = {
     "cpp": 10,
     "js": 10,
     "java": 10,
-    "go": 10,
+    "go": 20,
     "rust": 300, # Necessary for first-time compilation of cargo
 }
 
