@@ -325,7 +325,7 @@ class GeneralHumanEvalXBugs(Task):
                 for i, g in enumerate(gen):
                     gen[i] = main + declaration + g
 
-        results, _ = code_metric.compute(
+        results, logs = code_metric.compute(
             references=references,
             predictions=generations,
             language=language,
