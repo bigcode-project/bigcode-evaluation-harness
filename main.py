@@ -153,6 +153,9 @@ def main():
 
     results = {}
     if args.generations_path and os.path.exists(args.generations_path):
+        if args.generation_only:
+            print("generation mode only, skip the evaluation")
+            return
         # here we don't generate code but only evaluate previously computed generations
         if accelerator.is_main_process:
             print("evaluation only mode")
@@ -183,7 +186,7 @@ def main():
                 raise ValueError("No eos_token or bos_token found")
         tokenizer.pad_token = tokenizer.eos_token
         
-        args.generations_path = "generations.json" if args.generations_path is None else args.generations_path
+        generations_path = "generations.json" if args.generations_path is None else args.generations_path
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
         for task in task_names:
