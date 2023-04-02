@@ -177,7 +177,7 @@ class GeneralHumanEvalXBugs(Task):
             # input_template = "Instructions: {instruction}\nInput: {input} Output: "
             # https://github.com/SivilTaram/santacoder-finetuning-commit/blob/82a5598d632d299b7350c8b2ffb4af39527befa3/train.py#L115
             prompt = f"Instructions: Fix bug in {doc['entry_point']}\n"
-            prompt += f"Input: {doc["prompt"] + doc['buggy_solution']} "
+            prompt += f"Input: {doc['prompt'] + doc['buggy_solution']} "
             prompt += f"Output: " + doc["prompt"]
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
