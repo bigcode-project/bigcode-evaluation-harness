@@ -37,6 +37,16 @@ LANGUAGE_TO_TIMEOUT = {
     "rust": 300, # Necessary for first-time compilation of cargo
 }
 
+# Java sometimes fails with more workers; For JS it's twice as fast with 4 workers
+LANGUAGE_TO_NUM_WORKERS = {
+    "python": 4,
+    "cpp": 4,
+    "js": 4,
+    "java": 1,
+    "go": 4,
+    "rust": 1,
+}
+
 # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L6
 IMPORT_HELPER = {
     "python": [
@@ -249,6 +259,7 @@ class GeneralHumanEvalXBugs(Task):
         """
         code_metric = load("Muennighoff/code_eval")
         timeout = LANGUAGE_TO_TIMEOUT[self.DATASET_NAME]
+        num_workers = LANGUAGE_TO_NUM_WORKERS[self.DATASET_NAME]
         language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
 
         # Apply the diff to the input
@@ -319,6 +330,7 @@ class GeneralHumanEvalXBugs(Task):
             predictions=generations,
             language=language,
             timeout=timeout,
+            num_workers=num_workers,
         )
         """Debugging help
         for i, (gen, ref) in enumerate(zip(generations, references)):
