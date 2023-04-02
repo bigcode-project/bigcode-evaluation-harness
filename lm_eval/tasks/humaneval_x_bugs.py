@@ -115,13 +115,15 @@ class GeneralHumanEvalXBugs(Task):
         self.DATASET_NAME = language
         stop_words = LANGUAGE_TO_STOP_WORDS[language]
         self.mutate_method = mutate_method
-        if self.mutate_method == "edit":
+        if self.mutate_method.startswith("edit"):
             stop_words += [
                 "<commit_before>", 
                 "<commit_msg>", 
                 "<commit_after>", 
                 "<|endoftext|>",
             ]
+        elif self.mutate_method == "instruct":
+            stop_words += ["<|endoftext|>"]
 
         super().__init__(
             stop_words=stop_words,
@@ -146,9 +148,11 @@ class GeneralHumanEvalXBugs(Task):
             prompt = "# Buggy function"
             prompt += "\n" + doc["prompt"] + doc["buggy_solution"] + "\n"
             prompt += "# Fixed function\n" + doc["prompt"]
+        elif self.mutate_method == "instruct":
+            # input_template = "Instructions: {instruction}\nInput: {input} Output: "
+            prompt = f"Instructions: Fix bug in {doc['entry_point']}\nInput: {doc['buggy_solution']} Output:"
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
-
         # Strip off the final \n as it seems like its easier for small models to generate
         # \n\t than \t based on experiments from @lvwerra
         return prompt.strip()
