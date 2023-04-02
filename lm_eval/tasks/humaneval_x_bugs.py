@@ -1,6 +1,22 @@
 """WIP
 
 Homepage: https://github.com/bigcode-project/commits
+
+Recommended evaluation:
+--max_length_generation 2048
+    - The longest solution by split using the santacoder tokenizer:
+        - CPP: 562
+        - Java: 399
+        - JS: 465
+        - Go: 349
+        - Rust: 753
+    - In addition comes:
+        - the function docstring (~100 tokens max)
+        - the instruction (~10 tokens)
+        - the generation/duplication with fixed bug (i.e. docstring again & solution) 
+    - So for e.g. Rust the entire thing may be ~1800 tokens (worst case)
+--do_sample False
+    - Greedy evaluation seems to work best; More experiments needed
 """
 
 import re
