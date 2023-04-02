@@ -186,7 +186,7 @@ def main():
                 raise ValueError("No eos_token or bos_token found")
         tokenizer.pad_token = tokenizer.eos_token
         
-        generations_path = "generations.json" if args.generations_path is None else args.generations_path
+        args.generations_path = "generations.json" if args.generations_path is None else args.generations_path
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
         for task in task_names:
@@ -195,7 +195,7 @@ def main():
                     print("generation mode only")
                 generations, references = evaluator.generate_text(task)
                 if accelerator.is_main_process:
-                    with open(generations_path, "w") as fp:
+                    with open(args.generations_path, "w") as fp:
                         json.dump(generations, fp)
                         print("generations were saved")
                     if args.save_references:
