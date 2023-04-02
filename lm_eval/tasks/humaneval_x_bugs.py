@@ -191,6 +191,7 @@ class GeneralHumanEvalXBugs(Task):
         generation = doc["prompt"].rstrip() + generation[len(prompt):]
         return self.remove_last_block(generation, self.stop_words).strip()
 
+
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
         returning the metric for the generations.
@@ -202,6 +203,19 @@ class GeneralHumanEvalXBugs(Task):
         code_metric = load("Muennighoff/code_eval")
         timeout = LANGUAGE_TO_TIMEOUT[self.DATASET_NAME]
         language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
+
+        # Apply the diff to the input
+        if self.mutate_method == "diff":
+            ds = self.get_dataset().select(range(len(generations)))
+            end_of_diff = re.compile("\n[^ +-@]+")
+            for gen in generations:
+                for i, g in enumerate(gen):
+                    # truncate diff hunk at the first line not starting with " ", "+", "-", or "@"
+                    diff_hunk: str = end_of_diff.split(g)[0]
+                    # apply the diff hunk to the input
+                    # apply_diff(function_str, diff_hunk)
+                    # WIP
+
 
         # See https://github.com/THUDM/CodeGeeX/blob/ebeb850f227a90c79de39f7e26b1302f374f3240/codegeex/benchmark/evaluate_humaneval_x.py
         if language == "python":
@@ -259,22 +273,25 @@ class GeneralHumanEvalXBugs(Task):
             language=language,
             timeout=timeout,
         )
-        """
+        """Debugging help
         for i, (gen, ref) in enumerate(zip(generations, references)):
-          results, log = code_metric.compute(
-              references=[ref],
-              predictions=[gen],
-              language=language,
-              timeout=timeout,
-          )
-          with open("errors.txt", "a") as f:
-              f.write(log[0][0][1]["result"] + "\n")
-          if ("compilation error" in log[0][0][1]["result"]) or (results["pass@1"] != 0):
-              print("XXXXX")
-              print(results)
-              print(log)
-              print(i)
-              print(gen[0])
-              print(ref)        
+            import time
+            starttime = time.time()            
+            results, log = code_metric.compute(
+                references=[ref],
+                predictions=[gen],
+                language=language,
+                timeout=timeout,
+            )
+            print("TOOK: ", time.time() - starttime)
+            with open("errors.txt", "a") as f:
+                f.write(log[0][0][1]["result"] + "\n")
+            if ("compilation error" in log[0][0][1]["result"]) or (results["pass@1"] != 0):
+                print("XXXXX")
+                print(results)
+                print(log)
+                print(i)
+                print(gen[0])
+                print(ref)        
         """
         return results
