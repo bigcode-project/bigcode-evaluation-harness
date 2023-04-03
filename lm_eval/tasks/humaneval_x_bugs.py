@@ -1,6 +1,22 @@
 """WIP
 
 Homepage: https://github.com/bigcode-project/commits
+
+Recommended evaluation:
+--max_length_generation 2048
+    - The longest solution by split using the santacoder tokenizer:
+        - CPP: 562
+        - Java: 399
+        - JS: 465
+        - Go: 349
+        - Rust: 753
+    - In addition comes:
+        - the function docstring (~100 tokens max)
+        - the instruction (~10 tokens)
+        - the generation/duplication with fixed bug (i.e. docstring again & solution) 
+    - So for e.g. Rust the entire thing may be ~1800 tokens (worst case)
+--do_sample False
+    - Greedy evaluation seems to work best; More experiments needed
 """
 
 import re
@@ -35,6 +51,16 @@ LANGUAGE_TO_TIMEOUT = {
     "java": 10,
     "go": 20,
     "rust": 300, # Necessary for first-time compilation of cargo
+}
+
+# Java sometimes fails with more workers; For JS it's twice as fast with 4 workers
+LANGUAGE_TO_NUM_WORKERS = {
+    "python": 4,
+    "cpp": 4,
+    "js": 4,
+    "java": 1,
+    "go": 4,
+    "rust": 1,
 }
 
 # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L6
@@ -249,6 +275,7 @@ class GeneralHumanEvalXBugs(Task):
         """
         code_metric = load("Muennighoff/code_eval")
         timeout = LANGUAGE_TO_TIMEOUT[self.DATASET_NAME]
+        num_workers = LANGUAGE_TO_NUM_WORKERS[self.DATASET_NAME]
         language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
 
         # Apply the diff to the input
@@ -314,11 +341,12 @@ class GeneralHumanEvalXBugs(Task):
                 for i, g in enumerate(gen):
                     gen[i] = main + declaration + g
 
-        results, _ = code_metric.compute(
+        results, logs = code_metric.compute(
             references=references,
             predictions=generations,
             language=language,
             timeout=timeout,
+            num_workers=num_workers,
         )
         """Debugging help
         for i, (gen, ref) in enumerate(zip(generations, references)):
