@@ -187,7 +187,7 @@ def main():
                 raise ValueError("No eos_token or bos_token found")
         tokenizer.pad_token = tokenizer.eos_token
         
-        generations_path = "generations.json" if args.generations_path is None else args.generations_path
+        args.generations_path = "generations.json" if args.generations_path is None else args.generations_path
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
         for task in task_names:
