@@ -207,8 +207,19 @@ class GeneralHumanEvalXBugs(Task):
             prompt += f"Output: " + doc["prompt"]
         else:
             raise ValueError(f"Unknown mutate_method: {mutate_method}")
-        # Strip off the final \n as it seems like its easier for small models to generate
-        # \n\t than \t based on experiments from @lvwerra
+        # Strip off the final \n to make the tokens more natural
+        # Essentially, we want to make sure that if there was no distrinction between
+        # input & output, the tokens would be the same
+        # E.g. for SantaCoder:
+        # tokenize("""def hi()\n   return""")
+        # ['def', 'Ġhi', '()', 'ĊĠĠ', 'Ġreturn']
+        # So we need to split before the \n so that the input is
+        # ['def', 'Ġhi', '()'] and the model can generate ['ĊĠĠ', 'Ġreturn']
+        # If instead we provide def hi()\n the tokens will be
+        # ['def', 'Ġhi', '()', 'Ċ'] and the model would need to generate ['ĠĠ', 'Ġreturn']
+        # Which would be harder, as it's not the usual way these tokens are tokenized
+        # i.e. the model has never seen the token sequence of ['()', 'Ċ', 'ĠĠ'], but only ['()', 'ĊĠĠ']
+        # The same holds for Java, JS, Go, Rust, C++ tho the start sequences are slightly different
         return prompt.strip()
 
     def get_reference(self, doc, get_solution=False):
