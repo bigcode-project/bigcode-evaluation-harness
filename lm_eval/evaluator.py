@@ -67,7 +67,7 @@ class Evaluator:
             )
 
         if self.accelerator.is_main_process:
-            if not self.args.generations_path:
+            if not self.args.load_generations_path:
                 if self.args.save_generations:
                     with open("generations.json", "w") as fp:
                         json.dump(generations, fp)

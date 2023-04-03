@@ -108,7 +108,7 @@ If you already have the generations in a json file from this evaluation harness 
 Below is an example, be mind of specifying arguments proper to the task you are evaluating on, and note that `model` value here only serves for documenting the experiment.
 
 ```bash
-accelerate launch  main.py   --tasks mbpp  --allow_code_execution  --generations_path generations.json  --model incoder-temperature-08
+accelerate launch  main.py   --tasks mbpp  --allow_code_execution  --load_generations_path generations.json  --model incoder-temperature-08
 ```
 
 ## Implementing new tasks
