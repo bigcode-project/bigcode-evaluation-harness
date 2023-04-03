@@ -97,7 +97,7 @@ def parse_args():
         help="Path of file with previously generated solutions, if provided generation is skipped and only evaluation is done",
     )
     parser.add_argument(
-        "--output_path",
+        "--metric_output_path",
         type=str,
         default="evaluation_results.json",
         help="Path to save the results",
@@ -194,7 +194,7 @@ def main():
         if accelerator.is_main_process:
             print(dumped)
 
-        with open(args.output_path, "w") as f:
+        with open(args.metric_output_path, "w") as f:
             f.write(dumped)
 
 

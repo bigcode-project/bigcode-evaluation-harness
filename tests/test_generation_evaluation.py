@@ -22,7 +22,7 @@ def update_args(args):
     args.allow_code_execution = True
     args.save_generations = False
     args.save_references = False
-    args.output_path = TMPDIR
+    args.metric_output_path = TMPDIR
     args.load_generations_path = None
     args.generation_only = False
     # postprocessing for HumanEval and MBPP makes generations

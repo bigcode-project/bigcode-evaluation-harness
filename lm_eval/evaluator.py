@@ -32,7 +32,7 @@ class Evaluator:
         self.args = args
 
         # setup arguments
-        self.output_path = args.output_path
+        self.metric_output_path = args.metric_output_path
 
         # code evaluation permission
         self.allow_code_execution = args.allow_code_execution
