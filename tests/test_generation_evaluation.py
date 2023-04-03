@@ -21,6 +21,7 @@ def update_args(args):
     # the executed code for the tests is safe (see tests/data/*_eval_gens.json)
     args.allow_code_execution = True
     args.save_generations = False
+    args.save_generations_path = ""
     args.save_references = False
     args.metric_output_path = TMPDIR
     args.load_generations_path = None

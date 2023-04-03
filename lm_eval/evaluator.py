@@ -69,13 +69,13 @@ class Evaluator:
         if self.accelerator.is_main_process:
             if not self.args.load_generations_path:
                 if self.args.save_generations:
-                    with open("generations.json", "w") as fp:
+                    with open(self.args.save_generations_path, "w") as fp:
                         json.dump(generations, fp)
-                        print("generations were saved")
+                        print(f"generations were saved at {self.args.save_generations_path}")
                 if self.args.save_references:
                     with open("references.json", "w") as fp:
                         json.dump(references, fp)
-                        print("references were saved")
+                        print("references were saved at references.json")
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"

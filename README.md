@@ -89,7 +89,7 @@ accelerate launch  main.py \
 * `limit` represents the number of problems to solve, if it's not provided all problems in the benchmark are selected. 
 * `allow_code_execution` is for executing the generated code: it is off by default, read the displayed warning before calling it to enable execution. 
 * Some models with custom code on the HF hub like [SantaCoder](https://huggingface.co/bigcode/santacoder) require calling `--trust_remote_code`, for private models add `--use_auth_token`.
-* `save_generations` saves the post-processed generations in a json file. You can also save references by calling `--save_references`
+* `save_generations` saves the post-processed generations in a json file at `save_generations_path` (by default `generations.json`). You can also save references by calling `--save_references`
 
 Some tasks don't require code execution such as
 `codexglue_code_to_text-<LANGUAGE>`/`codexglue_code_to_text-python-left`/`conala`/`concode` that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `batch_size=1`. (Note that `batch_size` should always be equal or less than `n_samples`).

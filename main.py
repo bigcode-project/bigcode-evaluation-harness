@@ -108,6 +108,12 @@ def parse_args():
         help="Whether to save code generations",
     )
     parser.add_argument(
+        "--save_generations_path",
+        type=str,
+        default="generations.json",
+        help="Path for saving the code generations",
+    )
+    parser.add_argument(
         "--save_references",
         action="store_true",
         help="Whether to save reference solutions/tests",
