@@ -106,9 +106,6 @@ def compute(
         try:
             score = 1 if abs(float(ans) - float(ref)) < 1e-3 else 0
         except ValueError as e:
-            warnings.warn(
-                f"""ValueError - {e} during scoring task_id- {task_id},answer - {ans},reference -{ref}\ndefaulting evaluation score for this answer to 0"""
-            )
             errored += 1
             score = 0
 
