@@ -218,6 +218,55 @@ These are classification tasks for Java and C, we provide the code to finetune m
 * [Java code equivalence prediction](https://huggingface.co/datasets/code_x_glue_cc_clone_detection_big_clone_bench)
 * [C code defect prediction](https://huggingface.co/datasets/code_x_glue_cc_defect_detection)
 
+## Natural language reasoning tasks
+
+These are reasoning tasks involving mathematical , symbolic and procedural reasoning with the task description / questions are in natural language.
+
+#### PAL - Program-aided Language Models
+
+In PAL, Large Language Models solve reasoning problems by generating reasoning chains with code. PAL datasets that are currently supported:
+
+* [GSM8K](https://huggingface.co/datasets/gsm8k) - Grade School Math 8K
+* [GSM-HARD](https://huggingface.co/datasets/reasoning-machines/gsm-hard) - Created by replacing the numbers in the questions of GSM8K with larger numbers 
+
+The model is prompted with few-shot examples of questions and reasoning steps as code. It then generates reasoning steps for a new question as Python code, which is executed to get the model's predicted answer.
+
+PAL uses two types of few-shot evaluation - 
+
+- `greedy` - samples one generation by greedy decoding and evaluates against reference answers
+- `majority_voting` - samples k (k=40 in paper) generations and takes majority voted answer to evaluate against the reference.
+
+**Task signature** : `pal-{dataset_name}-{evaluation_type}` (eg: `pal-gsm8k-greedy`,`pal-gsmhard-majority_voting`)
+
+Commands to run the evaluation:
+
+**Greedy Decoding**
+
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks pal-gsm8k-greedy \
+  --n_samples 1 \
+  --batch_size 1 \
+  --do_sample False \
+  --allow_code_execution
+```
+
+**Majority Voting**
+
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks pal-gsmhard-majority_voting \
+  --n_samples 40 \
+  --batch_size 1 \
+  --temperature 0.7 \
+  --top_p 0.95 \
+  --allow_code_execution
+```
+
 ## How to add a new benchmark
 
 We welcome contributions to add new code benchmarks to this evaluation harness. You can find a step-by-step guide in [`guide.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md).
