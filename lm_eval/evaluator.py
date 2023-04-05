@@ -72,7 +72,7 @@ class Evaluator:
         if len(generations[0]) != self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
             warnings.warn(
-                "Number of tasks wasn't proportional to number of devices, we removed extra predictions"
+                "Number of tasks wasn't proportional to number of devices, removed extra predictions"
             )
 
         if self.accelerator.is_main_process:
