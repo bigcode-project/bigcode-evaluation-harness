@@ -1,9 +1,12 @@
 from collections import defaultdict
+import math
 import warnings
 
 import torch
 from torch.utils.data import IterableDataset
 from tqdm import tqdm
+
+INFILL_MODE = False
 
 
 class TokenizedDataset(IterableDataset):
@@ -34,9 +37,28 @@ class TokenizedDataset(IterableDataset):
 
     def __iter__(self):
         prompts = []
+        infill = []
         for sample in range(self.n_tasks):
-            prompt = self.prefix + self.task.get_prompt(self.dataset[sample])
+            prompt_contents = self.task.get_prompt(self.dataset[sample])
+            if isinstance(prompt_contents, str):
+                infill.append(False)
+                prompt = self.prefix + prompt_contents
+            elif isinstance(prompt_contents, dict):
+                assert set(prompt_contents.keys()) == {"prefix", "suffix"}
+                infill.append(True)
+                prompt = self.prefix + self._make_infill_prompt(**prompt_contents)
+            else:
+                raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
             prompts.append(prompt)
+
+        if not len(set(infill)) == 1:
+            raise ValueError("Mixed infill and completion prompts are not supported.")
+        global INFILL_MODE
+        INFILL_MODE = infill[0]
+        if INFILL_MODE:
+            return_token_type_ids = False
+        else:
+            return_token_type_ids = None  # default
 
         outputs = self.tokenizer(
             prompts,
@@ -44,6 +66,7 @@ class TokenizedDataset(IterableDataset):
             truncation=True,
             return_tensors="pt",
             max_length=self.max_length,
+            return_token_type_ids=return_token_type_ids,
         )
 
         if self.n_copies == 1 and self.n_tasks % self.num_devices != 0:
@@ -59,6 +82,19 @@ class TokenizedDataset(IterableDataset):
                     "task_id": sample,
                     "input_len": outputs.attention_mask[sample].sum(),
                 }
+
+    def _make_infill_prompt(self, prefix, suffix):
+        """Make a prompt for infilling.
+        Currently supported only for official InCoder and SantaCoder implementations.
+        """
+        model_id = self.tokenizer.name_or_path
+        if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
+            self.tokenizer.add_special_tokens({"pad_token": "<pad>"})
+            return f"{prefix}<|mask:0|>{suffix}<|mask:0|>"
+        elif model_id in ["bigcode/santacoder"]:
+            return f"<fim-prefix>{prefix}<fim-suffix>{suffix}<fim-middle>"
+        else:
+            raise ValueError(f"Infilling not yet supported for: {model_id}")
 
 
 def complete_code(
@@ -80,10 +116,16 @@ def complete_code(
     """
 
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
-    for step, batch in tqdm(enumerate(dataloader)):
+    for step, batch in tqdm(
+        enumerate(dataloader),
+        total=math.ceil(
+            n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
+        ),
+    ):
         with torch.no_grad():
             if task.stop_words:
-                gen_kwargs["stopping_criteria"][0].start_length = batch["ids"].shape[-1]
+                # Set the start_length after which to check for stopping to be the longest input ignoring padding
+                gen_kwargs["stopping_criteria"][0].start_length = batch["input_len"].max().item()
             generated_tokens = accelerator.unwrap_model(model).generate(
                 input_ids=batch["ids"][:, : batch["input_len"]],
                 num_return_sequences=batch_size,
@@ -104,12 +146,40 @@ def complete_code(
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
 
+    def parse_infill(code, tokenizer):
+        """Reorder infill code and remove remaining special tokens."""
+        model_id = tokenizer.name_or_path
+        if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
+            prefix, suffix, infill = code.split("<|mask:0|>", 2)
+            infill = infill.split("<|endofmask|>")[0]
+        elif model_id in ["bigcode/santacoder"]:
+            prefix, rest = code.split("<fim-suffix>", 1)
+            suffix, infill = rest.split("<fim-middle>", 1)
+            infill = infill.split("<|endoftext|>")[0]
+        else:
+            raise ValueError(f"Infilling not yet supported for: {model_id}")
+        for k, v in tokenizer.special_tokens_map.items():
+            if k == "additional_special_tokens":
+                for t in v:
+                    infill = infill.replace(t, "")
+            else:
+                infill = infill.replace(v, "")
+        return infill
+
     code_gens = [[] for _ in range(n_tasks)]
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
-            gen_code = tokenizer.decode(
-                s, skip_special_tokens=True, clean_up_tokenization_spaces=True
-            )
+            if INFILL_MODE:
+                gen_code = parse_infill(
+                    tokenizer.decode(
+                        s, skip_special_tokens=False, clean_up_tokenization_spaces=False
+                    ),
+                    tokenizer,
+                )
+            else:
+                gen_code = tokenizer.decode(
+                    s, skip_special_tokens=True, clean_up_tokenization_spaces=True
+                )
             if postprocess:
                 code_gens[sample].append(
                     task.postprocess_generation(gen_code[len(prefix) :], int(sample))

@@ -1,0 +1,8 @@
+[
+    [
+        "def solution():\n    \"\"\"Janet\u2019s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?\"\"\"\n    eggs_per_day = 16\n    eggs_eaten = 3\n    eggs_baked = 4\n    eggs_sold = eggs_per_day - eggs_eaten - eggs_baked\n    price_per_egg = 2\n    money_made = eggs_sold * price_per_egg\n    result = money_made\n    return result\nprint(solution())"
+    ],
+    [
+        "def solution():\n    \"\"\"A robe takes 2 bolts of blue fiber and half that much white fiber.  How many bolts in total does it take?\"\"\"\n    blue_fiber = 2\n    white_fiber = blue_fiber / 2\n    total_fiber = blue_fiber + white_fiber\n    result = total_fiber\n    return result\nprint(solution())"
+    ]
+]
