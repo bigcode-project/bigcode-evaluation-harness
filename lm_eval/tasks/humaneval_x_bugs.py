@@ -195,6 +195,10 @@ class GeneralHumanEvalXBugs(Task):
             prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix " + doc["bug_type"] + " in " + doc["entry_point"]
             prompt += "<commit_after>" + doc["prompt"]
+        elif self.mutate_method == "diff":
+            prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
+            prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
+            prompt += "<commit_after>"
         elif self.mutate_method == "prompt":
             prompt = "# Buggy function"
             prompt += "\n" + doc["prompt"] + doc["buggy_solution"] + "\n"
@@ -291,6 +295,25 @@ class GeneralHumanEvalXBugs(Task):
 
         # Apply the diff to the input
         if self.mutate_method == "diff":
+            # !wget https://raw.githubusercontent.com/google/diff-match-patch/master/python3/diff_match_patch.py
+            from diff_match_patch import diff_match_patch
+            #dmp = diff_match_patch()
+            #patches = dmp.patch_fromText(diff)
+            #new_text, _ = dmp.patch_apply(patches, old_text)
+            dmp = diff_match_patch()
+            ds = self.get_dataset().select(range(len(generations)))
+            for gen, doc in zip(generations, ds):
+                old_code = doc["buggy_solution"]
+                for i, diff in enumerate(gen):
+                    patches = dmp.patch_fromText(diff)
+                    try:
+                        fixed_code, _ = dmp.patch_apply(patches, old_code)
+                    except Exception as e:
+                        print(f"Failed with {e} when applying patch to buggy code: {diff}")
+                        fixed_code = ""
+                    gen[i] = fixed_code
+                    
+        elif self.mutate_method == "diff-carper":
             ds = self.get_dataset().select(range(len(generations)))
             end_of_diff = re.compile("\n[^ +-@]+")
             for gen in generations:
