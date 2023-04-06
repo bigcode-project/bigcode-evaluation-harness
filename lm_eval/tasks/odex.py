@@ -9,6 +9,7 @@ Homepage: https://github.com/zorazrw/odex
 """
 from evaluate import load
 from lm_eval.base import Task
+from lm_eval.tasks.custom_metrics.odex_imports import *
 
 _CITATION = """
 @article{wang2022execution,
@@ -56,7 +57,7 @@ class GeneralODEX(Task):
         function_head, function_prefix = doc["prompt"].split("\n")
         docstr = f'    """{doc["intent"]}\n    """'
         code_body = function_prefix.replace("\t", " " * 4)
-        return "\n".join([function_head, docstr, code_body])
+        return "\n".join([function_head, docstr, code_body]).strip()
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -101,5 +102,6 @@ class GeneralODEX(Task):
         results, _ = code_metric.compute(
             references=references,
             predictions=generations,
+            k = [1, 2, 5, 10]
         )
         return results
