@@ -229,9 +229,18 @@ class GeneralHumanEvalXBugs(Task):
     def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""
         if get_solution:
-            return doc["prompt"] + doc["canonical_solution"]
-            # To check that all buggy solutions result in a 0 score:
-            # return doc["prompt"] + doc["buggy_solution"]
+            if self.mutate_method == "diff":
+                from diff_match_patch import diff_match_patch
+                text1 = doc["prompt"] + doc["buggy_solution"]
+                text2 = doc["prompt"] + doc["canonical_solution"]
+                dmp = diff_match_patch()
+                patches = dmp.patch_make(text1, text2)
+                diff = dmp.patch_toText(patches)
+                return diff
+            else:
+                return doc["prompt"] + doc["canonical_solution"]
+                # To check that all buggy solutions result in a 0 score:
+                # return doc["prompt"] + doc["buggy_solution"]
         else:
             test_func = doc["test"]
             # check(func_name) is already included
@@ -297,13 +306,10 @@ class GeneralHumanEvalXBugs(Task):
         if self.mutate_method == "diff":
             # !wget https://raw.githubusercontent.com/google/diff-match-patch/master/python3/diff_match_patch.py
             from diff_match_patch import diff_match_patch
-            #dmp = diff_match_patch()
-            #patches = dmp.patch_fromText(diff)
-            #new_text, _ = dmp.patch_apply(patches, old_text)
             dmp = diff_match_patch()
             ds = self.get_dataset().select(range(len(generations)))
             for gen, doc in zip(generations, ds):
-                old_code = doc["buggy_solution"]
+                old_code = doc["prompt"] + doc["buggy_solution"]
                 for i, diff in enumerate(gen):
                     patches = dmp.patch_fromText(diff)
                     try:
