@@ -173,13 +173,14 @@ def main():
         # here we generate code and save it (evaluation is optional but True by default)
         print("Loading the model and tokenizer")
         if args.max_memory_per_gpu:
+            import torch
             model = AutoModelForCausalLM.from_pretrained(
                 args.model,     
                 revision=args.revision,
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,                   
                 device_map="auto", 
-                torch_dtype="bfloat16",
+                torch_dtype=torch.bfloat16,
                 max_memory=get_gpus_max_memory(args.max_memory_per_gpu),
                 offload_folder="offload",
             )
