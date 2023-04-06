@@ -119,6 +119,7 @@ def parse_args():
         default="prompt",
         help="Method used to mutate the code, could be edit for commit models",
     )
+    parser.add_argument("--max_memory_per_gpu", type=str, default="50GB")
     parser.add_argument(
         "--check_references",
         action="store_true",
@@ -136,6 +137,9 @@ def pattern_match(patterns, source_list):
             task_names.add(matching)
     return list(task_names)
 
+def get_gpus_max_memory(max_memory):
+    max_memory = {i: max_memory for i in range(torch.cuda.device_count())}
+    return max_memory
 
 def main():
     args = parse_args()
@@ -167,12 +171,24 @@ def main():
     else:
         # here we generate code and save it (evaluation is optional but True by default)
         print("Loading the model and tokenizer")
-        model = AutoModelForCausalLM.from_pretrained(
-            args.model,
-            revision=args.revision,
-            trust_remote_code=args.trust_remote_code,
-            use_auth_token=args.use_auth_token,
-        )
+        if args.max_memory_per_gpu:
+            model = AutoModelForCausalLM.from_pretrained(
+                args.model,     
+                revision=args.revision,
+                trust_remote_code=args.trust_remote_code,
+                use_auth_token=args.use_auth_token,                   
+                device_map="auto", 
+                torch_dtype="bfloat16",
+                max_memory=get_gpus_max_memory(args.max_memory_per_gpu),
+                offload_folder="offload",
+            )
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                args.model,
+                revision=args.revision,
+                trust_remote_code=args.trust_remote_code,
+                use_auth_token=args.use_auth_token,
+            )
         tokenizer = AutoTokenizer.from_pretrained(
             args.model,
             revision=args.revision,
