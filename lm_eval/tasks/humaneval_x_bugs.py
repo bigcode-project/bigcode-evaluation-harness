@@ -324,7 +324,8 @@ class GeneralHumanEvalXBugs(Task):
             for gen, doc in zip(generations, ds):
                 old_code = doc["prompt"] + doc["buggy_solution"]
                 for i, diff in enumerate(gen):
-                    patches = dmp.patch_fromText(diff)
+                    # Strip away anything to the left such as \n
+                    patches = dmp.patch_fromText(diff.lstrip())
                     try:
                         fixed_code, _ = dmp.patch_apply(patches, old_code)
                     except Exception as e:
