@@ -144,6 +144,8 @@ class GeneralHumanEvalXBugs(Task):
                 "<commit_msg>",
                 "<commit_after>",
             ])
+        elif self.mutate_method.startswith("diff")
+            stop_words = ["<commit_before>", "<commit_msg>", "<commit_after>"]
         stop_words.append("<|endoftext|>")
 
         super().__init__(
@@ -159,6 +161,9 @@ class GeneralHumanEvalXBugs(Task):
         """
         if any([w in code for w in self.stop_words]):
             return True
+
+        if self.mutate_method == "diff":
+            return False
 
         if self.DATASET_NAME == "python":
             for line in code.split("\n"):
