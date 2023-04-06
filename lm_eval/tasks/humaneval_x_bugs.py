@@ -162,6 +162,7 @@ class GeneralHumanEvalXBugs(Task):
         if any([w in code for w in self.stop_words]):
             return True
 
+        # The heuristics below do not hold for diff generation
         if self.mutate_method == "diff":
             return False
 
@@ -260,7 +261,7 @@ class GeneralHumanEvalXBugs(Task):
                 code = code[:code.rfind(w)]
 
         if self.mutate_method == "diff":
-            return False
+            return code
 
         if self.DATASET_NAME == "java":
             main_pos = code.find("public static void main")
@@ -294,11 +295,11 @@ class GeneralHumanEvalXBugs(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        # Strip on the right to maintain same behavior as with get_prompt
         gen = self.remove_last_block(generation[len(prompt):].rstrip())
         if self.mutate_method == "diff":
             return gen
         else:
+            # Strip on the right to maintain same behavior as with get_prompt
             return doc["prompt"].rstrip() + gen
 
     def process_results(self, generations, references):
@@ -341,7 +342,6 @@ class GeneralHumanEvalXBugs(Task):
                     # apply the diff hunk to the input
                     # apply_diff(function_str, diff_hunk)
                     # WIP
-
 
         # See https://github.com/THUDM/CodeGeeX/blob/ebeb850f227a90c79de39f7e26b1302f374f3240/codegeex/benchmark/evaluate_humaneval_x.py
         if language == "python":
