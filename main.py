@@ -138,6 +138,7 @@ def pattern_match(patterns, source_list):
     return list(task_names)
 
 def get_gpus_max_memory(max_memory):
+    import torch
     max_memory = {i: max_memory for i in range(torch.cuda.device_count())}
     return max_memory
 
