@@ -119,7 +119,7 @@ def parse_args():
         default="prompt",
         help="Method used to mutate the code, could be edit for commit models",
     )
-    parser.add_argument("--max_memory_per_gpu", type=str, default="50GB")
+    parser.add_argument("--max_memory_per_gpu", type=str, default=None)
     parser.add_argument(
         "--check_references",
         action="store_true",
