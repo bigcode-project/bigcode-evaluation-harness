@@ -144,7 +144,7 @@ class GeneralHumanEvalXBugs(Task):
                 "<commit_msg>",
                 "<commit_after>",
             ])
-        elif self.mutate_method.startswith("diff")
+        elif self.mutate_method.startswith("diff"):
             stop_words = ["<commit_before>", "<commit_msg>", "<commit_after>"]
         stop_words.append("<|endoftext|>")
 
