@@ -323,10 +323,10 @@ class GeneralHumanEvalXBugs(Task):
             ds = self.get_dataset().select(range(len(generations)))
             for gen, doc in zip(generations, ds):
                 old_code = doc["prompt"] + doc["buggy_solution"]
-                for i, diff in enumerate(gen):
-                    # Strip away anything to the left such as \n
-                    patches = dmp.patch_fromText(diff.lstrip())
+                for i, diff in enumerate(gen): 
                     try:
+                        # Strip away anything to the left such as \n
+                        patches = dmp.patch_fromText(diff.lstrip())
                         fixed_code, _ = dmp.patch_apply(patches, old_code)
                     except Exception as e:
                         print(f"Failed with {e} when applying patch to buggy code: {diff}")
