@@ -196,6 +196,10 @@ class GeneralHumanEvalXBugs(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
+        if self.language == "rust":
+            main = "\nfn main(){ \n } \n"
+            doc["prompt"] = doc["prompt"] + main + declaration
+
         if self.mutate_method == "edit":
             prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
@@ -209,9 +213,15 @@ class GeneralHumanEvalXBugs(Task):
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
             prompt += "<commit_after>"
         elif self.mutate_method == "diff-carper":
-            prompt = "<BEF>" + doc["prompt"] + doc["buggy_solution"]
-            prompt += "<MSG>" + "Fix bug in " + doc["entry_point"]
-            prompt += "<DFF>"       
+            if self.DATASET_NAME == "python":
+                prompt = f"<NME> {doc['entry_point']}.py" + "\n"
+            elif self.DATASET_NAME == "java":
+                prompt = f"<NME> {doc['entry_point']}.java" + "\n"
+            elif self.DATASET_NAME == "go":
+                prompt = f"<NME> {doc['entry_point']}.go" + "\n"
+            prompt += "<BEF> " + doc["prompt"] + doc["buggy_solution"] + "\n"
+            prompt += "<MSG> " + "Fix bug in " + doc["entry_point"] + "\n"
+            prompt += "<DFF>"   
         elif self.mutate_method == "prompt":
             prompt = "# Buggy function"
             prompt += "\n" + doc["prompt"] + doc["buggy_solution"] + "\n"
