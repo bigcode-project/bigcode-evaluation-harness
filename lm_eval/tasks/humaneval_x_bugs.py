@@ -224,7 +224,7 @@ class GeneralHumanEvalXBugs(Task):
             prompt += f"Input: {doc['prompt'] + doc['buggy_solution']} "
             prompt += f"Output: " + doc["prompt"]
         else:
-            raise ValueError(f"Unknown mutate_method: {mutate_method}")
+            raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
         # Strip off the final \n to make the tokens more natural
         # Essentially, we want to make sure that if there was no distrinction between
         # input & output, the tokens would be the same
@@ -340,17 +340,21 @@ class GeneralHumanEvalXBugs(Task):
                         print(f"Failed with {e} when applying patch to buggy code: {diff}")
                         fixed_code = ""
                     gen[i] = fixed_code
-        # 
         elif self.mutate_method == "diff-carper":
+            from lm_eval.tasks.custom_metrics import apply_diff
             ds = self.get_dataset().select(range(len(generations)))
             end_of_diff = re.compile("\n[^ +-@]+")
-            for gen in generations:
+            for gen, doc in zip(generations, ds):
+                old_code = doc["prompt"] + doc["buggy_solution"]
                 for i, g in enumerate(gen):
+                    # https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L162
                     # truncate diff hunk at the first line not starting with " ", "+", "-", or "@"
                     diff_hunk: str = end_of_diff.split(g)[0]
-                    # apply the diff hunk to the input
-                    # apply_diff(function_str, diff_hunk)
-                    # WIP
+                    nme_idx: int = diff_hunk.find("<NME>")
+                    if nme_idx != -1:
+                        diff_hunk = diff_hunk[:nme_idx]
+                    res: str = apply_diff(old_code, diff_hunk)        
+                    gen[i] = res
 
         # See https://github.com/THUDM/CodeGeeX/blob/ebeb850f227a90c79de39f7e26b1302f374f3240/codegeex/benchmark/evaluate_humaneval_x.py
         if language == "python":
