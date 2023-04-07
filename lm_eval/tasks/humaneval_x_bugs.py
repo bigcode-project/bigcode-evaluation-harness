@@ -163,7 +163,7 @@ class GeneralHumanEvalXBugs(Task):
             return True
 
         # The heuristics below do not hold for diff generation
-        if self.mutate_method == "diff":
+        if self.mutate_method.startswith("diff"):
             return False
 
         if self.DATASET_NAME == "python":
@@ -268,7 +268,7 @@ class GeneralHumanEvalXBugs(Task):
             if w in code:
                 code = code[:code.rfind(w)]
 
-        if self.mutate_method == "diff":
+        if self.mutate_method.startswith("diff"):
             return code
 
         if self.DATASET_NAME == "java":
@@ -304,7 +304,7 @@ class GeneralHumanEvalXBugs(Task):
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
         gen = self.remove_last_block(generation[len(prompt):].rstrip())
-        if self.mutate_method == "diff":
+        if self.mutate_method.startswith("diff"):
             return gen
         else:
             # Strip on the right to maintain same behavior as with get_prompt
