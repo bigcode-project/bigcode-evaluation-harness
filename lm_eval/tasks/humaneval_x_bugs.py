@@ -205,10 +205,18 @@ class GeneralHumanEvalXBugs(Task):
             prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
             prompt += "<commit_after>"
+        elif self.mutate_method == "diff-carper":
+            prompt = "<BEF>" + doc["prompt"] + doc["buggy_solution"]
+            prompt += "<MSG>" + "Fix bug in " + doc["entry_point"]
+            prompt += "<DFF>"       
         elif self.mutate_method == "prompt":
             prompt = "# Buggy function"
             prompt += "\n" + doc["prompt"] + doc["buggy_solution"] + "\n"
             prompt += "# Fixed function\n" + doc["prompt"]
+        elif self.mutate_method == "prompt-plain":
+            prompt = doc["prompt"] + doc["buggy_solution"]
+            prompt += "\n" + "Fix bug in " + doc["entry_point"] # This will be cut-off, so it will compile
+            prompt += "\n" + doc["prompt"]     
         elif self.mutate_method == "instruct":
             # input_template = "Instructions: {instruction}\nInput: {input} Output: "
             # https://github.com/SivilTaram/santacoder-finetuning-commit/blob/82a5598d632d299b7350c8b2ffb4af39527befa3/train.py#L115
@@ -332,7 +340,7 @@ class GeneralHumanEvalXBugs(Task):
                         print(f"Failed with {e} when applying patch to buggy code: {diff}")
                         fixed_code = ""
                     gen[i] = fixed_code
-                    
+        # 
         elif self.mutate_method == "diff-carper":
             ds = self.get_dataset().select(range(len(generations)))
             end_of_diff = re.compile("\n[^ +-@]+")
