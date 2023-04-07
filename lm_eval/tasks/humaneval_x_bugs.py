@@ -341,7 +341,7 @@ class GeneralHumanEvalXBugs(Task):
                         fixed_code = ""
                     gen[i] = fixed_code
         elif self.mutate_method == "diff-carper":
-            from lm_eval.tasks.custom_metrics import apply_diff
+            from lm_eval.tasks.custom_metrics.diff_eval import apply_diff
             ds = self.get_dataset().select(range(len(generations)))
             end_of_diff = re.compile("\n[^ +-@]+")
             for gen, doc in zip(generations, ds):
