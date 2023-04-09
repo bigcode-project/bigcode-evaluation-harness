@@ -353,8 +353,6 @@ class GeneralHumanEvalXBugs(Task):
                     diff_hunk = diff_hunk[:nme_idx]
                 return diff_hunk
         else:
-            doc = self.get_dataset()[idx]
-            prompt = self.get_prompt(doc)
             gen = self.remove_last_block(generation[len(prompt):].rstrip())
             if self.mutate_method.startswith("diff"):
                 return gen
