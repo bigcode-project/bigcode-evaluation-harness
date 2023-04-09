@@ -222,6 +222,8 @@ class GeneralHumanEvalXBugs(Task):
                 prompt = f"<NME> {doc['entry_point']}.java" + "\n"
             elif self.DATASET_NAME == "go":
                 prompt = f"<NME> {doc['entry_point']}.go" + "\n"
+            elif self.DATASET_NAME == "js":
+                prompt = f"<NME> {doc['entry_point']}.js" + "\n"
             prompt += "<BEF> " + prompt_base + doc["buggy_solution"] + "\n"
             prompt += "<MSG> " + "Fix bug in " + doc["entry_point"] + "\n"
             prompt += "<DFF>"   
@@ -326,9 +328,12 @@ class GeneralHumanEvalXBugs(Task):
             index of doc in the dataset to which the generation belongs
             (not used for Humaneval-Task)
         """
+        doc = self.get_dataset()[idx]
+        prompt = self.get_prompt(doc)        
         if self.mutate_method == "diff-carper":
             # Only remove final stopwords like <MSG>
-            generation = self.remove_last_block(generation)
+            generation = self.remove_last_block(generation[len(prompt):].rstrip())
+            generation = prompt + generation
             from lm_eval.tasks.custom_metrics.diff_eval import split_diff
             # From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L93
             end_of_diff = re.compile("\n[^ +-@]+")
