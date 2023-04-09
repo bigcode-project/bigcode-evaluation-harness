@@ -196,7 +196,7 @@ class GeneralHumanEvalXBugs(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        if self.language == "rust":
+        if self.DATASET_NAME == "rust":
             main = "\nfn main(){ \n } \n"
             doc["prompt"] = doc["prompt"] + main + declaration
 
@@ -287,7 +287,11 @@ class GeneralHumanEvalXBugs(Task):
         if self.mutate_method.startswith("diff"):
             return code
 
-        if self.DATASET_NAME == "java":
+        if self.DATASET_NAME == "python":
+            for i, line in enumerate(code.split("\n")):
+                if len(line.strip()) > 0 and line[0] != ' ' and line[0] != '\t':
+                    return "\n".join(code.split("\n")[:i])
+        elif self.DATASET_NAME == "java":
             main_pos = code.find("public static void main")
             if main_pos != -1:
                 code = code[:main_pos] + '}'
