@@ -199,18 +199,20 @@ class GeneralHumanEvalXBugs(Task):
         """Builds the prompt for the LM to generate from."""
         if self.DATASET_NAME == "rust":
             main = "\nfn main(){ \n } \n"
-            doc["prompt"] = doc["prompt"] + main + declaration
+            prompt_base = doc["prompt"] + main + doc["declaration"]
+        else:
+            prompt_base = doc["prompt"]
 
         if self.mutate_method == "edit":
-            prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
+            prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
-            prompt += "<commit_after>" + doc["prompt"]
+            prompt += "<commit_after>" + prompt_base
         elif self.mutate_method == "edit-type":
-            prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
+            prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix " + doc["bug_type"] + " in " + doc["entry_point"]
-            prompt += "<commit_after>" + doc["prompt"]
+            prompt += "<commit_after>" + prompt_base
         elif self.mutate_method == "diff":
-            prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
+            prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
             prompt += "<commit_after>"
         elif self.mutate_method == "diff-carper":
@@ -220,26 +222,28 @@ class GeneralHumanEvalXBugs(Task):
                 prompt = f"<NME> {doc['entry_point']}.java" + "\n"
             elif self.DATASET_NAME == "go":
                 prompt = f"<NME> {doc['entry_point']}.go" + "\n"
-            prompt += "<BEF> " + doc["prompt"] + doc["buggy_solution"] + "\n"
+            prompt += "<BEF> " + prompt_base + doc["buggy_solution"] + "\n"
             prompt += "<MSG> " + "Fix bug in " + doc["entry_point"] + "\n"
             prompt += "<DFF>"   
         elif self.mutate_method == "prompt-python":
             # This is sligthly better than just prompt, but it's kind of prompt engineering which we'd like to avoid
             # Also the comments # only work for Python
             prompt = "# Buggy function"
-            prompt += "\n" + doc["prompt"] + doc["buggy_solution"] + "\n"
-            prompt += "# Fixed function\n" + doc["prompt"]
+            prompt += "\n" + prompt_base + doc["buggy_solution"] + "\n"
+            prompt += "# Fixed function\n" + prompt_base
         elif self.mutate_method == "prompt":
-            # This is the simplest way of prompting regardless of language
-            prompt = doc["prompt"] + doc["buggy_solution"]
+            # This is the simplest, most natural way of prompting regardless of language
+            prompt = prompt_base + doc["buggy_solution"]
+            # One could add a comment here, but then it becomes language-specific & for some languages it may not
+            # compile anyways since repeating the prompt results in double imports, so let's keep it simple
             prompt += "\n" + "Fix bug in " + doc["entry_point"] # This will be cut-off, so it will compile
-            prompt += "\n" + doc["prompt"]     
+            prompt += "\n" + prompt_base
         elif self.mutate_method == "instruct":
             # input_template = "Instructions: {instruction}\nInput: {input} Output: "
             # https://github.com/SivilTaram/santacoder-finetuning-commit/blob/82a5598d632d299b7350c8b2ffb4af39527befa3/train.py#L115
             prompt = f"Instructions: Fix bug in {doc['entry_point']}\n"
-            prompt += f"Input: {doc['prompt'] + doc['buggy_solution']} "
-            prompt += f"Output: " + doc["prompt"]
+            prompt += f"Input: {prompt_base + doc['buggy_solution']} "
+            prompt += f"Output: " + prompt_base
         else:
             raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
         # Strip off the final \n to make the tokens more natural
@@ -329,18 +333,16 @@ class GeneralHumanEvalXBugs(Task):
             # From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L93
             end_of_diff = re.compile("\n[^ +-@]+")
             parsed: dict = split_diff(generation)
-            # truncate the diff hunk at the first line not starting with
-            # " ", "+", "-", or "@".
             if parsed and all(
                 (s in parsed for s in ["name", "file", "message", "diff"])
             ):
+                # truncate diff hunk at the first line not starting with " ", "+", "-", or "@"
                 diff_hunk: str = end_of_diff.split(parsed["diff"])[0]
                 # We apply diff patch loosely:
                 #   1. it ignores the line numbers;
                 #   2. it ignores invalid lines (not starting with " ",
                 #   "+" or "-" and not being "@@ ... @@").
                 # https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L162
-                # truncate diff hunk at the first line not starting with " ", "+", "-", or "@"
                 nme_idx: int = diff_hunk.find("<NME>")
                 if nme_idx != -1:
                     diff_hunk = diff_hunk[:nme_idx]
