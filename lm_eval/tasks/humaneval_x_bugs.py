@@ -222,11 +222,14 @@ class GeneralHumanEvalXBugs(Task):
             prompt += "<BEF> " + doc["prompt"] + doc["buggy_solution"] + "\n"
             prompt += "<MSG> " + "Fix bug in " + doc["entry_point"] + "\n"
             prompt += "<DFF>"   
-        elif self.mutate_method == "prompt":
+        elif self.mutate_method == "prompt-python":
+            # This is sligthly better than just prompt, but it's kind of prompt engineering which we'd like to avoid
+            # Also the comments # only work for Python
             prompt = "# Buggy function"
             prompt += "\n" + doc["prompt"] + doc["buggy_solution"] + "\n"
             prompt += "# Fixed function\n" + doc["prompt"]
-        elif self.mutate_method == "prompt-plain":
+        elif self.mutate_method == "prompt":
+            # This is the simplest way of prompting regardless of language
             prompt = doc["prompt"] + doc["buggy_solution"]
             prompt += "\n" + "Fix bug in " + doc["entry_point"] # This will be cut-off, so it will compile
             prompt += "\n" + doc["prompt"]     
@@ -316,12 +319,35 @@ class GeneralHumanEvalXBugs(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        gen = self.remove_last_block(generation[len(prompt):].rstrip())
-        if self.mutate_method.startswith("diff"):
-            return gen
+
+        if self.mutate_method == "diff-carper":
+            from lm_eval.tasks.custom_metrics.diff_eval import split_diff
+            # From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L93
+            end_of_diff = re.compile("\n[^ +-@]+")
+            parsed: dict = split_diff(text)
+            # truncate the diff hunk at the first line not starting with
+            # " ", "+", "-", or "@".
+            if parsed and all(
+                (s in parsed for s in ["name", "file", "message", "diff"])
+            ):
+                diff_hunk: str = end_of_diff.split(parsed["diff"])[0]
+                # We apply diff patch loosely:
+                #   1. it ignores the line numbers;
+                #   2. it ignores invalid lines (not starting with " ",
+                #   "+" or "-" and not being "@@ ... @@").
+                # https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L162
+                # truncate diff hunk at the first line not starting with " ", "+", "-", or "@"
+                nme_idx: int = diff_hunk.find("<NME>")
+                if nme_idx != -1:
+                    diff_hunk = diff_hunk[:nme_idx]
+                return diff_hunk
         else:
-            # Strip on the right to maintain same behavior as with get_prompt
-            return doc["prompt"].rstrip() + gen
+            gen = self.remove_last_block(generation[len(prompt):].rstrip())
+            if self.mutate_method.startswith("diff"):
+                return gen
+            else:
+                # Strip on the right to maintain same behavior as with get_prompt
+                return doc["prompt"].rstrip() + gen
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -356,19 +382,11 @@ class GeneralHumanEvalXBugs(Task):
         elif self.mutate_method == "diff-carper":
             from lm_eval.tasks.custom_metrics.diff_eval import apply_diff
             ds = self.get_dataset().select(range(len(generations)))
-            end_of_diff = re.compile("\n[^ +-@]+")
             for gen, doc in zip(generations, ds):
                 old_code = doc["prompt"] + doc["buggy_solution"]
-                for i, g in enumerate(gen):
-                    # https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L162
-                    # truncate diff hunk at the first line not starting with " ", "+", "-", or "@"
-                    diff_hunk: str = end_of_diff.split(g)[0]
-                    nme_idx: int = diff_hunk.find("<NME>")
-                    if nme_idx != -1:
-                        diff_hunk = diff_hunk[:nme_idx]
+                for i, diff_hunk in enumerate(gen):
                     res: str = apply_diff(old_code, diff_hunk)        
                     gen[i] = res
-
         # See https://github.com/THUDM/CodeGeeX/blob/ebeb850f227a90c79de39f7e26b1302f374f3240/codegeex/benchmark/evaluate_humaneval_x.py
         if language == "python":
             python_imports = "\n".join(IMPORT_HELPER["python"])
