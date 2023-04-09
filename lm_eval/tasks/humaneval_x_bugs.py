@@ -16,7 +16,8 @@ Recommended evaluation:
         - the generation/duplication with fixed bug (i.e. docstring again & solution) 
     - So for e.g. Rust the entire thing may be ~1800 tokens (worst case)
 --do_sample False
-    - Greedy evaluation seems to work best; More experiments needed
+    - For pass@1; Sometimes temperature 0.2 is better though (Same as PaLM)
+    - For pass@10 & pass@100: Temperature 0.8, n_samples 200 (Same as PaLM)
 """
 
 import re
@@ -147,7 +148,7 @@ class GeneralHumanEvalXBugs(Task):
         elif self.mutate_method == "diff":
             stop_words = ["<commit_before>", "<commit_msg>", "<commit_after>"]
         elif self.mutate_method == "diff-carper":
-            stop_words = ["<BEF>", "<MSG>", "<DFF>"]
+            stop_words = ["<BEF>", "<MSG>", "<DFF>", "\ No newline at end of file"]
 
         stop_words.append("<|endoftext|>")
 
@@ -321,14 +322,11 @@ class GeneralHumanEvalXBugs(Task):
             index of doc in the dataset to which the generation belongs
             (not used for Humaneval-Task)
         """
-        doc = self.get_dataset()[idx]
-        prompt = self.get_prompt(doc)
-
         if self.mutate_method == "diff-carper":
             from lm_eval.tasks.custom_metrics.diff_eval import split_diff
             # From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L93
             end_of_diff = re.compile("\n[^ +-@]+")
-            parsed: dict = split_diff(text)
+            parsed: dict = split_diff(generation)
             # truncate the diff hunk at the first line not starting with
             # " ", "+", "-", or "@".
             if parsed and all(
@@ -346,6 +344,8 @@ class GeneralHumanEvalXBugs(Task):
                     diff_hunk = diff_hunk[:nme_idx]
                 return diff_hunk
         else:
+            doc = self.get_dataset()[idx]
+            prompt = self.get_prompt(doc)
             gen = self.remove_last_block(generation[len(prompt):].rstrip())
             if self.mutate_method.startswith("diff"):
                 return gen
