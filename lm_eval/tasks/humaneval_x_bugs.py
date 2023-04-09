@@ -15,9 +15,9 @@ Recommended evaluation:
         - the instruction (~10 tokens)
         - the generation/duplication with fixed bug (i.e. docstring again & solution) 
     - So for e.g. Rust the entire thing may be ~1800 tokens (worst case)
---do_sample False
-    - For pass@1; Sometimes temperature 0.2 is better though (Same as PaLM)
-    - For pass@10 & pass@100: Temperature 0.8, n_samples 200 (Same as PaLM)
+Sampling:
+    - pass@1: `--do_sample False` (sometimes temperature 0.2 is better, but greedy is faster & gives the actual most likely prediction of the model)
+    - pass@10 & pass@100: `--do_sample True --temperature 0.8 -- n_samples 200`
 """
 
 import re
@@ -323,6 +323,8 @@ class GeneralHumanEvalXBugs(Task):
             (not used for Humaneval-Task)
         """
         if self.mutate_method == "diff-carper":
+            # Only remove final stopwords like <MSG>
+            generation = self.remove_last_block(generation)
             from lm_eval.tasks.custom_metrics.diff_eval import split_diff
             # From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L93
             end_of_diff = re.compile("\n[^ +-@]+")
