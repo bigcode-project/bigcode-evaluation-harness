@@ -58,7 +58,7 @@ class ContentParser:
         # second parse content with assumption that model wrote code without description
         for entry_point in self._entry_point_variations(entry_point):
             if entry_point in content:
-                content = content.split(entry_point)[1]
+                content = content.split(entry_point)[-1]
                 return "".join(content.splitlines(keepends=True)[1:])
         raise ParseError(f"prompt is not in content:\n{content}")
 
