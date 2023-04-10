@@ -105,14 +105,15 @@ if __name__ == '__main__':
     parse_errors = 0
     parser = ContentParser()
     for idx, sample in enumerate(samples):
+        prompt = sample["prompt"] if LANGUAGE not in ["rust"] else sample["prompt"] + sample["declaration"]
         if VERBOSE:
             print(f"Processing {sample['task_id']} ({idx + 1}/{len(samples)}))...")
             print(termcolor.colored(sample["entry_point"], "yellow", attrs=["bold"]))
-            print(termcolor.colored(sample["prompt"], "yellow"))
+            print(termcolor.colored(prompt, "yellow"))
             print(termcolor.colored(sample["buggy_solution"], "red"))
-        sample["raw_generation"] = chat_wrapper(sample["prompt"], sample["buggy_solution"])
+        sample["raw_generation"] = chat_wrapper(prompt, sample["buggy_solution"])
         try:
-            sample["generation"] = parser(sample["prompt"], sample["raw_generation"], sample["entry_point"])
+            sample["generation"] = parser(prompt, sample["raw_generation"], sample["entry_point"])
         except ParseError as e:
             parse_errors += 1
             print("PARSE EXCEPTION:", e)
