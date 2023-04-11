@@ -37,5 +37,7 @@ def expected_score() -> float:
 
 
 def test_process_results(references, generations, expected_score):
-    evaluated_metric: EvaluatedMetric = ProgramRepair().process_results(generations, references)
-    assert evaluated_metric['avg_exact_match'] == expected_score
+    evaluated_metric: EvaluatedMetric = ProgramRepair().process_results(
+        generations, references
+    )
+    assert evaluated_metric["avg_exact_match"] == expected_score

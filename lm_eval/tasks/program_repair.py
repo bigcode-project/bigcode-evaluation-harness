@@ -44,7 +44,7 @@ class SpecialTokens:
     COMMIT_AFTER: str = "<commit-after>\n"
 
 
-EvaluatedMetric = NewType('EvaluatedMetric', Dict[str, float])
+EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, float])
 
 
 class ProgramRepair(Task):
@@ -56,11 +56,14 @@ class ProgramRepair(Task):
     the dataset and uses them as few-shot examples. Note that the zero-shot examples are always the same (the first
     NUM_OF_FEWSHOT_EXAMPLES examples from the dataset). Set NUM_OF_FEWSHOT_EXAMPLES to 0 to evaluate in zero-shot mode.
     """
+
     DATASET_PATH: str = "Nadav-Timor/PyPiBugs"
     DATASET_SPLIT: str = "train"
     NUM_OF_FEWSHOT_EXAMPLES: int = 5
     TOKENIZER_CHECKPOINT = "bigcode/santacoder"
-    dataset_features_names: PyPiBugsDatasetFeaturesNames = PyPiBugsDatasetFeaturesNames()
+    dataset_features_names: PyPiBugsDatasetFeaturesNames = (
+        PyPiBugsDatasetFeaturesNames()
+    )
     special_tokens: SpecialTokens = SpecialTokens()
 
     def __init__(self) -> None:
@@ -68,12 +71,18 @@ class ProgramRepair(Task):
             self.TOKENIZER_CHECKPOINT
         )
         new_special_tokens: Set[str] = set(asdict(self.special_tokens).values())
-        self.stop_words: List[str] = list(set(self.tokenizer.all_special_tokens_extended).union(new_special_tokens))
+        self.stop_words: List[str] = list(
+            set(self.tokenizer.all_special_tokens_extended).union(new_special_tokens)
+        )
         super().__init__(stop_words=self.stop_words, requires_execution=False)
         # Extract few-shot examples from the dataset
         self.dataset: Dataset = self.dataset[self.DATASET_SPLIT]
-        self.fewshot_prompt: str = self._get_fewshot_examples_prompt(num_of_examples=self.NUM_OF_FEWSHOT_EXAMPLES)
-        self.dataset = self.dataset.select(range(self.NUM_OF_FEWSHOT_EXAMPLES, len(self.dataset)))
+        self.fewshot_prompt: str = self._get_fewshot_examples_prompt(
+            num_of_examples=self.NUM_OF_FEWSHOT_EXAMPLES
+        )
+        self.dataset = self.dataset.select(
+            range(self.NUM_OF_FEWSHOT_EXAMPLES, len(self.dataset))
+        )
 
     def get_dataset(self) -> Dataset:
         return self.dataset
@@ -102,10 +111,14 @@ class ProgramRepair(Task):
             self._get_single_example_prompt(doc, is_fewshot_example=True)
             for doc in self.dataset.select(range(0, num_of_examples))
         ]
-        return '\n'.join(examples)
+        return "\n".join(examples)
 
     def get_prompt(self, doc: Dict) -> str:
-        ret: str = self.fewshot_prompt + '\n' + self._get_single_example_prompt(doc, is_fewshot_example=False)
+        ret: str = (
+            self.fewshot_prompt
+            + "\n"
+            + self._get_single_example_prompt(doc, is_fewshot_example=False)
+        )
         # print('***************')
         # print('Prompt:')
         # print(ret)
@@ -121,7 +134,7 @@ class ProgramRepair(Task):
         """
         for stop_word in self.stop_words:
             if stop_word in generation:
-                generation = generation[:generation.index(stop_word)]
+                generation = generation[: generation.index(stop_word)]
         return generation
 
     def process_results(
@@ -139,7 +152,10 @@ class ProgramRepair(Task):
         reference: str
         corresponding_generations: List[str]
         for reference, corresponding_generations in zip(references, generations):
-            curr: EvaluatedMetric = metric.compute(predictions=corresponding_generations, references=[reference] * len(corresponding_generations))
+            curr: EvaluatedMetric = metric.compute(
+                predictions=corresponding_generations,
+                references=[reference] * len(corresponding_generations),
+            )
             ret[avg_metric_name] += curr[metric_name] > 0
         ret[avg_metric_name] /= len(references)
         return ret
