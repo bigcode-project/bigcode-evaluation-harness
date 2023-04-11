@@ -110,23 +110,18 @@ class BugRepair(Task):
         self, generations: List[List[str]], references: List[str]
     ) -> EvaluatedMetric:
         """
-        Computes the maximal exact match score over all the generations. The score is 1 if there exists at least one
-        generation that is equal to the reference, and 0 otherwise.
+        For each reference and its corresponding generations, compute the average exact match score. The average score
+        is 1 if all generations are equal to the reference. The average score is 0 if none of the generations are equal
+        to the reference. The average score is in the range (0, 1) otherwise.
         """
         metric_name: str = "exact_match"
+        avg_metric_name: str = f"avg_{metric_name}"
         metric = load(metric_name)
+        ret: EvaluatedMetric = EvaluatedMetric({avg_metric_name: 0.0})
         reference: str
         predictions: List[str]
-        ret: EvaluatedMetric = {"exact_match": 0.0}
-        max_exact_match_score: float = 1.0
-
-        def get_max_exact_match_score(a: EvaluatedMetric, b: EvaluatedMetric) -> EvaluatedMetric:
-            return a if a[metric_name] >= b[metric_name] else b
-
         for reference, predictions in zip(references, generations):
             curr: EvaluatedMetric = metric.compute(predictions=predictions, references=[reference] * len(predictions))
-            ret = get_max_exact_match_score(ret, curr)
-            if ret[metric_name] == max_exact_match_score:
-                break
+            ret[avg_metric_name] += curr[metric_name]
+        ret[avg_metric_name] /= len(references)
         return ret
-
