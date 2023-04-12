@@ -195,6 +195,25 @@ class GeneralHumanEvalXBugs(Task):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
         return self.dataset["test"]
 
+    def get_filename_with_extension(self, input_file):
+        """Returns the synthetic filename for different datasets"""
+        file_name = input_file if input_file is not None else "solution"
+        if self.DATASET_NAME == "python":
+            file_name += ".py"
+        elif self.DATASET_NAME == "java":
+            file_name += ".java"
+        elif self.DATASET_NAME == "go":
+            file_name += ".go"
+        elif self.DATASET_NAME == "js":
+            file_name += ".js"
+        elif self.DATASET_NAME == "cpp":
+            file_name += ".cpp"
+        elif self.DATASET_NAME == "rust":
+            file_name += ".rs"
+        else:
+            raise ValueError("Not supporting the dataset for file name")
+        return file_name
+
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         if self.DATASET_NAME == "rust":
@@ -203,10 +222,15 @@ class GeneralHumanEvalXBugs(Task):
         else:
             prompt_base = doc["prompt"]
 
-        if self.mutate_method == "edit":
-            prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
-            prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
-            prompt += "<commit_after>" + prompt_base
+        if self.mutate_method == "file":
+            file_name = self.get_filename_with_extension(input_file=doc["entry_point"])
+            prompt = "<file_name>\n" + file_name + "\n<commit_before>\n" + doc["prompt"] + doc["buggy_solution"]
+            prompt += "\n<commit_msg>\n" + "Fix bug in " + doc["entry_point"]
+            prompt += "\n<commit_after>\n" + doc["prompt"]
+        elif self.mutate_method == "edit":
+            prompt = "<commit_before>\n" + doc["prompt"] + doc["buggy_solution"]
+            prompt += "\n<commit_msg>\n" + "Fix bug in " + doc["entry_point"]
+            prompt += "\n<commit_after>\n" + doc["prompt"]
         elif self.mutate_method == "edit-type":
             prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix " + doc["bug_type"] + " in " + doc["entry_point"]
@@ -244,8 +268,8 @@ class GeneralHumanEvalXBugs(Task):
             # input_template = "Instructions: {instruction}\nInput: {input} Output: "
             # https://github.com/SivilTaram/santacoder-finetuning-commit/blob/82a5598d632d299b7350c8b2ffb4af39527befa3/train.py#L115
             prompt = f"Instructions: Fix bug in {doc['entry_point']}\n"
-            prompt += f"Input: {prompt_base + doc['buggy_solution']} "
-            prompt += f"Output: " + prompt_base
+            prompt += f"Input:\n{prompt_base + doc['buggy_solution']}\n"
+            prompt += f"Output:\n" + prompt_base
         else:
             raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
         # Strip off the final \n to make the tokens more natural
