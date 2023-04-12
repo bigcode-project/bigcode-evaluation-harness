@@ -122,7 +122,7 @@ This creates an image called `evaluation-harness`, and runs a test on it. To ski
 
 If you want to evaluate on MultiPL-E, we have a different Dockerfile since it requires more dependencies, use:
 ```bash
-$ sudo make DOCKERFILE=dockerfiles/Dockerfile-multiple all
+$ sudo make DOCKERFILE=Dockerfile-multiple all
 ```
 This creates an image called `evaluation-harness-multiple`.
 
