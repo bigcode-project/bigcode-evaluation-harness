@@ -178,12 +178,12 @@ class Gsm8k(Task):
         :param references: list(float)
             list of references
         """
-        results = compute(
+        results, extra = compute(
             references=references,
             predictions=generations,
             majority_voting=self.majority_voting,
         )
-        return results
+        return results, extra
 
 
 class GsmHard(Gsm8k):

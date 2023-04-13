@@ -1,5 +1,6 @@
 import fnmatch
 import json
+from pathlib import Path
 
 import datasets
 import transformers
@@ -140,13 +141,14 @@ def main():
         print(f"Selected Tasks: {task_names}")
 
     results = {}
+    extras = {}
     if args.generations_path:
         # here we don't generate code but only evaluate previously computed generations
         if accelerator.is_main_process:
             print("evaluation only mode")
         evaluator = Evaluator(accelerator, None, None, args)
         for task in task_names:
-            results[task] = evaluator.evaluate(task)
+            results[task], extras[task] = evaluator.evaluate(task)
 
     else:
         # here we generate code and save it (evaluation is optional but True by default)
@@ -186,7 +188,7 @@ def main():
                             json.dump(references, fp)
                             print("references were saved")
             else:
-                results[task] = evaluator.evaluate(task)
+                results[task], extras[task] = evaluator.evaluate(task)
 
     results["config"] = {"model": args.model}
     if not args.generation_only:
@@ -194,8 +196,12 @@ def main():
         if accelerator.is_main_process:
             print(dumped)
 
-        with open(args.output_path, "w") as f:
+        output_path = Path(args.output_path)
+        with open(output_path, "w") as f:
             f.write(dumped)
+        extras_out_path = output_path.with_stem(output_path.stem + "_extras")
+        with open(extras_out_path, "w") as f:
+            json.dump(extras, f, indent=2)
 
 
 if __name__ == "__main__":

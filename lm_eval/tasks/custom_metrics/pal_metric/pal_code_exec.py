@@ -111,4 +111,15 @@ def compute(
 
         scores.append(score)
 
-    return {"accuracy": sum(scores) / len(scores), "num_failed_execution": errored}
+    # Per-problem evaluation
+    extra = [
+        {
+            "task_id": task_id,
+            "answer": ans,
+            "reference": ref,
+            "prediction": pred,
+            "result": results[task_id]
+        }
+        for task_id, (ans, ref, pred, res) in enumerate(zip(answers, references, predictions))
+    ]
+    return {"accuracy": sum(scores) / len(scores), "num_failed_execution": errored}, extra
