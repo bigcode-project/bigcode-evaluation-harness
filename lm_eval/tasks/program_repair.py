@@ -76,7 +76,7 @@ class ProgramRepair(Task):
         )
         super().__init__(stop_words=self.stop_words, requires_execution=False)
         # Extract few-shot examples from the dataset
-        self.dataset: Dataset = self.dataset[self.DATASET_SPLIT]
+        self.dataset: Dataset = load_dataset(self.DATASET_PATH, split=self.DATASET_SPLIT)
         self.fewshot_prompt: str = self._get_fewshot_examples_prompt(
             num_of_examples=self.NUM_OF_FEWSHOT_EXAMPLES
         )
