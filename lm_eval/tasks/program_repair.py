@@ -40,7 +40,7 @@ class PyPiBugsDatasetFeaturesNames:
 @dataclass(frozen=True)
 class SpecialTokens:
     COMMIT_BEFORE: str = "<commit-before>\n"
-    COMMIT_MSG: str = "\n<commit-msg> Fix bug.\n"
+    COMMIT_MSG: str = "\n<commit-msg> Fix a bug.\n"
     COMMIT_AFTER: str = "<commit-after>\n"
 
 
