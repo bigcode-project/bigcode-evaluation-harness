@@ -7,6 +7,9 @@ from lm_eval.base import Task
 from evaluate import load
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
+from pathlib import Path
+import textwrap
+
 
 _CITATION = """
 @article{allamanis2021self,
@@ -33,15 +36,20 @@ _ADDITIONAL_CITATION = """
 
 @dataclass(frozen=True)
 class PyPiBugsDatasetFeaturesNames:
+    PATH: str = "old_path"
     INITIAL_STATE: str = "initial_state"
     FINAL_STATE: str = "final_state"
 
 
 @dataclass(frozen=True)
 class SpecialTokens:
-    COMMIT_BEFORE: str = "<commit-before>\n"
-    COMMIT_MSG: str = "\n<commit-msg> Fix bug.\n"
-    COMMIT_AFTER: str = "<commit-after>\n"
+    # COMMIT_BEFORE: str = "<commit-before>\n"
+    # COMMIT_MSG: str = "\n<commit-msg> Fix bug.\n"
+    # COMMIT_AFTER: str = "<commit-after>\n"
+    FILENAME: str = "<NME> "
+    COMMIT_BEFORE: str = "<BEF> "
+    COMMIT_MSG: str = "<MSG> "
+    COMMIT_AFTER: str = "<DFF> "
 
 
 EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, float])
@@ -59,8 +67,8 @@ class ProgramRepair(Task):
 
     DATASET_PATH: str = "Nadav-Timor/PyPiBugs"
     DATASET_SPLIT: str = "train"
-    NUM_OF_FEWSHOT_EXAMPLES: int = 5
-    TOKENIZER_CHECKPOINT = "bigcode/santacoder"
+    NUM_OF_FEWSHOT_EXAMPLES: int = 0
+    TOKENIZER_CHECKPOINT = "CarperAI/diff-codegen-2b-v2"
     dataset_features_names: PyPiBugsDatasetFeaturesNames = (
         PyPiBugsDatasetFeaturesNames()
     )
@@ -70,10 +78,11 @@ class ProgramRepair(Task):
         self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
             self.TOKENIZER_CHECKPOINT
         )
-        new_special_tokens: Set[str] = set(asdict(self.special_tokens).values())
-        self.stop_words: List[str] = list(
-            set(self.tokenizer.all_special_tokens_extended).union(new_special_tokens)
-        )
+        # new_special_tokens: Set[str] = set(asdict(self.special_tokens).values())
+        # self.stop_words: List[str] = list(
+        #     set(self.tokenizer.all_special_tokens_extended).union(new_special_tokens)
+        # )
+        self.stop_words: List[str] = []
         super().__init__(stop_words=self.stop_words, requires_execution=False)
         # Extract few-shot examples from the dataset
         self.dataset: Dataset = load_dataset(self.DATASET_PATH, split=self.DATASET_SPLIT)
@@ -88,17 +97,19 @@ class ProgramRepair(Task):
         return self.dataset
 
     def _get_single_example_prompt(self, doc: Dict, is_fewshot_example: bool) -> str:
+        filename: str = Path(doc[self.dataset_features_names.PATH]).name
         commit_before: str = doc[self.dataset_features_names.INITIAL_STATE]
         commit_after: str = doc[self.dataset_features_names.FINAL_STATE]
-        ret: str = (
-            self.tokenizer.bos_token
-            + self.special_tokens.COMMIT_BEFORE
-            + commit_before
-            + self.special_tokens.COMMIT_MSG
-            + self.special_tokens.COMMIT_AFTER
-        )
+        ret: str = textwrap.dedent(f'''\
+        {self.special_tokens.FILENAME} {filename}
+        
+        {self.special_tokens.COMMIT_BEFORE} {commit_before}
+
+        {self.special_tokens.COMMIT_MSG} # Fixed a bug.
+
+        {self.special_tokens.COMMIT_AFTER} ''')
         if is_fewshot_example:
-            ret += commit_after
+            ret += f"{commit_after}\n{self.tokenizer.bos_token}"
         return ret
 
     def _get_fewshot_examples_prompt(self, num_of_examples: int) -> str:
@@ -107,6 +118,8 @@ class ProgramRepair(Task):
         :param num_of_examples:
         :return:
         """
+        if num_of_examples < 1:
+            return ""
         examples: List[str] = [
             self._get_single_example_prompt(doc, is_fewshot_example=True)
             for doc in self.dataset.select(range(0, num_of_examples))
@@ -114,15 +127,15 @@ class ProgramRepair(Task):
         return "\n".join(examples)
 
     def get_prompt(self, doc: Dict) -> str:
-        ret: str = (
-            self.fewshot_prompt
-            + "\n"
-            + self._get_single_example_prompt(doc, is_fewshot_example=False)
-        )
-        # print('***************')
-        # print('Prompt:')
-        # print(ret)
-        # print('***************')
+        ret: str = self.fewshot_prompt
+        if ret != "":
+            ret += "\n"
+        ret += self._get_single_example_prompt(doc, is_fewshot_example=False)
+        print('***************')
+        print('Prompt:')
+        print('***************')
+        print(ret)
+        print('***************')
         return ret
 
     def get_reference(self, doc: Dict) -> str:
@@ -132,6 +145,11 @@ class ProgramRepair(Task):
         """
         Return the generation until a stop token is encountered.
         """
+        print('***************')
+        print('Index:', idx)
+        print('Generation:')
+        print(generation)
+        print('***************')
         for stop_word in self.stop_words:
             if stop_word in generation:
                 generation = generation[: generation.index(stop_word)]
