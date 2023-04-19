@@ -120,6 +120,6 @@ def compute(
             "prediction": pred,
             "result": results[task_id]
         }
-        for task_id, (ans, ref, pred, res) in enumerate(zip(answers, references, predictions))
+        for task_id, (ans, ref, pred) in enumerate(zip(answers, references, predictions))
     ]
     return {"accuracy": sum(scores) / len(scores), "num_failed_execution": errored}, extra
