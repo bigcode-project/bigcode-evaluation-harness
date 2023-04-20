@@ -91,6 +91,12 @@ def parse_args():
         help="Do code generation but no evaluation",
     )
     parser.add_argument(
+        "--precision",
+        type=str,
+        default=None,
+        help="Model precision: bf16, fp16 or None",
+    )
+    parser.add_argument(
         "--generations_path",
         type=str,
         default=None,
