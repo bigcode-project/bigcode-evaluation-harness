@@ -81,8 +81,12 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
     if args.precision =="bf16":
         print("Converting model to bf16")
         model = model.bfloat16().cuda()
+    elif args.precision == "fp16":
+        print("Converting model to fp16")
+        model = model.bfloat16().cuda()   
     else:
         model = model.cuda()
+    
     ds_loader = accelerator.prepare(ds_loader)
     generations = complete_code(
         task,
