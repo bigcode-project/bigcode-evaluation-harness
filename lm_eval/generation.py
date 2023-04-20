@@ -1,10 +1,10 @@
-from tqdm import tqdm
 import json
 from math import ceil
 
-from torch.utils.data.dataloader import DataLoader
-from transformers import StoppingCriteria, StoppingCriteriaList
 from accelerate.utils import set_seed
+from torch.utils.data.dataloader import DataLoader
+from tqdm import tqdm
+from transformers import StoppingCriteria, StoppingCriteriaList
 
 from lm_eval.utils import TokenizedDataset, complete_code
 
@@ -78,15 +78,15 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
-    if args.precision =="bf16":
+    if args.precision == "bf16":
         print("Converting model to bf16")
         model = model.bfloat16().cuda()
     elif args.precision == "fp16":
         print("Converting model to fp16")
-        model = model.bfloat16().cuda()   
+        model = model.half().cuda()
     else:
         model = model.cuda()
-    
+
     ds_loader = accelerator.prepare(ds_loader)
     generations = complete_code(
         task,
