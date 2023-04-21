@@ -1,6 +1,8 @@
 import pytest
-from typing import List
-from lm_eval.tasks.program_repair import ProgramRepair, EvaluatedMetric
+from typing import List, Dict, Iterable, Callable, Set
+from lm_eval.tasks.program_repair import ProgramRepair, EvaluatedMetric, PyPiBugsDatasetFeaturesNames, SpecialTokens
+from dataclasses import asdict
+import re
 
 
 @pytest.fixture
@@ -34,6 +36,44 @@ def generations() -> List[List[str]]:
 @pytest.fixture
 def expected_score() -> float:
     return 0.625                                            # 6 out of 8 references have an exact match
+
+
+@pytest.fixture
+def prompt() -> str:
+    dataset_features_names: PyPiBugsDatasetFeaturesNames = PyPiBugsDatasetFeaturesNames()
+    doc: Dict[str, str] = {
+        dataset_features_names.PATH: "tests/test_task_program_repair.py",
+        dataset_features_names.INITIAL_STATE: "This is the initial state.",
+        dataset_features_names.FINAL_STATE: "This is the final state.",
+    }
+    return ProgramRepair().get_prompt(doc)
+
+
+@pytest.fixture
+def new_special_tokens() -> Iterable[str]:
+    return asdict(SpecialTokens()).values()
+
+
+def test_get_prompt(prompt, new_special_tokens):
+    print('***************')
+    print('Prompt:')
+    print(prompt)
+    print('***************')
+
+    def lines_containing_substrings_not_at_the_beginning(string: str, substrings: Iterable[str]) -> Set[str]:
+        """
+        Returns a set of all the lines that contain at least one of the substrings such that the substring is not at
+        the beginning of the line.
+        """
+        bad_lines: List[str] = []
+        for substring in substrings:
+            match = re.search(rf"^.+{substring}", string, flags=re.MULTILINE)
+            if match:
+                bad_lines.append(match.group())
+        return set(bad_lines)
+
+    bad_lines: Set[str] = lines_containing_substrings_not_at_the_beginning(prompt, new_special_tokens)
+    assert len(bad_lines) == 0, f"Found bad lines: {bad_lines}"
 
 
 def test_process_results(references, generations, expected_score):

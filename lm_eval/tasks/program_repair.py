@@ -1,5 +1,5 @@
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Set, NewType, Optional
+from dataclasses import dataclass
+from typing import List, Dict, NewType
 
 from datasets import Dataset, load_dataset
 
@@ -8,7 +8,7 @@ from evaluate import load
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from pathlib import Path
-import textwrap
+# import textwrap
 
 
 _CITATION = """
@@ -67,7 +67,7 @@ class ProgramRepair(Task):
 
     DATASET_PATH: str = "Nadav-Timor/PyPiBugs"
     DATASET_SPLIT: str = "train"
-    NUM_OF_FEWSHOT_EXAMPLES: int = 0
+    NUM_OF_FEWSHOT_EXAMPLES: int = 5
     TOKENIZER_CHECKPOINT = "CarperAI/diff-codegen-2b-v2"
     dataset_features_names: PyPiBugsDatasetFeaturesNames = (
         PyPiBugsDatasetFeaturesNames()
@@ -100,14 +100,14 @@ class ProgramRepair(Task):
         filename: str = Path(doc[self.dataset_features_names.PATH]).name
         commit_before: str = doc[self.dataset_features_names.INITIAL_STATE]
         commit_after: str = doc[self.dataset_features_names.FINAL_STATE]
-        ret: str = textwrap.dedent(f'''\
-        {self.special_tokens.FILENAME} {filename}
-        
-        {self.special_tokens.COMMIT_BEFORE} {commit_before}
+        ret: str = f"""\
+{self.special_tokens.FILENAME} {filename}
 
-        {self.special_tokens.COMMIT_MSG} # Fixed a bug.
+{self.special_tokens.COMMIT_BEFORE} {commit_before}
 
-        {self.special_tokens.COMMIT_AFTER} ''')
+{self.special_tokens.COMMIT_MSG} # Fixed a bug.
+
+{self.special_tokens.COMMIT_AFTER} """
         if is_fewshot_example:
             ret += f"{commit_after}\n{self.tokenizer.bos_token}"
         return ret

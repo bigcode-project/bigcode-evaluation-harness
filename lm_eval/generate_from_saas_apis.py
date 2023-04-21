@@ -1,5 +1,6 @@
 import argparse
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -18,7 +19,7 @@ class OpenAIModelArguments:
     Arguments for generating text using the OpenAI API.
     """
 
-    model: str = "davinci"
+    model: str = "text-davinci-003"
     max_tokens: int = 512
     temperature: float = 0.7
 
@@ -76,10 +77,11 @@ class OpenAIGenerator:
         for i in range(num_of_inputs):
             prompt: str = task.get_prompt(dataset[i])
             response = openai.Completion.create(
-                model="davinci",
+                model=openai_model_args.model,
                 prompt=prompt,
                 max_tokens=openai_model_args.max_tokens,
                 temperature=openai_model_args.temperature,
+                n=task_args.num_of_predictions,
                 stop=stop,
             )
             predictions = get_predictions_from_response()
@@ -137,7 +139,8 @@ def generate_from_openai() -> Tuple[Generations, References]:
         openai_model_args=openai_model_args, task_args=task_args
     )
     if task_args.store_path:
-        dirpath: Path = Path(task_args.store_path)
+        dirpath: Path = Path(task_args.store_path) / "outputs" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
+        dirpath.mkdir(parents=True, exist_ok=False)
         filepath_g: Path = dirpath / "generations.json"
         filepath_r: Path = dirpath / "references.json"
         with open(filepath_g, "w") as f:
