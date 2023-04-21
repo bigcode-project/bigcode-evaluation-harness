@@ -194,7 +194,7 @@ def main():
             else:
                 results[task] = evaluator.evaluate(task)
 
-    results["config"] = {"model": args.model}
+    results["config"] = {"model": args.model, "temperature": args.temperature, "n_samples": args.n_samples}
     if not args.generation_only:
         dumped = json.dumps(results, indent=2)
         if accelerator.is_main_process:
