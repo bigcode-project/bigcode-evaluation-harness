@@ -176,6 +176,10 @@ def complete_code(
                     ),
                     tokenizer,
                 )
+            elif tokenizer.eos_token in task.stop_words:
+                gen_code = tokenizer.decode(
+                    s, skip_special_tokens=False, clean_up_tokenization_spaces=False
+                )
             else:
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=True, clean_up_tokenization_spaces=True
