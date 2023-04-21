@@ -78,18 +78,9 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
-
-    device = accelerator.device
-    if args.precision == "bf16":
-        print("Converting model to bf16")
-        model = model.bfloat16().to(device)
-    elif args.precision == "fp16":
-        print("Converting model to fp16")
-        model = model.half().to(device)
-    else:
-        model = model.to(device)
-
+    model = model.to(accelerator.device)
     ds_loader = accelerator.prepare(ds_loader)
+
     generations = complete_code(
         task,
         accelerator,
