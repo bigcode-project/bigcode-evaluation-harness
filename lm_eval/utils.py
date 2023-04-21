@@ -125,8 +125,10 @@ def complete_code(
         with torch.no_grad():
             if task.stop_words:
                 # Set the start_length after which to check for stopping to be the longest input ignoring padding
-                gen_kwargs["stopping_criteria"][0].start_length = batch["input_len"].max().item()
-            generated_tokens = accelerator.unwrap_model(model).generate(
+                gen_kwargs["stopping_criteria"][0].start_length = (
+                    batch["input_len"].max().item()
+                )
+            generated_tokens = model.generate(
                 input_ids=batch["ids"][:, : batch["input_len"]],
                 num_return_sequences=batch_size,
                 **gen_kwargs,
