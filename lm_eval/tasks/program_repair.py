@@ -164,28 +164,29 @@ class ProgramRepair(Task):
         return generation
 
     def process_results(
-        self, generations: List[List[str]], references: List[str]
+        self, generations: List[List[str]], references: List[str], to_strip_surrounding_whitespaces: bool = True
     ) -> EvaluatedMetric:
         """
         Returns the number of references that has an exact match generation divided by the number of references.
         For each reference and its corresponding generations, compute the maximal exact match score. The maximal
         exact match score is 1 if there is at least one generation that is equal to the reference, and 0 otherwise.
-        Note: Ignore surrounding whitespaces.
         """
         metric_name: str = "exact_match"
         avg_metric_name: str = f"avg_{metric_name}"
         metric: EvaluationModule = load(metric_name)
         ret: EvaluatedMetric = EvaluatedMetric({avg_metric_name: 0.0})
-        reference: str
+        i: int
         corresponding_generations: List[str]
-        for reference, corresponding_generations in zip(references, generations):
+        for i, corresponding_generations in enumerate(generations):
             # Strip surrounding whitespaces
-            reference = reference.strip()
-            corresponding_generations = [gen.strip() for gen in corresponding_generations]
+            reference: str = references[i]
+            if to_strip_surrounding_whitespaces:
+                reference = reference.strip()
+                corresponding_generations = [gen.strip() for gen in corresponding_generations]
             curr: EvaluatedMetric = metric.compute(
                 predictions=corresponding_generations,
                 references=[reference] * len(corresponding_generations),
             )
             ret[avg_metric_name] += curr[metric_name] > 0
-        ret[avg_metric_name] /= len(references)
+        ret[avg_metric_name] /= len(generations)
         return ret

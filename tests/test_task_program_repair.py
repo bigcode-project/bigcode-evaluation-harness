@@ -1,41 +1,8 @@
 import pytest
-from typing import List, Dict, Iterable, Callable, Set
+from typing import List, Dict, Iterable, Set
 from lm_eval.tasks.program_repair import ProgramRepair, EvaluatedMetric, PyPiBugsDatasetFeaturesNames, SpecialTokens
 from dataclasses import asdict
 import re
-
-
-@pytest.fixture
-def references() -> List[str]:
-    return [
-        "first",
-        "<|endoftext|>",
-        "<|endoftext|>",
-        "<|endoftext|>",
-        "",
-        "",
-        "last",
-        "last",
-    ]
-
-
-@pytest.fixture
-def generations() -> List[List[str]]:
-    return [
-        ["1st", "irst", "", "not-first"],                   # Does not include an exact match
-        ["<|endoftext|>", "", "<special_token>", "first"],  # Includes an exact match
-        ["<|endoftext|>", "", "first", "<special_token>"],  # Includes an exact match
-        ["", "", "", "<special_token>"],                    # Does not include an exact match
-        ["", "", "", "<|endoftext|>"],                      # Includes an exact match
-        ["<>", " ", "   ", "<|endoftext|>"],                # Does not include an exact match
-        ["last", "", "", ""],                               # Includes an exact match
-        ["", "", "", "last"],                               # Includes an exact match
-    ]
-
-
-@pytest.fixture
-def expected_score() -> float:
-    return 0.625                                            # 6 out of 8 references have an exact match
 
 
 @pytest.fixture
@@ -76,8 +43,46 @@ def test_get_prompt(prompt, new_special_tokens):
     assert len(bad_lines) == 0, f"Found bad lines: {bad_lines}"
 
 
+@pytest.fixture
+def references() -> List[str]:
+    return [
+        "first",
+        "<|endoftext|>",
+        "<|endoftext|>",
+        "<|endoftext|>",
+        "",
+        "",
+        "last",
+        "last",
+    ]
+
+
+@pytest.fixture
+def generations() -> List[List[str]]:
+    return [
+        ["1st", "irst", "", "not-first"],                   # Does not include an exact match
+        ["<|endoftext|>", "", "<special_token>", "first"],  # Includes an exact match
+        ["<|endoftext|>", "", "first", "<special_token>"],  # Includes an exact match
+        ["", "", "", "<special_token>"],                    # Does not include an exact match
+        ["", "", "", "<|endoftext|>"],                      # Includes an exact match
+        ["<>", " ", "   ", "<|endoftext|>"],                # Does not include an exact match (surrounding whitespace)
+        ["last", "", "", ""],                               # Includes an exact match
+        ["", "", "", "last"],                               # Includes an exact match
+    ]
+
+
+@pytest.fixture
+def expected_score() -> float:
+    return 0.625                                            # 5 out of 8 references have an exact match
+
+
 def test_process_results(references, generations, expected_score):
+    evaluated_metric: EvaluatedMetric = ProgramRepair().process_results(
+        generations, references, to_strip_surrounding_whitespaces=False
+    )
+    assert evaluated_metric["avg_exact_match"] == expected_score
+    # If we strip the surrounding whitespaces, then the score should be 0.75 (6 out of 8 references have an exact match)
     evaluated_metric: EvaluatedMetric = ProgramRepair().process_results(
         generations, references
     )
-    assert evaluated_metric["avg_exact_match"] == expected_score
+    assert evaluated_metric["avg_exact_match"] == 0.75
