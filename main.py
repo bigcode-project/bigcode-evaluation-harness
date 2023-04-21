@@ -123,7 +123,7 @@ def parse_args():
     parser.add_argument(
         "--check_references",
         action="store_true",
-        help="Don't run generation but benchmark groundtruth (useful dor debugging)",
+        help="Don't run generation but benchmark groundtruth (useful for debugging)",
     )    
     return parser.parse_args()
 
