@@ -44,7 +44,7 @@ def update_args(args):
     args.top_p = 0
     args.n_samples = 1
     args.seed = 0
-    args.precision = ""
+    args.precision = None
     return args
 
 
