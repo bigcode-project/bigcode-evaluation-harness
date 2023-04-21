@@ -9,9 +9,10 @@ Homepage: https://github.com/openai/human-eval
 """
 
 import re
-from evaluate import load
-from lm_eval.base import Task
 
+from evaluate import load
+
+from lm_eval.base import Task
 
 _CITATION = """
 @misc{chen2021evaluating,
@@ -53,11 +54,19 @@ class HumanEval(Task):
         return "\n" + test_func + "\n" + entry_point
 
     @staticmethod
-    def remove_last_block(string, stop_words):
-        # Remove the last block of the code containing stop_words for HumanEval
-        string_list = re.split("(%s)" % "|".join(stop_words), string)
-        # last string should be ""
-        return "".join(string_list[:-2])
+    def _stop_at_stop_token(decoded_string, stop_tokens):
+        """
+        Produces the prefix of decoded_string that ends at the first occurrence of
+        a stop_token.
+        WARNING: the decoded_string *must not* include the prompt, which may have stop tokens
+        itself.
+        """
+        min_stop_index = len(decoded_string)
+        for stop_token in stop_tokens:
+            stop_index = decoded_string.find(stop_token)
+            if stop_index != -1 and stop_index < min_stop_index:
+                min_stop_index = stop_index
+        return decoded_string[:min_stop_index]
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
@@ -67,7 +76,8 @@ class HumanEval(Task):
             index of doc in the dataset to which the generation belongs
             (not used for Humaneval-Task)
         """
-        return self.remove_last_block(generation, self.stop_words)
+        prompt = self.get_prompt(self.dataset["test"][idx])
+        return prompt + self._stop_at_stop_token(generation, self.stop_words)
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
