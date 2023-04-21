@@ -7,6 +7,7 @@ from typing import List, Tuple, Optional
 import openai
 from lm_eval import tasks
 from dataclasses import dataclass, asdict
+import logging
 
 
 Generations = List[List[str]]
@@ -76,16 +77,21 @@ class OpenAIGenerator:
         generations = []
         for i in range(num_of_inputs):
             prompt: str = task.get_prompt(dataset[i])
-            response = openai.Completion.create(
-                model=openai_model_args.model,
-                prompt=prompt,
-                max_tokens=openai_model_args.max_tokens,
-                temperature=openai_model_args.temperature,
-                n=task_args.num_of_predictions,
-                stop=stop,
-            )
-            predictions = get_predictions_from_response()
-            generations.append(predictions)
+            try:
+                response = openai.Completion.create(
+                    model=openai_model_args.model,
+                    prompt=prompt,
+                    max_tokens=openai_model_args.max_tokens,
+                    temperature=openai_model_args.temperature,
+                    n=task_args.num_of_predictions,
+                    stop=stop,
+                )
+                predictions = get_predictions_from_response()
+                generations.append(predictions)
+            except openai.error.OpenAIError as e:
+                logging.critical("Encountered the following OpenAIError while generating text.")
+                logging.critical(e)
+                logging.critical(f"Skipping this sample. (Index of sample: {i})")
         references = [task.get_reference(dataset[i]) for i in range(num_of_inputs)]
         return generations, references
 
