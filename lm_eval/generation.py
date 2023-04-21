@@ -36,9 +36,9 @@ class EndOfFunctionCriteria(StoppingCriteria):
 
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
-    if args.generations_path:
+    if args.load_generations_path:
         # load generated code
-        with open(args.generations_path) as fp:
+        with open(args.load_generations_path) as fp:
             generations = json.load(fp)
             if accelerator.is_main_process:
                 print(
