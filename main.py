@@ -60,11 +60,6 @@ def parse_args():
         help=f"Evaluation tasks from {ALL_TASKS}",
     )
     parser.add_argument(
-        "--bf16",
-        action="store_true",
-        help="Convert the model to bf16",
-    )
-    parser.add_argument(
         "--batch_size",
         type=int,
         default=1,
@@ -181,8 +176,6 @@ def main():
             trust_remote_code=args.trust_remote_code,
             use_auth_token=args.use_auth_token,
         )
-        if args.bf16:
-            model = model.bfloat16()
         tokenizer = AutoTokenizer.from_pretrained(
             args.model,
             revision=args.revision,
