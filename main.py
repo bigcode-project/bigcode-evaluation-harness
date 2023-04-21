@@ -1,5 +1,6 @@
 import fnmatch
 import json
+import torch
 
 import datasets
 import transformers
@@ -68,6 +69,12 @@ def parse_args():
         type=int,
         default=512,
         help="Maximum length of generated sequence (prompt+generation)",
+    )
+    parser.add_argument(
+        "--precision",
+        type=str,
+        default="fp32",
+        help="Model precision, from: fp32, fp16 or bf16",
     )
     parser.add_argument(
         "--limit",
@@ -156,10 +163,14 @@ def main():
 
     else:
         # here we generate code and save it (evaluation is optional but True by default)
-        print("Loading the model and tokenizer")
+        dict_precisions = {"fp32": torch.float32, "fp16": torch.float16, "bf16": torch.bfloat16}
+        if args.precision not in dict_precisions:
+            raise ValueError(f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16")
+        print(f"Loading tokenizer and model (in {args.precision})")
         model = AutoModelForCausalLM.from_pretrained(
             args.model,
             revision=args.revision,
+            torch_dtype=dict_precisions[args.precision],
             trust_remote_code=args.trust_remote_code,
             use_auth_token=args.use_auth_token,
         )

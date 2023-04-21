@@ -1,9 +1,10 @@
-from tqdm import tqdm
 import json
+from math import ceil
 
-from torch.utils.data.dataloader import DataLoader
-from transformers import StoppingCriteria, StoppingCriteriaList
 from accelerate.utils import set_seed
+from torch.utils.data.dataloader import DataLoader
+from tqdm import tqdm
+from transformers import StoppingCriteria, StoppingCriteriaList
 
 from lm_eval.utils import TokenizedDataset, complete_code
 
@@ -56,13 +57,15 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         "max_length": args.max_length_generation,
     }
     if task.stop_words:
+        if tokenizer.eos_token:
+            task.stop_words.append(tokenizer.eos_token)
         gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
             [EndOfFunctionCriteria(0, task.stop_words, tokenizer)]
         )
 
     if accelerator.is_main_process:
         print(f"number of problems for this task is {n_tasks}")
-    n_copies = args.n_samples // args.batch_size
+    n_copies = ceil(args.n_samples / args.batch_size)
 
     ds_tokenized = TokenizedDataset(
         task,
@@ -77,8 +80,9 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
+    model = model.to(accelerator.device)
+    ds_loader = accelerator.prepare(ds_loader)
 
-    model, ds_loader = accelerator.prepare(model, ds_loader)
     generations = complete_code(
         task,
         accelerator,
