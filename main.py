@@ -162,8 +162,6 @@ def main():
             print("generation mode only, skip the evaluation")
             return
         # here we don't generate code but only evaluate previously computed generations
-        if args.generation_only:
-            return
         if accelerator.is_main_process:
             print("evaluation only mode")
         evaluator = Evaluator(accelerator, None, None, args)
