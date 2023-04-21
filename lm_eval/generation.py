@@ -57,6 +57,8 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         "max_length": args.max_length_generation,
     }
     if task.stop_words:
+        if tokenizer.eos_token:
+            task.stop_words.append(tokenizer.eos_token)
         gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
             [EndOfFunctionCriteria(0, task.stop_words, tokenizer)]
         )
