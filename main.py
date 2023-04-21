@@ -94,7 +94,7 @@ def parse_args():
         "--precision",
         type=str,
         default=None,
-        help="Model precision: bf16, fp16 or None",
+        help="Model precision, from: bf16, fp16 or None",
     )
     parser.add_argument(
         "--generations_path",
