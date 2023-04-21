@@ -29,9 +29,10 @@ def update_args(args):
     # the executed code for the tests is safe (see tests/data/*_eval_gens.json)
     args.allow_code_execution = True
     args.save_generations = False
+    args.save_generations_path = ""
     args.save_references = False
-    args.output_path = TMPDIR
-    args.generations_path = None
+    args.metric_output_path = TMPDIR
+    args.load_generations_path = None
     args.generation_only = False
     # postprocessing for HumanEval and MBPP makes generations
     # with dummy model not distinctive
@@ -44,6 +45,7 @@ def update_args(args):
     args.top_p = 0
     args.n_samples = 1
     args.seed = 0
+    args.precision = None
     return args
 
 
@@ -89,7 +91,7 @@ def test_evaluation():
     for task in EVAL_TASKS:
         print(f"testing task {task}")
         # path to generation examples to evaluate
-        args.generations_path = f"tests/data/{task}_eval_gens.json"
+        args.load_generations_path = f"tests/data/{task}_eval_gens.json"
         evaluator = Evaluator(accelerator, None, None, args)
         results = evaluator.evaluate(task)
         assert results == REF_EVAL_SCORES[task]

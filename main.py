@@ -1,6 +1,7 @@
 import fnmatch
 import json
 from pathlib import Path
+import torch
 
 import datasets
 import transformers
@@ -76,6 +77,12 @@ def parse_args():
         help="Maximum length of generated sequence (prompt+generation)",
     )
     parser.add_argument(
+        "--precision",
+        type=str,
+        default="fp32",
+        help="Model precision, from: fp32, fp16 or bf16",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=None,
@@ -97,13 +104,13 @@ def parse_args():
         help="Do code generation but no evaluation",
     )
     parser.add_argument(
-        "--generations_path",
+        "--load_generations_path",
         type=str,
         default=None,
         help="Path of file with previously generated solutions, if provided generation is skipped and only evaluation is done",
     )
     parser.add_argument(
-        "--output_path",
+        "--metric_output_path",
         type=str,
         default="evaluation_results.json",
         help="Path to save the results",
@@ -112,6 +119,12 @@ def parse_args():
         "--save_generations",
         action="store_true",
         help="Whether to save code generations",
+    )
+    parser.add_argument(
+        "--save_generations_path",
+        type=str,
+        default="generations.json",
+        help="Path for saving the code generations",
     )
     parser.add_argument(
         "--save_references",
@@ -147,7 +160,7 @@ def main():
 
     results = {}
     extras = {}
-    if args.generations_path:
+    if args.load_generations_path:
         # here we don't generate code but only evaluate previously computed generations
         if accelerator.is_main_process:
             print("evaluation only mode")
@@ -157,10 +170,14 @@ def main():
 
     else:
         # here we generate code and save it (evaluation is optional but True by default)
-        print("Loading the model and tokenizer")
+        dict_precisions = {"fp32": torch.float32, "fp16": torch.float16, "bf16": torch.bfloat16}
+        if args.precision not in dict_precisions:
+            raise ValueError(f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16")
+        print(f"Loading tokenizer and model (in {args.precision})")
         model = AutoModelForCausalLM.from_pretrained(
             args.model,
             revision=args.revision,
+            torch_dtype=dict_precisions[args.precision],
             trust_remote_code=args.trust_remote_code,
             use_auth_token=args.use_auth_token,
         )
@@ -197,13 +214,13 @@ def main():
             else:
                 results[task], extras[task] = evaluator.evaluate(task)
 
-    results["config"] = {"model": args.model}
+    results["config"] = {"model": args.model, "temperature": args.temperature, "n_samples": args.n_samples}
     if not args.generation_only:
         dumped = json.dumps(results, indent=2)
         if accelerator.is_main_process:
             print(dumped)
 
-        output_path = Path(args.output_path)
+        output_path = Path(args.metric_output_path)
         with open(output_path, "w") as f:
             f.write(dumped)
         extras_out_path = output_path.with_name(f"{output_path.stem}_extras{output_path.suffix}")
