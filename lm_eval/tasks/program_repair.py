@@ -4,11 +4,10 @@ from typing import List, Dict, NewType
 from datasets import Dataset, load_dataset
 
 from lm_eval.base import Task
-from evaluate import load
+from evaluate import load, EvaluationModule
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from pathlib import Path
-# import textwrap
 
 
 _CITATION = """
@@ -141,18 +140,27 @@ class ProgramRepair(Task):
     def get_reference(self, doc: Dict) -> str:
         return doc[self.dataset_features_names.FINAL_STATE]
 
-    def postprocess_generation(self, generation, idx) -> str:
+    def postprocess_generation(self, generation: str, idx: int = -1) -> str:
         """
-        Return the generation until a stop token is encountered.
+        Return the generation until a stop token is encountered. Remove blank lines.
         """
         print('***************')
         print('Index:', idx)
         print('Generation:')
         print(generation)
         print('***************')
-        for stop_word in self.stop_words:
-            if stop_word in generation:
-                generation = generation[: generation.index(stop_word)]
+
+        def slice_until_stop_token() -> None:
+            """
+            Slice the generation until a stop token is encountered.
+            """
+            nonlocal generation
+            for stop_token in self.stop_words:
+                if stop_token in generation:
+                    generation = generation[: generation.index(stop_token)]
+                    break
+
+        slice_until_stop_token()
         return generation
 
     def process_results(
@@ -162,14 +170,18 @@ class ProgramRepair(Task):
         Returns the number of references that has an exact match generation divided by the number of references.
         For each reference and its corresponding generations, compute the maximal exact match score. The maximal
         exact match score is 1 if there is at least one generation that is equal to the reference, and 0 otherwise.
+        Note: Ignore surrounding whitespaces.
         """
         metric_name: str = "exact_match"
         avg_metric_name: str = f"avg_{metric_name}"
-        metric = load(metric_name)
+        metric: EvaluationModule = load(metric_name)
         ret: EvaluatedMetric = EvaluatedMetric({avg_metric_name: 0.0})
         reference: str
         corresponding_generations: List[str]
         for reference, corresponding_generations in zip(references, generations):
+            # Strip surrounding whitespaces
+            reference = reference.strip()
+            corresponding_generations = [gen.strip() for gen in corresponding_generations]
             curr: EvaluatedMetric = metric.compute(
                 predictions=corresponding_generations,
                 references=[reference] * len(corresponding_generations),

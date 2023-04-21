@@ -138,6 +138,8 @@ def generate_from_openai() -> Tuple[Generations, References]:
     generations, references = generator.generate_text(
         openai_model_args=openai_model_args, task_args=task_args
     )
+    # task = tasks.get_task(task_args.task_name)
+    # generations = task.postprocess_generation(generations)
     if task_args.store_path:
         dirpath: Path = Path(task_args.store_path) / "outputs" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
         dirpath.mkdir(parents=True, exist_ok=False)
