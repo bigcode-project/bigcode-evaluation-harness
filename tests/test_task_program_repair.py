@@ -27,19 +27,19 @@ def test_get_prompt(prompt, new_special_tokens):
     print(prompt)
     print('***************')
 
-    def lines_containing_substrings_not_at_the_beginning(string: str, substrings: Iterable[str]) -> Set[str]:
+    def get_lines_containing_substrings_not_at_the_beginning(string: str, substrings: Iterable[str]) -> Set[str]:
         """
         Returns a set of all the lines that contain at least one of the substrings such that the substring is not at
         the beginning of the line.
         """
-        bad_lines: List[str] = []
+        ret: List[str] = []
         for substring in substrings:
             match = re.search(rf"^.+{substring}", string, flags=re.MULTILINE)
             if match:
-                bad_lines.append(match.group())
-        return set(bad_lines)
+                ret.append(match.group())
+        return set(ret)
 
-    bad_lines: Set[str] = lines_containing_substrings_not_at_the_beginning(prompt, new_special_tokens)
+    bad_lines: Set[str] = get_lines_containing_substrings_not_at_the_beginning(prompt, new_special_tokens)
     assert len(bad_lines) == 0, f"Found bad lines: {bad_lines}"
 
 
