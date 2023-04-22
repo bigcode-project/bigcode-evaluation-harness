@@ -7,9 +7,20 @@ with 439, 90, 164, and 252 samples in English, Spanish, Japanese, and Russian.
 
 Homepage: https://github.com/zorazrw/odex
 """
+from warnings import warn
+
 from evaluate import load
+
 from lm_eval.base import Task
-from lm_eval.tasks.custom_metrics.odex_imports import *
+
+try:
+    from lm_eval.tasks.custom_metrics.odex_imports import *
+except ImportError:
+    warn(
+        "Failed to import Odex libraries, make sure you have them installed. Ignore this warning if you are running a different evaluation task."
+    )
+    pass
+
 
 _CITATION = """
 @article{wang2022execution,
@@ -19,6 +30,7 @@ _CITATION = """
          year={2022}
 }
 """
+
 
 def create_task(lang):
     class ODEX(GeneralODEX):
@@ -100,8 +112,6 @@ class GeneralODEX(Task):
         """
         code_metric = load("code_eval")
         results, _ = code_metric.compute(
-            references=references,
-            predictions=generations,
-            k = [1, 2, 5, 10]
+            references=references, predictions=generations, k=[1, 2, 5, 10]
         )
         return results
