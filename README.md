@@ -110,6 +110,49 @@ Below is an example, be mind of specifying arguments proper to the task you are 
 ```bash
 accelerate launch  main.py   --tasks mbpp  --allow_code_execution  --load_generations_path generations.json  --model incoder-temperature-08
 ```
+## Docker containers
+For safety, we provide a Dockerfiles to do the execution inside a docker container. To do that, first, do the generation on your machine and save them in generations.json by adding the flag --generation_only to the command. Then build the docker container and run the evaluation inside it.
+
+### Building  Docker image
+Here's how to build a docker image for the evaluation harness:
+```bash
+$ sudo make DOCKERFILE=Dockerfile  all
+```
+This creates an image called `evaluation-harness`, and runs a test on it. To skip the test remove `all` form the command.
+
+If you want to evaluate on MultiPL-E, we have a different Dockerfile since it requires more dependencies, use:
+```bash
+$ sudo make DOCKERFILE=Dockerfile-multiple all
+```
+This creates an image called `evaluation-harness-multiple`.
+
+### Evaluating inside a container
+Suppose you generated text with the `bigcode/santacoder` model and saved it in `generations.json` with:
+```bash
+accelerate launch  main.py \
+    --model bigcode/santacoder  \
+    --tasks multiple-py  \
+    --max_length_generation 650 \
+    --temperature 0.8   \
+    --do_sample True  \
+    --n_samples 200  \
+    --batch_size 200  \
+    --trsut_remote_code \
+    --generation_only \
+    --save_generations \
+    --save_generations_path generations_py.json
+```
+
+To run the container (here from image `evaluation-harness`) to evaluate on `generations.json`, or another file mount it with `-v`, specify `n_samples` and allow code execution with `--allow_code_execution` (and add the number of problems `--limit`  if it was used during generation):
+```bash
+$ sudo docker run -v $(pwd)/generations_py.json:/app/generations_py.json:ro -it evaluation-harness-multiple python3 main.py \
+    --model bigcode/santacoder \
+    --tasks multiple-py \
+    --load_generations_path /app/generations_py.json \
+    --allow_code_execution  \
+    --temperature 0.8 \
+    --n_samples 200
+```
 
 ## Implementing new tasks
 To implement a new task in this evaluation harness, see the guide in [`docs/guide`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md). The are also contribution guidelines in this [`CONTRIBUTING.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/CONTRIBUTING.md)

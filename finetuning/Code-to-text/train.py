@@ -1,19 +1,15 @@
 import argparse
 
 from datasets import load_dataset
-
-from transformers import (
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    Trainer,
-    TrainingArguments,
-    set_seed,
-)
+from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
+                          Trainer, TrainingArguments, set_seed)
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_ckpt", type=str, default="microsoft/unixcoder-base-nine")
+    parser.add_argument(
+        "--model_ckpt", type=str, default="microsoft/unixcoder-base-nine"
+    )
     parser.add_argument("--language", type=str, default="Python")
     parser.add_argument("--max_length", type=int, default=1024)
     parser.add_argument("--num_epochs", type=int, default=5)
@@ -40,7 +36,9 @@ def main():
     print("Loading tokenizer and model")
     tokenizer = AutoTokenizer.from_pretrained(args.model_ckpt)
     tokenizer.pad_token = tokenizer.eos_token
-    model = AutoModelForSequenceClassification.from_pretrained(args.model_ckpt, num_labels=2)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        args.model_ckpt, num_labels=2
+    )
     model.config.pad_token_id = model.config.eos_token_id
 
     if args.freeze:
@@ -49,13 +47,20 @@ def main():
 
     def tokenize(example):
         if args.language == "Python":
-            #remove docstring from code
+            # remove docstring from code
             chunks = example["code"].split('"""')
             code = chunks[0].strip() + chunks[2]
         else:
             code = example["code"]
-        inputs = tokenizer(code, padding="max_length", truncation=True, max_length=args.max_length)  
-        labels = tokenizer(example["docstring"], padding="max_length", truncation=True, max_length=args.max_length).input_ids
+        inputs = tokenizer(
+            code, padding="max_length", truncation=True, max_length=args.max_length
+        )
+        labels = tokenizer(
+            example["docstring"],
+            padding="max_length",
+            truncation=True,
+            max_length=args.max_length,
+        ).input_ids
         labels_with_ignore_index = []
         for labels_example in labels:
             labels_example = [label if label != 0 else -100 for label in labels_example]
@@ -99,10 +104,11 @@ def main():
 
     print("Training...")
     trainer.train()
-    
+
     # push the model to the Hugging Face hub
     if args.push_to_hub:
         model.push_to_hub(args.model_hub_name)
+
 
 if __name__ == "__main__":
     main()

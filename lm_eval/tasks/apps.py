@@ -8,9 +8,10 @@ Homepage: https://github.com/hendrycks/apps
 """
 
 import json
-from evaluate import load
-from lm_eval.base import Task
 
+from evaluate import load
+
+from lm_eval.base import Task
 
 _CITATION = """
 @article{hendrycksapps2021,
