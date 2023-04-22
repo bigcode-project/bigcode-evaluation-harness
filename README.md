@@ -131,13 +131,16 @@ Suppose you generated text with the `bigcode/santacoder` model and saved it in `
 ```bash
 accelerate launch  main.py \
     --model bigcode/santacoder  \
-    --tasks multiple-java  \
+    --tasks multiple-py  \
     --max_length_generation 650 \
     --temperature 0.8   \
     --do_sample True  \
     --n_samples 200  \
-    --batch_size 120  \
-    --generation_only
+    --batch_size 200  \
+    --trsut_remote_code \
+    --generation_only \
+    --save_generations \
+    --save_generations_path generations_py.json
 ```
 
 To run the container (here from image `evaluation-harness`) to evaluate on `generations.json`, or another file mount it with `-v`, specify `n_samples` and allow code execution with `--allow_code_execution` (and add the number of problems `--limit`  if it was used during generation):
@@ -145,7 +148,7 @@ To run the container (here from image `evaluation-harness`) to evaluate on `gene
 $ sudo docker run -v $(pwd)/generations_py.json:/app/generations_py.json:ro -it evaluation-harness-multiple python3 main.py \
     --model bigcode/santacoder \
     --tasks multiple-py \
-    --generations_path /app/generations_py.json \
+    --load_generations_path /app/generations_py.json \
     --allow_code_execution  \
     --temperature 0.8 \
     --n_samples 200

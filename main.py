@@ -195,9 +195,9 @@ def main():
                     print("generation mode only")
                 generations, references = evaluator.generate_text(task)
                 if accelerator.is_main_process:
-                    with open("generations.json", "w") as fp:
+                    with open(args.save_generations_path, "w") as fp:
                         json.dump(generations, fp)
-                        print("generations were saved")
+                        print(f"generations were saved at {args.save_generations_path}")
                     if args.save_references:
                         with open("references.json", "w") as fp:
                             json.dump(references, fp)
