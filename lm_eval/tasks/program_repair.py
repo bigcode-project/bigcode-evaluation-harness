@@ -42,6 +42,7 @@ class PyPiBugsDatasetFeaturesNames:
     The names of the relevant features in the PyPiBugs dataset.
     (See https://huggingface.co/datasets/Nadav-Timor/PyPiBugs)
     """
+
     PATH: str = "old_path"
     INITIAL_STATE: str = "initial_state"
     FINAL_STATE: str = "final_state"
@@ -60,6 +61,7 @@ class DatasetConfig:
                                     num_of_fewshot_examples examples are used. If the dataset is not shuffled, the
                                     examples will always be the same.
     """
+
     DATASET_PATH: str = "Nadav-Timor/PyPiBugs"
     DATASET_SPLIT: str = "train"
     to_shuffle: bool = True
@@ -91,14 +93,21 @@ class ProgramRepair(Task):
     the dataset and uses them as few-shot examples. Note that the zero-shot examples are always the same (the first
     num_of_fewshot_examples examples from the dataset). Set num_of_fewshot_examples to 0 to evaluate in zero-shot mode.
     """
+
     def __init__(self, **kwargs: Dict[str, Any]) -> None:
         self.args: Dict[str, Any] = kwargs
         # Dataset
-        self.dataset_config: DatasetConfig = init_dataclass_from_kwargs(cls=DatasetConfig, kwargs=kwargs)
-        self.dataset_features_names: PyPiBugsDatasetFeaturesNames = PyPiBugsDatasetFeaturesNames()
+        self.dataset_config: DatasetConfig = init_dataclass_from_kwargs(
+            cls=DatasetConfig, kwargs=kwargs
+        )
+        self.dataset_features_names: PyPiBugsDatasetFeaturesNames = (
+            PyPiBugsDatasetFeaturesNames()
+        )
         self.seed: int = self.args.get("seed", 0)
         # Tokenization
-        self.tokenizer_config: TokenizerConfig = init_dataclass_from_kwargs(cls=TokenizerConfig, kwargs=kwargs)
+        self.tokenizer_config: TokenizerConfig = init_dataclass_from_kwargs(
+            cls=TokenizerConfig, kwargs=kwargs
+        )
         self.new_special_tokens: NewSpecialTokens = NewSpecialTokens()
         self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
             self.tokenizer_config.tokenizer_checkpoint
@@ -111,7 +120,9 @@ class ProgramRepair(Task):
         self.stop_words: List[str] = []
         self.requires_execution: bool = False
         # Extract few-shot examples from the dataset
-        self.dataset: Dataset = load_dataset(self.dataset_config.DATASET_PATH, split=self.dataset_config.DATASET_SPLIT)
+        self.dataset: Dataset = load_dataset(
+            self.dataset_config.DATASET_PATH, split=self.dataset_config.DATASET_SPLIT
+        )
         datasets.disable_caching()
         if self.dataset_config.to_shuffle:
             self.dataset = self.dataset.shuffle(seed=self.seed)
@@ -169,6 +180,7 @@ class ProgramRepair(Task):
         """
         Return the generation until a stop token is encountered. Remove blank lines.
         """
+
         def slice_until_stop_token() -> None:
             """
             Slice the generation until a stop token is encountered.
@@ -183,20 +195,34 @@ class ProgramRepair(Task):
         return generation
 
     def process_results(
-        self, generations: List[List[str]], references: List[str], to_strip_surrounding_whitespaces: bool = True
+        self,
+        generations: List[List[str]],
+        references: List[str],
+        to_strip_surrounding_whitespaces: bool = True,
     ) -> EvaluatedMetric:
         """
         Returns the number of references that have an exact match generation divided by the number of references.
         For each reference and its corresponding generations, compute the maximal exact match score. The maximal
         exact match score is 1 if there is at least one generation that is equal to the reference, and 0 otherwise.
         Additionally, returns a histogram of the ratio of references that have an exact match score equal to the key.
-        The first metric described is the value of the histogram at key 0.0.
         """
+        n: int = len(generations)
         exact_match: str = "exact_match"
-        exact_match_avg_max: str = f"ratio_of_references_with_at_least_one_{exact_match}"
-        exact_match_hist: str = f"histogram_of_the_ratio_of_references_that_have_{exact_match}_equal_to_key"
+        exact_match_avg_max: str = (
+            f"ratio_of_references_with_at_least_one_{exact_match}"
+        )
+        exact_match_hist: str = (
+            f"histogram_of_the_ratio_of_references_that_have_{exact_match}_equal_to_key"
+        )
+        num_of_references: str = "num_of_references"
+        ret: EvaluatedMetric = EvaluatedMetric(
+            {
+                exact_match_avg_max: 0.0,
+                exact_match_hist: Counter(),
+                num_of_references: n,
+            }
+        )
         metric: EvaluationModule = load(exact_match)
-        ret: EvaluatedMetric = EvaluatedMetric({exact_match_avg_max: 0.0, exact_match_hist: Counter()})
         i: int
         corresponding_generations: List[str]
         for i, corresponding_generations in enumerate(generations):
@@ -204,14 +230,17 @@ class ProgramRepair(Task):
             reference: str = references[i]
             if to_strip_surrounding_whitespaces:
                 reference = reference.strip()
-                corresponding_generations = [gen.strip() for gen in corresponding_generations]
+                corresponding_generations = [
+                    gen.strip() for gen in corresponding_generations
+                ]
             curr: EvaluatedMetric = metric.compute(
                 predictions=corresponding_generations,
                 references=[reference] * len(corresponding_generations),
             )
             ret[exact_match_avg_max] += curr[exact_match] > 0
             ret[exact_match_hist][curr[exact_match]] += 1
-        num_of_samples: int = len(generations)
-        ret[exact_match_avg_max] /= num_of_samples
-        ret[exact_match_hist] = {key: value / num_of_samples for key, value in ret[exact_match_hist].items()}
+        ret[exact_match_avg_max] /= n
+        ret[exact_match_hist] = {
+            key: value / n for key, value in ret[exact_match_hist].items()
+        }
         return ret
