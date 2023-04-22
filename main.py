@@ -97,6 +97,12 @@ def parse_args():
         help="Path of file with previously generated solutions, if provided generation is skipped and only evaluation is done",
     )
     parser.add_argument(
+        "--references_path",
+        type=str,
+        default=None,
+        help="Path of file with corresponding references. If provided, the evaluation is done on the provided targets."
+    )
+    parser.add_argument(
         "--output_path",
         type=str,
         default="evaluation_results.json",
@@ -146,7 +152,7 @@ def main():
             print("evaluation only mode")
         evaluator = Evaluator(accelerator, None, None, args)
         for task in task_names:
-            results[task] = evaluator.evaluate(task)
+            results[task] = evaluator.evaluate(task, **vars(args))
 
     else:
         # here we generate code and save it (evaluation is optional but True by default)
@@ -186,7 +192,7 @@ def main():
                             json.dump(references, fp)
                             print("references were saved")
             else:
-                results[task] = evaluator.evaluate(task)
+                results[task] = evaluator.evaluate(task, **vars(args))
 
     results["config"] = {"model": args.model}
     if not args.generation_only:

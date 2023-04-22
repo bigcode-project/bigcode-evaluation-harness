@@ -80,9 +80,10 @@ def test_process_results(references, generations, expected_score):
     evaluated_metric: EvaluatedMetric = ProgramRepair().process_results(
         generations, references, to_strip_surrounding_whitespaces=False
     )
-    assert evaluated_metric["avg_exact_match"] == expected_score
+    exact_match_avg_max: str = "ratio_of_references_with_at_least_one_exact_match"
+    assert evaluated_metric[exact_match_avg_max] == expected_score
     # If we strip the surrounding whitespaces, then the score should be 0.75 (6 out of 8 references have an exact match)
     evaluated_metric: EvaluatedMetric = ProgramRepair().process_results(
         generations, references
     )
-    assert evaluated_metric["avg_exact_match"] == 0.75
+    assert evaluated_metric[exact_match_avg_max] == 0.75

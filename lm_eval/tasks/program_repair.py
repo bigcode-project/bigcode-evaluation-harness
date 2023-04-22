@@ -1,7 +1,9 @@
+from collections import Counter
 from dataclasses import dataclass
-from typing import List, Dict, NewType
+from typing import List, Dict, NewType, Any
 
 from datasets import Dataset, load_dataset
+import datasets
 
 from lm_eval.base import Task
 from evaluate import load, EvaluationModule
@@ -54,7 +56,6 @@ class DatasetConfig:
     :param to_shuffle: Whether to shuffle the dataset. The shuffle is done before extracting the few-shot examples.
                        Hence, different seeds will result in different few-shot examples. By default, the dataset is
                        shuffled.
-    :param seed: The random seed for the shuffle.
     :param num_of_fewshot_examples: The number of few-shot examples to extract from the dataset. By default, the first
                                     num_of_fewshot_examples examples are used. If the dataset is not shuffled, the
                                     examples will always be the same.
@@ -62,16 +63,11 @@ class DatasetConfig:
     DATASET_PATH: str = "Nadav-Timor/PyPiBugs"
     DATASET_SPLIT: str = "train"
     to_shuffle: bool = True
-    seed: int = 0
     num_of_fewshot_examples: int = 5
-    # features_names: PyPiBugsDatasetFeaturesNames = PyPiBugsDatasetFeaturesNames()
 
 
 @dataclass(frozen=True)
 class NewSpecialTokens:
-    # COMMIT_BEFORE: str = "<commit-before>\n"
-    # COMMIT_MSG: str = "\n<commit-msg> Fix bug.\n"
-    # COMMIT_AFTER: str = "<commit-after>\n"
     FILENAME: str = "<NME> "
     COMMIT_BEFORE: str = "<BEF> "
     COMMIT_MSG: str = "<MSG> "
@@ -83,7 +79,7 @@ class TokenizerConfig:
     tokenizer_checkpoint = "CarperAI/diff-codegen-350m-v2"
 
 
-EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, float])
+EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, Any])
 
 
 class ProgramRepair(Task):
@@ -95,10 +91,12 @@ class ProgramRepair(Task):
     the dataset and uses them as few-shot examples. Note that the zero-shot examples are always the same (the first
     num_of_fewshot_examples examples from the dataset). Set num_of_fewshot_examples to 0 to evaluate in zero-shot mode.
     """
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Dict[str, Any]) -> None:
+        self.args: Dict[str, Any] = kwargs
         # Dataset
         self.dataset_config: DatasetConfig = init_dataclass_from_kwargs(cls=DatasetConfig, kwargs=kwargs)
         self.dataset_features_names: PyPiBugsDatasetFeaturesNames = PyPiBugsDatasetFeaturesNames()
+        self.seed: int = self.args.get("seed", 0)
         # Tokenization
         self.tokenizer_config: TokenizerConfig = init_dataclass_from_kwargs(cls=TokenizerConfig, kwargs=kwargs)
         self.new_special_tokens: NewSpecialTokens = NewSpecialTokens()
@@ -111,11 +109,12 @@ class ProgramRepair(Task):
         #     set(self.tokenizer.all_special_tokens_extended).union(new_special_tokens)
         # )
         self.stop_words: List[str] = []
-        super().__init__(stop_words=self.stop_words, requires_execution=False)
+        self.requires_execution: bool = False
         # Extract few-shot examples from the dataset
         self.dataset: Dataset = load_dataset(self.dataset_config.DATASET_PATH, split=self.dataset_config.DATASET_SPLIT)
+        datasets.disable_caching()
         if self.dataset_config.to_shuffle:
-            self.dataset = self.dataset.shuffle(seed=self.dataset_config.seed)
+            self.dataset = self.dataset.shuffle(seed=self.seed)
         self.fewshot_prompt: str = self._get_fewshot_examples_prompt(
             num_of_examples=self.dataset_config.num_of_fewshot_examples
         )
@@ -161,11 +160,6 @@ class ProgramRepair(Task):
         if ret != "":
             ret += "\n"
         ret += self._get_single_example_prompt(doc, is_fewshot_example=False)
-        # print('***************')
-        # print('Prompt:')
-        # print('***************')
-        # print(ret)
-        # print('***************')
         return ret
 
     def get_reference(self, doc: Dict) -> str:
@@ -175,12 +169,6 @@ class ProgramRepair(Task):
         """
         Return the generation until a stop token is encountered. Remove blank lines.
         """
-        # print('***************')
-        # print('Index:', idx)
-        # print('Generation:')
-        # print(generation)
-        # print('***************')
-
         def slice_until_stop_token() -> None:
             """
             Slice the generation until a stop token is encountered.
@@ -198,14 +186,17 @@ class ProgramRepair(Task):
         self, generations: List[List[str]], references: List[str], to_strip_surrounding_whitespaces: bool = True
     ) -> EvaluatedMetric:
         """
-        Returns the number of references that has an exact match generation divided by the number of references.
+        Returns the number of references that have an exact match generation divided by the number of references.
         For each reference and its corresponding generations, compute the maximal exact match score. The maximal
         exact match score is 1 if there is at least one generation that is equal to the reference, and 0 otherwise.
+        Additionally, returns a histogram of the ratio of references that have an exact match score equal to the key.
+        The first metric described is the value of the histogram at key 0.0.
         """
-        metric_name: str = "exact_match"
-        avg_metric_name: str = f"avg_{metric_name}"
-        metric: EvaluationModule = load(metric_name)
-        ret: EvaluatedMetric = EvaluatedMetric({avg_metric_name: 0.0})
+        exact_match: str = "exact_match"
+        exact_match_avg_max: str = f"ratio_of_references_with_at_least_one_{exact_match}"
+        exact_match_hist: str = f"histogram_of_the_ratio_of_references_that_have_{exact_match}_equal_to_key"
+        metric: EvaluationModule = load(exact_match)
+        ret: EvaluatedMetric = EvaluatedMetric({exact_match_avg_max: 0.0, exact_match_hist: Counter()})
         i: int
         corresponding_generations: List[str]
         for i, corresponding_generations in enumerate(generations):
@@ -218,6 +209,9 @@ class ProgramRepair(Task):
                 predictions=corresponding_generations,
                 references=[reference] * len(corresponding_generations),
             )
-            ret[avg_metric_name] += curr[metric_name] > 0
-        ret[avg_metric_name] /= len(generations)
+            ret[exact_match_avg_max] += curr[exact_match] > 0
+            ret[exact_match_hist][curr[exact_match]] += 1
+        num_of_samples: int = len(generations)
+        ret[exact_match_avg_max] /= num_of_samples
+        ret[exact_match_hist] = {key: value / num_of_samples for key, value in ret[exact_match_hist].items()}
         return ret
