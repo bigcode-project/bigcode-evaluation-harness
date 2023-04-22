@@ -89,7 +89,7 @@ accelerate launch  main.py \
 * `limit` represents the number of problems to solve, if it's not provided all problems in the benchmark are selected. 
 * `allow_code_execution` is for executing the generated code: it is off by default, read the displayed warning before calling it to enable execution. 
 * Some models with custom code on the HF hub like [SantaCoder](https://huggingface.co/bigcode/santacoder) require calling `--trust_remote_code`, for private models add `--use_auth_token`.
-* `save_generations` saves the post-processed generations in a json file. You can also save references by calling `--save_references`
+* `save_generations` saves the post-processed generations in a json file at `save_generations_path` (by default `generations.json`). You can also save references by calling `--save_references`
 
 Some tasks don't require code execution such as
 `codexglue_code_to_text-<LANGUAGE>`/`codexglue_code_to_text-python-left`/`conala`/`concode` that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `batch_size=1`. (Note that `batch_size` should always be equal or less than `n_samples`).
@@ -108,7 +108,7 @@ If you already have the generations in a json file from this evaluation harness 
 Below is an example, be mind of specifying arguments proper to the task you are evaluating on, and note that `model` value here only serves for documenting the experiment.
 
 ```bash
-accelerate launch  main.py   --tasks mbpp  --allow_code_execution  --generations_path generations.json  --model incoder-temperature-08
+accelerate launch  main.py   --tasks mbpp  --allow_code_execution  --load_generations_path generations.json  --model incoder-temperature-08
 ```
 ## Docker containers
 For safety, we provide a Dockerfiles to do the execution inside a docker container. To do that, first, do the generation on your machine and save them in generations.json by adding the flag --generation_only to the command. Then build the docker container and run the evaluation inside it.

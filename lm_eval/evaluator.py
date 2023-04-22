@@ -32,7 +32,7 @@ class Evaluator:
         self.args = args
 
         # setup arguments
-        self.output_path = args.output_path
+        self.metric_output_path = args.metric_output_path
 
         # code evaluation permission
         self.allow_code_execution = args.allow_code_execution
@@ -52,12 +52,11 @@ class Evaluator:
             args=self.args,
         )
         references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
-        if len(generations[0]) != self.args.n_samples and not self.args.generations_path:
+        if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
-            if self.accelerator.is_main_process:
-                warnings.warn(
-                    "Number of tasks wasn't proportional to number of devices, we removed extra predictions"
-                )
+            warnings.warn(
+                f"Number of tasks wasn't proportional to number of devices, we removed extra predictions to only keep nsamples={self.args.n_samples}"
+            )
         return generations, references
 
     def evaluate(self, task_name):
@@ -68,19 +67,20 @@ class Evaluator:
         generations, references = self.generate_text(task_name)
 
         if self.accelerator.is_main_process:
-            if not self.args.generations_path:
+            if not self.args.load_generations_path:
                 if self.args.save_generations:
-                    with open("generations.json", "w") as fp:
+                    with open(self.args.save_generations_path, "w") as fp:
                         json.dump(generations, fp)
-                        print("generations were saved")
+                        print(f"generations were saved at {self.args.save_generations_path}")
                 if self.args.save_references:
                     with open("references.json", "w") as fp:
                         json.dump(references, fp)
-                        print("references were saved")
+                        print("references were saved at references.json")
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
             if self.allow_code_execution and task.requires_execution:
                 os.environ["HF_ALLOW_CODE_EVAL"] = "1"
+            print("Evaluating generations...")
             results = task.process_results(generations, references)
             return results
