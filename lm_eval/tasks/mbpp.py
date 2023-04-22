@@ -11,9 +11,10 @@ Homepage:: https://github.com/google-research/google-research/tree/master/mbpp
 """
 
 import re
-from evaluate import load
-from lm_eval.base import Task
 
+from evaluate import load
+
+from lm_eval.base import Task
 
 _CITATION = """
 @article{austin2021program,

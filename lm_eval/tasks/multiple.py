@@ -189,5 +189,9 @@ class GeneralMultiPLE(Task):
             if temp_dir.split("/")[-1] != ""
             else temp_dir.split("/")[-2]
         )
-        results = {f"pass@{k}": v for k, v in zip([1, 10, 100], result) if k <= len(generations[0])}
+        results = {
+            f"pass@{k}": v
+            for k, v in zip([1, 10, 100], result)
+            if k <= len(generations[0])
+        }
         return results
