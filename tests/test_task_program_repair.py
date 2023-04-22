@@ -1,6 +1,6 @@
 import pytest
 from typing import List, Dict, Iterable, Set
-from lm_eval.tasks.program_repair import ProgramRepair, EvaluatedMetric, PyPiBugsDatasetFeaturesNames, SpecialTokens
+from lm_eval.tasks.program_repair import ProgramRepair, EvaluatedMetric, PyPiBugsDatasetFeaturesNames, NewSpecialTokens
 from dataclasses import asdict
 import re
 
@@ -18,7 +18,7 @@ def prompt() -> str:
 
 @pytest.fixture
 def new_special_tokens() -> Iterable[str]:
-    return asdict(SpecialTokens()).values()
+    return asdict(NewSpecialTokens()).values()
 
 
 def test_get_prompt(prompt, new_special_tokens):

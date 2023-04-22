@@ -1,6 +1,7 @@
 from collections import defaultdict
 import math
 import warnings
+from dataclasses import asdict
 
 import torch
 from torch.utils.data import IterableDataset
@@ -191,3 +192,16 @@ def complete_code(
                 code_gens[sample].append(gen_code[len(prefix) :])
 
     return code_gens
+
+
+def init_dataclass_from_kwargs(cls, kwargs):
+    """
+    Initialize a dataclass from a dictionary of keyword arguments. Use the default values of the dataclass for arguments
+    not in the dictionary.
+    :param cls: The dataclass to initialize.
+    :param kwargs: A dictionary of keyword arguments.
+    :return: An instance of the dataclass.
+    """
+    return cls(
+        **{key: value for key, value in kwargs.items() if key in asdict(cls()).keys()}
+    )

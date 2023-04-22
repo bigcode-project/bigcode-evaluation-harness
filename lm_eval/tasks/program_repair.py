@@ -9,6 +9,7 @@ from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from pathlib import Path
 
+from lm_eval.utils import init_dataclass_from_kwargs
 
 _CITATION = """
 @article{allamanis2021self,
@@ -35,13 +36,39 @@ _ADDITIONAL_CITATION = """
 
 @dataclass(frozen=True)
 class PyPiBugsDatasetFeaturesNames:
+    """
+    The names of the relevant features in the PyPiBugs dataset.
+    (See https://huggingface.co/datasets/Nadav-Timor/PyPiBugs)
+    """
     PATH: str = "old_path"
     INITIAL_STATE: str = "initial_state"
     FINAL_STATE: str = "final_state"
 
 
 @dataclass(frozen=True)
-class SpecialTokens:
+class DatasetConfig:
+    """
+    The configuration of the dataset.
+    :param DATASET_PATH: The path to the dataset on the HuggingFace Hub.
+    :param DATASET_SPLIT: The split of the dataset to use. (See HuggingFace's `dataset` library for more info.)
+    :param to_shuffle: Whether to shuffle the dataset. The shuffle is done before extracting the few-shot examples.
+                       Hence, different seeds will result in different few-shot examples. By default, the dataset is
+                       shuffled.
+    :param seed: The random seed for the shuffle.
+    :param num_of_fewshot_examples: The number of few-shot examples to extract from the dataset. By default, the first
+                                    num_of_fewshot_examples examples are used. If the dataset is not shuffled, the
+                                    examples will always be the same.
+    """
+    DATASET_PATH: str = "Nadav-Timor/PyPiBugs"
+    DATASET_SPLIT: str = "train"
+    to_shuffle: bool = True
+    seed: int = 0
+    num_of_fewshot_examples: int = 5
+    features_names: PyPiBugsDatasetFeaturesNames = PyPiBugsDatasetFeaturesNames()
+
+
+@dataclass(frozen=True)
+class NewSpecialTokens:
     # COMMIT_BEFORE: str = "<commit-before>\n"
     # COMMIT_MSG: str = "\n<commit-msg> Fix bug.\n"
     # COMMIT_AFTER: str = "<commit-after>\n"
@@ -49,6 +76,12 @@ class SpecialTokens:
     COMMIT_BEFORE: str = "<BEF> "
     COMMIT_MSG: str = "<MSG> "
     COMMIT_AFTER: str = "<DFF> "
+
+
+@dataclass(frozen=True)
+class TokenizerConfig:
+    CHECKPOINT = "CarperAI/diff-codegen-2b-v2"
+    new_special_tokens: NewSpecialTokens = NewSpecialTokens()
 
 
 EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, float])
@@ -59,24 +92,36 @@ class ProgramRepair(Task):
     Generate code to fix a bug in a given code snippet, inspired by https://arxiv.org/abs/2105.12787 and
     https://carper.ai/diff-models-a-new-way-to-edit-code/.
 
-    The task supports zero-shot and few-shot evaluation. The task takes the first NUM_OF_FEWSHOT_EXAMPLES examples from
+    The task supports zero-shot and few-shot evaluation. The task takes the first num_of_fewshot_examples examples from
     the dataset and uses them as few-shot examples. Note that the zero-shot examples are always the same (the first
-    NUM_OF_FEWSHOT_EXAMPLES examples from the dataset). Set NUM_OF_FEWSHOT_EXAMPLES to 0 to evaluate in zero-shot mode.
+    num_of_fewshot_examples examples from the dataset). Set num_of_fewshot_examples to 0 to evaluate in zero-shot mode.
     """
+    # # Dataset
+    # DATASET_PATH: str = "Nadav-Timor/PyPiBugs"
+    # DATASET_SPLIT: str = "train"
+    # dataset_features_names: PyPiBugsDatasetFeaturesNames = (
+    #     PyPiBugsDatasetFeaturesNames()
+    # )
+    # seed: int = 0
+    # to_shuffle: bool = True
+    # # Tokenization
+    # TOKENIZER_CHECKPOINT = "CarperAI/diff-codegen-2b-v2"
+    # new_special_tokens: NewSpecialTokens = NewSpecialTokens()
+    # # Few-shot evaluation
+    # NUM_OF_FEWSHOT_EXAMPLES: int = 5
 
-    DATASET_PATH: str = "Nadav-Timor/PyPiBugs"
-    DATASET_SPLIT: str = "train"
-    NUM_OF_FEWSHOT_EXAMPLES: int = 5
-    TOKENIZER_CHECKPOINT = "CarperAI/diff-codegen-2b-v2"
-    dataset_features_names: PyPiBugsDatasetFeaturesNames = (
-        PyPiBugsDatasetFeaturesNames()
-    )
-    special_tokens: SpecialTokens = SpecialTokens()
-
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
+        # Dataset
+        self.dataset_config: DatasetConfig = init_dataclass_from_kwargs(cls=DatasetConfig, kwargs=kwargs)
+        # self.dataset_features_names: PyPiBugsDatasetFeaturesNames = (
+        #     PyPiBugsDatasetFeaturesNames()
+        # )
+        # Tokenization
+        self.tokenizer_config: TokenizerConfig = init_dataclass_from_kwargs(cls=TokenizerConfig, kwargs=kwargs)
         self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
-            self.TOKENIZER_CHECKPOINT
+            self.tokenizer_config.CHECKPOINT
         )
+        # NOTE: Names were refactored. `self.special_tokens` is now `self.tokenizer_config.new_special_tokens`.
         # new_special_tokens: Set[str] = set(asdict(self.special_tokens).values())
         # self.stop_words: List[str] = list(
         #     set(self.tokenizer.all_special_tokens_extended).union(new_special_tokens)
@@ -84,29 +129,31 @@ class ProgramRepair(Task):
         self.stop_words: List[str] = []
         super().__init__(stop_words=self.stop_words, requires_execution=False)
         # Extract few-shot examples from the dataset
-        self.dataset: Dataset = load_dataset(self.DATASET_PATH, split=self.DATASET_SPLIT)
+        self.dataset: Dataset = load_dataset(self.dataset_config.DATASET_PATH, split=self.dataset_config.DATASET_SPLIT)
+        if self.dataset_config.to_shuffle:
+            self.dataset = self.dataset.shuffle(seed=self.dataset_config.seed)
         self.fewshot_prompt: str = self._get_fewshot_examples_prompt(
-            num_of_examples=self.NUM_OF_FEWSHOT_EXAMPLES
+            num_of_examples=self.dataset_config.num_of_fewshot_examples
         )
         self.dataset = self.dataset.select(
-            range(self.NUM_OF_FEWSHOT_EXAMPLES, len(self.dataset))
+            range(self.dataset_config.num_of_fewshot_examples, len(self.dataset))
         )
 
     def get_dataset(self) -> Dataset:
         return self.dataset
 
     def _get_single_example_prompt(self, doc: Dict, is_fewshot_example: bool) -> str:
-        filename: str = Path(doc[self.dataset_features_names.PATH]).name
-        commit_before: str = doc[self.dataset_features_names.INITIAL_STATE]
-        commit_after: str = doc[self.dataset_features_names.FINAL_STATE]
+        filename: str = Path(doc[self.dataset_config.features_names.PATH]).name
+        commit_before: str = doc[self.dataset_config.features_names.INITIAL_STATE]
+        commit_after: str = doc[self.dataset_config.features_names.FINAL_STATE]
         ret: str = f"""\
-{self.special_tokens.FILENAME} {filename}
+{self.tokenizer_config.new_special_tokens.FILENAME} {filename}
 
-{self.special_tokens.COMMIT_BEFORE} {commit_before}
+{self.tokenizer_config.new_special_tokens.COMMIT_BEFORE} {commit_before}
 
-{self.special_tokens.COMMIT_MSG} # Fixed a bug.
+{self.tokenizer_config.new_special_tokens.COMMIT_MSG} # Fixed a bug.
 
-{self.special_tokens.COMMIT_AFTER} """
+{self.tokenizer_config.new_special_tokens.COMMIT_AFTER} """
         if is_fewshot_example:
             ret += f"{commit_after}\n{self.tokenizer.bos_token}"
         return ret
@@ -130,25 +177,25 @@ class ProgramRepair(Task):
         if ret != "":
             ret += "\n"
         ret += self._get_single_example_prompt(doc, is_fewshot_example=False)
-        print('***************')
-        print('Prompt:')
-        print('***************')
-        print(ret)
-        print('***************')
+        # print('***************')
+        # print('Prompt:')
+        # print('***************')
+        # print(ret)
+        # print('***************')
         return ret
 
     def get_reference(self, doc: Dict) -> str:
-        return doc[self.dataset_features_names.FINAL_STATE]
+        return doc[self.dataset_config.features_names.FINAL_STATE]
 
     def postprocess_generation(self, generation: str, idx: int = -1) -> str:
         """
         Return the generation until a stop token is encountered. Remove blank lines.
         """
-        print('***************')
-        print('Index:', idx)
-        print('Generation:')
-        print(generation)
-        print('***************')
+        # print('***************')
+        # print('Index:', idx)
+        # print('Generation:')
+        # print(generation)
+        # print('***************')
 
         def slice_until_stop_token() -> None:
             """

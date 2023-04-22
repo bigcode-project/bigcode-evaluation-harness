@@ -5,10 +5,13 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 import openai
+from tqdm import trange
+
 from lm_eval import tasks
 from dataclasses import dataclass, asdict
 import logging
 
+from lm_eval.utils import init_dataclass_from_kwargs
 
 Generations = List[List[str]]
 References = List[str]
@@ -75,7 +78,7 @@ class OpenAIGenerator:
         )
         stop: Optional[List[str]] = task.stop_words if task.stop_words else None
         generations = []
-        for i in range(num_of_inputs):
+        for i in trange(num_of_inputs):
             prompt: str = task.get_prompt(dataset[i])
             try:
                 response = openai.Completion.create(
@@ -89,9 +92,12 @@ class OpenAIGenerator:
                 predictions = get_predictions_from_response()
                 generations.append(predictions)
             except openai.error.OpenAIError as e:
-                logging.critical("Encountered the following OpenAIError while generating text.")
+                logging.critical(
+                    "Encountered the following OpenAIError while generating text."
+                )
                 logging.critical(e)
                 logging.critical(f"Skipping this sample. (Index of sample: {i})")
+                break
         references = [task.get_reference(dataset[i]) for i in range(num_of_inputs)]
         return generations, references
 
@@ -110,18 +116,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def init_data_class_from_kwargs(cls, kwargs):
-    """
-    Initialize a dataclass from a dictionary of keyword arguments.
-    :param cls: The dataclass to initialize.
-    :param kwargs: A dictionary of keyword arguments.
-    :return: An instance of the dataclass.
-    """
-    return cls(
-        **{key: value for key, value in kwargs.items() if key in asdict(cls()).keys()}
-    )
-
-
 def generate_from_openai() -> Tuple[Generations, References]:
     """
     A function to generate text using the OpenAI API. The generations could be stored in a file.
@@ -133,10 +127,10 @@ def generate_from_openai() -> Tuple[Generations, References]:
         python -m lm_eval.generate_from_saas_apis --api_key=<your_api_key> --num_of_predictions=100 --num_of_inputs=10 --max_tokens=1024 --temperature=0.9
     """
     args: argparse.Namespace = parse_args()
-    openai_model_args: OpenAIModelArguments = init_data_class_from_kwargs(
+    openai_model_args: OpenAIModelArguments = init_dataclass_from_kwargs(
         OpenAIModelArguments, vars(args)
     )
-    task_args: TaskArguments = init_data_class_from_kwargs(TaskArguments, vars(args))
+    task_args: TaskArguments = init_dataclass_from_kwargs(TaskArguments, vars(args))
     api_key: str = args.api_key
     generator: OpenAIGenerator = OpenAIGenerator(api_key=api_key)
     generations: Generations
@@ -147,7 +141,11 @@ def generate_from_openai() -> Tuple[Generations, References]:
     # task = tasks.get_task(task_args.task_name)
     # generations = task.postprocess_generation(generations)
     if task_args.store_path:
-        dirpath: Path = Path(task_args.store_path) / "outputs" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
+        dirpath: Path = (
+            Path(task_args.store_path)
+            / "outputs"
+            / datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
+        )
         dirpath.mkdir(parents=True, exist_ok=False)
         filepath_g: Path = dirpath / "generations.json"
         filepath_r: Path = dirpath / "references.json"
