@@ -64,7 +64,7 @@ class DatasetConfig:
     to_shuffle: bool = True
     seed: int = 0
     num_of_fewshot_examples: int = 5
-    features_names: PyPiBugsDatasetFeaturesNames = PyPiBugsDatasetFeaturesNames()
+    # features_names: PyPiBugsDatasetFeaturesNames = PyPiBugsDatasetFeaturesNames()
 
 
 @dataclass(frozen=True)
@@ -80,8 +80,7 @@ class NewSpecialTokens:
 
 @dataclass(frozen=True)
 class TokenizerConfig:
-    CHECKPOINT = "CarperAI/diff-codegen-2b-v2"
-    new_special_tokens: NewSpecialTokens = NewSpecialTokens()
+    tokenizer_checkpoint = "CarperAI/diff-codegen-350m-v2"
 
 
 EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, float])
@@ -96,30 +95,15 @@ class ProgramRepair(Task):
     the dataset and uses them as few-shot examples. Note that the zero-shot examples are always the same (the first
     num_of_fewshot_examples examples from the dataset). Set num_of_fewshot_examples to 0 to evaluate in zero-shot mode.
     """
-    # # Dataset
-    # DATASET_PATH: str = "Nadav-Timor/PyPiBugs"
-    # DATASET_SPLIT: str = "train"
-    # dataset_features_names: PyPiBugsDatasetFeaturesNames = (
-    #     PyPiBugsDatasetFeaturesNames()
-    # )
-    # seed: int = 0
-    # to_shuffle: bool = True
-    # # Tokenization
-    # TOKENIZER_CHECKPOINT = "CarperAI/diff-codegen-2b-v2"
-    # new_special_tokens: NewSpecialTokens = NewSpecialTokens()
-    # # Few-shot evaluation
-    # NUM_OF_FEWSHOT_EXAMPLES: int = 5
-
     def __init__(self, **kwargs) -> None:
         # Dataset
         self.dataset_config: DatasetConfig = init_dataclass_from_kwargs(cls=DatasetConfig, kwargs=kwargs)
-        # self.dataset_features_names: PyPiBugsDatasetFeaturesNames = (
-        #     PyPiBugsDatasetFeaturesNames()
-        # )
+        self.dataset_features_names: PyPiBugsDatasetFeaturesNames = PyPiBugsDatasetFeaturesNames()
         # Tokenization
         self.tokenizer_config: TokenizerConfig = init_dataclass_from_kwargs(cls=TokenizerConfig, kwargs=kwargs)
+        self.new_special_tokens: NewSpecialTokens = NewSpecialTokens()
         self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
-            self.tokenizer_config.CHECKPOINT
+            self.tokenizer_config.tokenizer_checkpoint
         )
         # NOTE: Names were refactored. `self.special_tokens` is now `self.tokenizer_config.new_special_tokens`.
         # new_special_tokens: Set[str] = set(asdict(self.special_tokens).values())
@@ -143,17 +127,17 @@ class ProgramRepair(Task):
         return self.dataset
 
     def _get_single_example_prompt(self, doc: Dict, is_fewshot_example: bool) -> str:
-        filename: str = Path(doc[self.dataset_config.features_names.PATH]).name
-        commit_before: str = doc[self.dataset_config.features_names.INITIAL_STATE]
-        commit_after: str = doc[self.dataset_config.features_names.FINAL_STATE]
+        filename: str = Path(doc[self.dataset_features_names.PATH]).name
+        commit_before: str = doc[self.dataset_features_names.INITIAL_STATE]
+        commit_after: str = doc[self.dataset_features_names.FINAL_STATE]
         ret: str = f"""\
-{self.tokenizer_config.new_special_tokens.FILENAME} {filename}
+{self.new_special_tokens.FILENAME} {filename}
 
-{self.tokenizer_config.new_special_tokens.COMMIT_BEFORE} {commit_before}
+{self.new_special_tokens.COMMIT_BEFORE} {commit_before}
 
-{self.tokenizer_config.new_special_tokens.COMMIT_MSG} # Fixed a bug.
+{self.new_special_tokens.COMMIT_MSG} # Fixed a bug.
 
-{self.tokenizer_config.new_special_tokens.COMMIT_AFTER} """
+{self.new_special_tokens.COMMIT_AFTER} """
         if is_fewshot_example:
             ret += f"{commit_after}\n{self.tokenizer.bos_token}"
         return ret
@@ -185,7 +169,7 @@ class ProgramRepair(Task):
         return ret
 
     def get_reference(self, doc: Dict) -> str:
-        return doc[self.dataset_config.features_names.FINAL_STATE]
+        return doc[self.dataset_features_names.FINAL_STATE]
 
     def postprocess_generation(self, generation: str, idx: int = -1) -> str:
         """

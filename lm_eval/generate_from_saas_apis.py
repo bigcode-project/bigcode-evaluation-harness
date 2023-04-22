@@ -11,6 +11,7 @@ from lm_eval import tasks
 from dataclasses import dataclass, asdict
 import logging
 
+from lm_eval.tasks.program_repair import DatasetConfig, TokenizerConfig
 from lm_eval.utils import init_dataclass_from_kwargs
 
 Generations = List[List[str]]
@@ -55,7 +56,7 @@ class OpenAIGenerator:
 
     @staticmethod
     def generate_text(
-        openai_model_args: OpenAIModelArguments, task_args: TaskArguments
+        openai_model_args: OpenAIModelArguments, task_args: TaskArguments, **task_kwargs
     ) -> Tuple[Generations, References]:
         """
         An alternative to Evaluator.generate_text. Evaluator assumes to be given an Accelerator object and generates
@@ -71,7 +72,7 @@ class OpenAIGenerator:
             nonlocal response
             return [prediction["text"] for prediction in response["choices"]]
 
-        task = tasks.get_task(task_args.task_name)
+        task = tasks.get_task(**task_kwargs)
         dataset = task.get_dataset()
         num_of_inputs = (
             task_args.num_of_inputs if task_args.num_of_inputs > 0 else len(dataset)
@@ -110,7 +111,7 @@ def parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--api_key", type=str, required=True)
-    for dc in [OpenAIModelArguments, TaskArguments]:
+    for dc in [OpenAIModelArguments, TaskArguments, DatasetConfig, TokenizerConfig]:
         for key, value in asdict(dc()).items():
             parser.add_argument(f"--{key}", type=type(value), default=value)
     return parser.parse_args()
@@ -136,10 +137,8 @@ def generate_from_openai() -> Tuple[Generations, References]:
     generations: Generations
     references: References
     generations, references = generator.generate_text(
-        openai_model_args=openai_model_args, task_args=task_args
+        openai_model_args=openai_model_args, task_args=task_args, **vars(args)
     )
-    # task = tasks.get_task(task_args.task_name)
-    # generations = task.postprocess_generation(generations)
     if task_args.store_path:
         dirpath: Path = (
             Path(task_args.store_path)
@@ -147,8 +146,13 @@ def generate_from_openai() -> Tuple[Generations, References]:
             / datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
         )
         dirpath.mkdir(parents=True, exist_ok=False)
+        filepath_a: Path = dirpath / "args.json"
         filepath_g: Path = dirpath / "generations.json"
         filepath_r: Path = dirpath / "references.json"
+        with open(filepath_a, "w") as f:
+            # Remove the api_key from the arguments.
+            del vars(args)["api_key"]
+            json.dump(vars(args), f)
         with open(filepath_g, "w") as f:
             json.dump(generations, f)
         with open(filepath_r, "w") as f:
