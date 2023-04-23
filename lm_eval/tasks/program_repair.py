@@ -112,11 +112,6 @@ class ProgramRepair(Task):
         self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
             self.tokenizer_config.tokenizer_checkpoint
         )
-        # NOTE: Names were refactored. `self.special_tokens` is now `self.tokenizer_config.new_special_tokens`.
-        # new_special_tokens: Set[str] = set(asdict(self.special_tokens).values())
-        # self.stop_words: List[str] = list(
-        #     set(self.tokenizer.all_special_tokens_extended).union(new_special_tokens)
-        # )
         self.stop_words: List[str] = []
         self.requires_execution: bool = False
         # Extract few-shot examples from the dataset
