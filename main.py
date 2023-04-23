@@ -1,8 +1,8 @@
 import fnmatch
 import json
-import torch
 
 import datasets
+import torch
 import transformers
 from accelerate import Accelerator
 from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
@@ -163,9 +163,15 @@ def main():
 
     else:
         # here we generate code and save it (evaluation is optional but True by default)
-        dict_precisions = {"fp32": torch.float32, "fp16": torch.float16, "bf16": torch.bfloat16}
+        dict_precisions = {
+            "fp32": torch.float32,
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+        }
         if args.precision not in dict_precisions:
-            raise ValueError(f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16")
+            raise ValueError(
+                f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16"
+            )
         print(f"Loading tokenizer and model (in {args.precision})")
         model = AutoModelForCausalLM.from_pretrained(
             args.model,
@@ -195,9 +201,9 @@ def main():
                     print("generation mode only")
                 generations, references = evaluator.generate_text(task)
                 if accelerator.is_main_process:
-                    with open("generations.json", "w") as fp:
+                    with open(args.save_generations_path, "w") as fp:
                         json.dump(generations, fp)
-                        print("generations were saved")
+                        print(f"generations were saved at {args.save_generations_path}")
                     if args.save_references:
                         with open("references.json", "w") as fp:
                             json.dump(references, fp)
@@ -205,7 +211,11 @@ def main():
             else:
                 results[task] = evaluator.evaluate(task)
 
-    results["config"] = {"model": args.model, "temperature": args.temperature, "n_samples": args.n_samples}
+    results["config"] = {
+        "model": args.model,
+        "temperature": args.temperature,
+        "n_samples": args.n_samples,
+    }
     if not args.generation_only:
         dumped = json.dumps(results, indent=2)
         if accelerator.is_main_process:
