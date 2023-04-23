@@ -1,0 +1,3 @@
+Draw
+White 6
+Black 15

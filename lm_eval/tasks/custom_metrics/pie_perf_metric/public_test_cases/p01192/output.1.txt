@@ -1,0 +1,3 @@
+Case #1: OK
+Case #2: Cannot pay some amount
+Case #3: Cannot use greedy algorithm

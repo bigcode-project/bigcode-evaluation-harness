@@ -1,0 +1,58 @@
+5 4
+(Follow.my.style
+.........starting.from.round.brackets)
+{then.curly.brackets
+.....[.and.finally
+.......square.brackets.]}
+(Thank.you
+{for.showing.me
+[all
+the.secrets]})
+4 2
+(This.time.I.will.show.you
+.........(how.to.use.round.brackets)
+.........[but.not.about.square.brackets]
+.........{nor.curly.brackets})
+(I.learned
+how.to.use.round.brackets)
+4 2
+(This.time.I.will.show.you
+.........(how.to.use.round.brackets)
+.........[but.not.about.square.brackets]
+.........{nor.curly.brackets})
+[I.have.not.learned
+how.to.use.square.brackets]
+2 2
+(Be.smart.and.let.fear.of
+..(closed.brackets).go)
+(A.pair.of.round.brackets.enclosing
+[A.line.enclosed.in.square.brackets])
+1 2
+Telling.you.nothing.but.you.can.make.it
+[One.liner.(is).(never.indented)]
+[One.liner.(is).(never.indented)]
+2 4
+([{Learn.from.my.KungFu
+...}])
+((
+{{
+[[
+]]}}))
+1 2
+Do.not.waste.your.time.trying.to.read.from.emptiness
+(
+)
+2 3
+({Quite.interesting.art.of.ambiguity
+....})
+{
+(
+)}
+2 4
+({[
+............................................................]})
+(
+{
+[
+]})
+0 0

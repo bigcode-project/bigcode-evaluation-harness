@@ -1,0 +1,13 @@
+6
+red
+red
+blue
+yellow
+yellow
+red
+5
+red
+red
+yellow
+green
+blue

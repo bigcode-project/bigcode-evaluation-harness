@@ -1,0 +1,5 @@
+1 1 3 All All 1 1
+2 37 5 All Night 150 1
+16 2 20 All Day 5 10
+1 14 15 Mon All 20000 100
+0 0 0 None None 0 0

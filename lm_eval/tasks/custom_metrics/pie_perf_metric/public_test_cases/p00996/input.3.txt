@@ -1,0 +1,7 @@
+6 10
+1xxxxxxxxx
+o.......o.
+xxxx.xxxx4
+xoxx.xxxx.
+x....3xx..
+x..xxxxx..

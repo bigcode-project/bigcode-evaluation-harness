@@ -1,0 +1,4 @@
+Yes I have a number
+How I wish I could calculate an unused color for space
+Thank you
+END OF INPUT

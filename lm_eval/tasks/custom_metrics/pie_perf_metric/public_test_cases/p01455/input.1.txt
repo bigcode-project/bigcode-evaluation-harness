@@ -1,0 +1,20 @@
+9 10
+riris
+soa
+elah
+clar
+arma
+memori
+neoles
+qhaon
+clue
+clar riris
+riris memori
+riris neoles
+soa clar
+soa memori
+neoles elah
+elah qhaon
+neoles qhaon
+clue riris
+arma elah

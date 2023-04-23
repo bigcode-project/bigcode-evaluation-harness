@@ -1,0 +1,6 @@
+2
+white 20
+black 10
+2
+black
+orange

@@ -1,0 +1,4 @@
+2 1 1 2
+Impossible
+10 -7 1 0
+Impossible

@@ -1,0 +1,4 @@
+4
+west
+east
+wait

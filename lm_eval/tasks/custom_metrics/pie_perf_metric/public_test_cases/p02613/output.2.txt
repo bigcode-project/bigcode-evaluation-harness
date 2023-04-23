@@ -1,0 +1,4 @@
+AC x 10
+WA x 0
+TLE x 0
+RE x 0

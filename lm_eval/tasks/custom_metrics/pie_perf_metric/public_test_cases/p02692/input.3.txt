@@ -1,0 +1,9 @@
+8 6 9 1
+AC
+BC
+AB
+BC
+AC
+BC
+AB
+AB

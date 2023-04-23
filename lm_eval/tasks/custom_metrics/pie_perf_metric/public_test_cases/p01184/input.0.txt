@@ -1,0 +1,28 @@
+3 4
+English
+French
+Japanese
+1 English
+2 French English
+2 Japanese English
+1 Japanese
+2 2
+English
+Japanese
+1 English
+1 Japanese
+6 7
+English
+Dutch
+German
+French
+Italian
+Spanish
+1 English
+2 English Dutch
+2 Dutch German
+2 German French
+2 French Italian
+2 Italian Spanish
+1 Spanish
+0 0

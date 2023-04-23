@@ -1,0 +1,23 @@
+6 3 34
+Tokyo Kyoto
+Tokyo Niigata 335
+Tokyo Shizuoka 174
+Shizuoka Nagoya 176
+Nagoya Kyoto 195
+Toyama Niigata 215
+Toyama Kyoto 296
+Nagoya
+Niigata
+Toyama
+6 3 30
+Tokyo Kyoto
+Tokyo Niigata 335
+Tokyo Shizuoka 174
+Shizuoka Nagoya 176
+Nagoya Kyoto 195
+Toyama Niigata 215
+Toyama Kyoto 296
+Nagoya
+Niigata
+Toyama
+0 0 0

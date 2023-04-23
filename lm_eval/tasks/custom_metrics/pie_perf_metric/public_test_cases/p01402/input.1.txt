@@ -1,0 +1,28 @@
+100 2 2 2
+A 5 6
+B 7 8
+C 1 2
+D 3 4
+27 2 3 3
+A 8 10
+B 8 10
+C 6 7
+D 5 4
+E 8 9
+27 2 3 2
+A 8 10
+B 8 10
+C 6 7
+D 5 4
+E 8 9
+44 3 6 5
+YamatoNoHito 9 10
+ZettoNoHito 9 10
+TMR 10 10
+SkillNoGroup 8 10
+NanaSama 6 9
+FRPSD 6 8
+Magi3rdDeshi 5 7
+Magi13thDeshi 2 2
+MagicalItoh 4 6
+0 0 0 0

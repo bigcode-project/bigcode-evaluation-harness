@@ -1,0 +1,12 @@
+13
+aizualgorithm
+9
+comp 1 1 4 5
+comp 2 6 1 5
+set 9 12 b
+comp 9 9 10 10
+comp 5 8 1 4
+set 1 10 z
+set 11 13 x
+comp 8 10 1 5
+comp 1 5 1 5

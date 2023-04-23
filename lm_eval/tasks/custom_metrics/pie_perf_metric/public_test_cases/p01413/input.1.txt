@@ -1,0 +1,11 @@
+2 3 100 20
+vim 10 10
+emacs 5 10
+vstudio 65 100
+2 1 6
+emacs 4
+vstudio 13
+3 -3 0
+vim 5
+emacs 9
+vstudio 62

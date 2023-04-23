@@ -1,0 +1,3 @@
+2
+LOOP:
+goto LOOP;

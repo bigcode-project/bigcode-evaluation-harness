@@ -1,0 +1,4 @@
+node 0: parent = 1, depth = 1, leaf, []
+node 1: parent = -1, depth = 0, root, [3, 2, 0]
+node 2: parent = 1, depth = 1, leaf, []
+node 3: parent = 1, depth = 1, leaf, []

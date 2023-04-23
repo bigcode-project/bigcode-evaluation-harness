@@ -1,0 +1,4 @@
+LOW
+HIGH
+HIGH
+LOW

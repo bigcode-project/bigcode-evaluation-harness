@@ -1,0 +1,31 @@
+5
+Hakodate 08:15 Morioka 12:30 2500
+Morioka 14:05 Hakodate 17:30 2500
+Morioka 15:30 Hakodate 18:00 3000
+Morioka 14:30 Tokyo 17:50 3000
+Tokyo 08:30 Morioka 13:35 3000
+4
+Hakodate 08:15 Morioka 12:30 2500
+Morioka 14:04 Hakodate 17:30 2500
+Morioka 14:30 Tokyo 17:50 3000
+Tokyo 08:30 Morioka 13:35 3000
+18
+Hakodate 09:55 Akita 10:53 3840
+Hakodate 14:14 Akita 16:09 1920
+Hakodate 18:36 Akita 19:33 3840
+Hakodate 08:00 Morioka 08:53 3550
+Hakodate 22:40 Morioka 23:34 3550
+Akita 14:23 Tokyo 14:53 2010
+Akita 20:36 Tokyo 21:06 2010
+Akita 08:20 Hakodate 09:18 3840
+Akita 13:56 Hakodate 14:54 3840
+Akita 21:37 Hakodate 22:35 3840
+Morioka 09:51 Tokyo 10:31 2660
+Morioka 14:49 Tokyo 15:29 2660
+Morioka 19:42 Tokyo 20:22 2660
+Morioka 15:11 Hakodate 16:04 3550
+Morioka 23:03 Hakodate 23:56 3550
+Tokyo 09:44 Morioka 11:04 1330
+Tokyo 21:54 Morioka 22:34 2660
+Tokyo 11:34 Akita 12:04 2010
+0

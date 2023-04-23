@@ -1,0 +1,5 @@
+xyz
+3
+print 0 2
+replace 0 2 abc
+print 0 2

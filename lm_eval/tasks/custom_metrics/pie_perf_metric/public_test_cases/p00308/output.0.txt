@@ -1,0 +1,17 @@
+-1
+7
+split 0 0
+join 2 1
+split 3 4
+split 4 0
+join 7 6
+split 8 2
+split 9 0
+3
+split 0 1
+split 2 1
+split 4 1
+-1
+0
+1
+split 0 0

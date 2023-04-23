@@ -1,0 +1,5 @@
+2
+tako 2
+yaki 1
+1
+tako yaki

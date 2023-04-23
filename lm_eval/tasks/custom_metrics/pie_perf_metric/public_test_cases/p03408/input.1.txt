@@ -1,0 +1,10 @@
+3
+apple
+orange
+apple
+5
+apple
+apple
+apple
+apple
+apple

@@ -1,0 +1,4 @@
+4 3 5
+2 2
+UDRRR
+LLDUD

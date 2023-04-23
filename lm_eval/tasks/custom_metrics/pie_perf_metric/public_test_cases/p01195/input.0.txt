@@ -1,0 +1,51 @@
+3
+philosopher’s-stone
+4 10
+tongue 1
+tear 1
+dunkelheit 1
+aroma-materia 1
+
+aroma-materia
+4 5
+solt 1
+holy-water 1
+golden-rock 1
+neutralizer 2
+
+neutralizer
+1 1
+red-rock 5
+
+7
+tongue 1
+tear 1
+dunkelheit 1
+solt 2
+holy-water 3
+golden-rock 2
+red-rock 10
+
+2
+philosopher’s-stone
+5 3
+ninjin 1
+jagaimo 3
+tamanegi 1
+barmont 12
+
+barmont
+3 1
+curry 5
+komugiko 20
+batar 10
+
+7
+ninjin 3
+jagaimo 2
+tamanegi 5
+curry 150
+komugiko 750
+batar 200
+
+0

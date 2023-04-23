@@ -1,0 +1,76 @@
+4 1 3 4
+yskwcnt 16
+akzakr 7
+tsnukk 12
+fnmyi 13
+akzakr
+4 1 3 5
+akzakr 7
+tsnukk 12
+fnmyi 13
+yskwcnt 16
+akzakr
+4 2 2 1
+akzakr 4
+tsnukk 6
+yskwcnt 6
+fnmyi 12
+akzakr
+fnmyi
+5 2 3 28
+knmmdk 6
+skrkyk 14
+tmemm 14
+akmhmr 15
+mksyk 25
+knmmdk
+skrkyk
+5 2 3 11
+tmemm 12
+skrkyk 18
+knmmdk 21
+mksyk 23
+akmhmr 42
+skrkyk
+tmemm
+14 5 10 38
+iormns 19
+hbkgnh 23
+yyitktk 31
+rtkakzk 36
+mmftm 43
+ykhhgwr 65
+hrkamm 66
+ktrotns 67
+mktkkc 68
+mkhsi 69
+azsmur 73
+tknsj 73
+amftm 81
+chyksrg 88
+mkhsi
+hbkgnh
+mktkkc
+yyitktk
+tknsj
+14 5 10 38
+mktkkc 24
+rtkakzk 25
+ykhhgwr 25
+hrkamm 27
+amftm 37
+iormns 38
+tknsj 38
+yyitktk 39
+hbkgnh 53
+mmftm 53
+chyksrg 63
+ktrotns 63
+azsmur 65
+mkhsi 76
+mkhsi
+hbkgnh
+mktkkc
+yyitktk
+tknsj
+0 0 0 0

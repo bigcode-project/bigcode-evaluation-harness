@@ -1,0 +1,7 @@
+2 2 100 20
+alfalfa 10 10
+carrot 5 10
+1 1 6
+carrot 4
+1 -3 0
+alfalfa 5

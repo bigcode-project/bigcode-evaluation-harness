@@ -1,0 +1,5 @@
+5
+usso 1 usso 0
+usso 0 caneda 1
+caneda 1 caneda 0
+-----

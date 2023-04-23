@@ -1,0 +1,5 @@
+10 30 10
+3
+nobiro
+nobiro
+tidime

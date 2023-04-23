@@ -1,0 +1,12 @@
+4 3
+ooxx
+ooxx
+ooxx
+4 1
+null
+4 4
+aabb
+aabb
+ccdd
+ccdd
+0 0

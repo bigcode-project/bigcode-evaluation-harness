@@ -1,0 +1,20 @@
+19
+1 +x 1 +y +z 3 +z
+3 +y -z +x +y -z -x +z 2 +z
+2 +y
+19
+1 +x 1 +y +z 3 +y -z +x +y -z -x +z 2 +y
+3 +z
+2 +z
+19
+1 +x 1 +y +z 3 +z
+3 +y -z +x +y -z -x +z 2 +y
+2 +z
+18
+1 -y
+1 +y -z +x
+1 +z +y +x +z +y -x -y 2 -y
+2 +z
+3 +x +y +z
+3 +y +z -x
+0

@@ -1,0 +1,16 @@
+8
+abrakatabra
+abadaba
+abracadabra
+atcoder
+grand
+contest
+ababa
+a
+6
+3 abcdefghijklmnopqrstuvwxyz
+6 qwertyuiopasdfghjklzxcvbnm
+8 poiuytrewqlkjhgfdsamnbvcxz
+2 qazwsxedcrfvtgbyhnujmikolp
+1 plokmijnuhbygvtfcrdxeszwaq
+4 mnbvcxzasdfghjklpoiuytrewq

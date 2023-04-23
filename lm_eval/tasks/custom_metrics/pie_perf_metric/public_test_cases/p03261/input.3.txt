@@ -1,0 +1,4 @@
+3
+abc
+arc
+agc

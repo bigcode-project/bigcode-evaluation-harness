@@ -1,0 +1,6 @@
+20
+usi 0 frence 0
+frence 0 powland 0
+-----
+Impossible
+-----

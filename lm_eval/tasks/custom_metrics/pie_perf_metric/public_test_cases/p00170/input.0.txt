@@ -1,0 +1,16 @@
+4
+sandwich 80 120
+apple 50 200
+cheese 20 40
+cake 100 100
+9
+onigiri 80 300
+onigiri 80 300
+anpan 70 280
+mikan 50 80
+kanzume 100 500
+chocolate 50 350
+cookie 30 80
+purin 40 400
+cracker 40 160
+0

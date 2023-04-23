@@ -1,0 +1,27 @@
+4
+4 6
+*.*..*
+*.....
+..-...
+^.*#..
+10
+SRSSRRUSSR
+2 2
+<.
+..
+12
+DDSRRSUUSLLS
+3 5
+>-#**
+.-*#*
+.-**#
+15
+SSSDRSSSDRSSSUU
+5 5
+v****
+*****
+*****
+*****
+*****
+44
+SSSSDDRSDRSRDSULUURSSSSRRRRDSSSSDDLSDLSDLSSD

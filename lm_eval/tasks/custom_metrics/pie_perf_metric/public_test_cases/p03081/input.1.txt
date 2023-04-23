@@ -1,0 +1,17 @@
+10 15
+SNCZWRCEWB
+B R
+R R
+E R
+W R
+Z L
+S R
+Q L
+W L
+B R
+C L
+A L
+N L
+E R
+Z L
+S L

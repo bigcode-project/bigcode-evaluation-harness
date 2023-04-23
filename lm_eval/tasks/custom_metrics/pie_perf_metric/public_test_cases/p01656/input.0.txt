@@ -1,0 +1,4 @@
+3 12
+5 sogo5gokan
+10 sogo10gokan
+15 sogo15gokan

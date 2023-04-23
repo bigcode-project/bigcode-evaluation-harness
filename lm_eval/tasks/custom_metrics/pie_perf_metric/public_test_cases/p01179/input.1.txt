@@ -1,0 +1,8 @@
+7
+C is A’s father’s brother’s son’s aunt
+C is A’s mother’s brother’s son’s aunt
+C is A’s son’s mother’s mother’s son
+C is A’s aunt’s niece’s aunt’s niece
+C is A’s father’s son’s brother
+C is A’s son’s son’s mother
+C is A

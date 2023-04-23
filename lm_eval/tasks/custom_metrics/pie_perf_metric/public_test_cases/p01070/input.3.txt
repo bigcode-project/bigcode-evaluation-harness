@@ -1,0 +1,9 @@
+abatagaadbura 8
+0 6 a
+6 12 a
+0 6 aa
+0 3 a
+3 5 a
+5 9 a
+1 8 b
+1 12 b

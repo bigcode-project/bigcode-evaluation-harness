@@ -1,0 +1,5 @@
+4
+1 acm = 10^2 icpc
+1 icpc = 10^3 utpc
+1 utpc = 10^4 topcoder
+1 topcoder = 10^-1 acm

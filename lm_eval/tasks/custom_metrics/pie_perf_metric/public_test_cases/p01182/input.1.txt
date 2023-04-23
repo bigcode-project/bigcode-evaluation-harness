@@ -1,0 +1,11 @@
+5 4
+Ramen 3 10
+Chahan 5 5
+Gyoza 5 10
+Rice 1 1
+Soup 1 1
+5 2 Ramen Gyoza
+10 6 Chahan Gyoza Soup Ramen Gyoza Rice
+20 1 Chahan
+25 1 Ramen
+0 0

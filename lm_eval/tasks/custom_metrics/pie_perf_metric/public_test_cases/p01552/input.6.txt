@@ -1,0 +1,2 @@
+.str.inner
+str: inner

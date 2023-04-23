@@ -1,0 +1,5 @@
+4 5
+S#ooo
+o#o#o
+o#o#o
+ooo#G

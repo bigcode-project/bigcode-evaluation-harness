@@ -1,0 +1,10 @@
+5 4
+aloe
+apple
+apricot
+cactus
+cat
+apple
+ap*
+*e
+ca?*

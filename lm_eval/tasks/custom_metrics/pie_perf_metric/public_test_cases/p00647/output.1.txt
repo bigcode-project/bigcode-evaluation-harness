@@ -1,0 +1,3 @@
+lunch 100
+dinner 50
+midnight no guest

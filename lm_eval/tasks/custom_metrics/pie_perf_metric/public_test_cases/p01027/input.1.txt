@@ -1,0 +1,14 @@
+3
+chinax 1
+ok 1
+austraria 2
+6
+chinax 0 austraria 0 5
+austraria 0 chinax 0 5
+austraria 1 austraria 0 1
+ok 0 austraria 0 5
+austraria 0 ok 0 5
+ok 0 austraria 1 1
+2
+chinax 0
+ok 0

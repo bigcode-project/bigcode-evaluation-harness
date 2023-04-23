@@ -1,0 +1,10 @@
+4
+Japan 1 0 2
+Egypt 1 2 0
+Canada 0 2 1
+Spain 2 0 1
+3
+India 0 2 0
+Poland 1 0 1
+Italy 1 0 1
+0

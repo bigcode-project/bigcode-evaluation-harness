@@ -1,0 +1,22 @@
+10 5
+kkkkkwwwww
+w#wwwrwwww
+wwwwbgwwww
+kwwmcwwwkk
+kkwywwwkkk
+rgbcmy
+10 5
+kkkkkkkkkk
+k#kkkkkkkk
+kwkkkkkwwk
+kcmyrgbwwk
+kwwwwwwwwk
+cmyrgb
+10 5
+kkkkkkkkkk
+k#kkkkkkkk
+kwkkkkkwkk
+kcmyrgbwwk
+kwwwwwwwwk
+cmyrgb
+0 0

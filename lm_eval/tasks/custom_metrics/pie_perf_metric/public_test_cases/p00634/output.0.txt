@@ -1,0 +1,2 @@
+400 10
+impossible

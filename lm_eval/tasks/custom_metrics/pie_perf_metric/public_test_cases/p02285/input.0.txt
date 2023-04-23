@@ -1,0 +1,19 @@
+18
+insert 8
+insert 2
+insert 3
+insert 7
+insert 22
+insert 1
+find 1
+find 2
+find 3
+find 4
+find 5
+find 6
+find 7
+find 8
+print
+delete 3
+delete 7
+print

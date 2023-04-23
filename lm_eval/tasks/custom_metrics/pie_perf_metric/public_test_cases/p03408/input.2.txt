@@ -1,0 +1,6 @@
+3
+apple
+orange
+apple
+1
+grape

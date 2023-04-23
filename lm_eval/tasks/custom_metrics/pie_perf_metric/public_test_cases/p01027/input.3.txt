@@ -1,0 +1,21 @@
+3
+neepal 2
+luxenbourg 4
+noway 2
+12
+neepal 1 neepal 0 2
+neepal 0 noway 1 2
+neepal 0 luxenbourg 0 10
+neepal 0 luxenbourg 3 2
+luxenbourg 3 luxenbourg 1 2
+luxenbourg 3 luxenbourg 2 2
+luxenbourg 1 luxenbourg 0 2
+luxenbourg 2 luxenbourg 0 2
+noway 1 noway 0 2
+noway 0 neepal 0 2
+noway 0 luxenbourg 3 2
+noway 0 luxenbourg 0 10
+3
+neepal 1
+luxenbourg 3
+noway 1

@@ -1,0 +1,56 @@
+2 1
+KarasumaKitaoji 0 6150
+KarasumaNanajo 0 0
+KarasumaNanajo KarasumaKitaoji
+KarasumaKitaoji KarasumaNanajo
+3 2
+KujoOmiya 0 0
+KujoAburanokoji 400 0
+OmiyaNanajo 0 1150
+KujoOmiya KujoAburanokoji
+KujoOmiya OmiyaNanajo
+KujoAburanokoji OmiyaNanajo
+10 12
+KarasumaGojo 745 0
+HorikawaShijo 0 870
+ShijoKarasuma 745 870
+ShijoKawaramachi 1645 870
+HorikawaOike 0 1700
+KarasumaOike 745 1700
+KawaramachiOike 1645 1700
+KawabataOike 1945 1700
+KarasumaMarutamachi 745 2445
+KawaramachiMarutamachi 1645 2445
+KarasumaGojo ShijoKarasuma
+HorikawaShijo ShijoKarasuma
+ShijoKarasuma ShijoKawaramachi
+HorikawaShijo HorikawaOike
+ShijoKarasuma KarasumaOike
+ShijoKawaramachi KawaramachiOike
+HorikawaOike KarasumaOike
+KarasumaOike KawaramachiOike
+KawaramachiOike KawabataOike
+KarasumaOike KarasumaMarutamachi
+KawaramachiOike KawaramachiMarutamachi
+KarasumaMarutamachi KawaramachiMarutamachi
+KarasumaGojo KawabataOike
+8 9
+NishikojiNanajo 0 0
+NishiojiNanajo 750 0
+NishikojiGojo 0 800
+NishiojiGojo 750 800
+HorikawaGojo 2550 800
+NishiojiShijo 750 1700
+Enmachi 750 3250
+HorikawaMarutamachi 2550 3250
+NishikojiNanajo NishiojiNanajo
+NishikojiNanajo NishikojiGojo
+NishiojiNanajo NishiojiGojo
+NishikojiGojo NishiojiGojo
+NishiojiGojo HorikawaGojo
+NishiojiGojo NishiojiShijo
+HorikawaGojo HorikawaMarutamachi
+NishiojiShijo Enmachi
+Enmachi HorikawaMarutamachi
+HorikawaGojo NishiojiShijo
+0 0
