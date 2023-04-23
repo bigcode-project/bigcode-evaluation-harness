@@ -111,5 +111,5 @@ class PiePerf(Task):
             list of str containing refrences
         :return: dict[str: float]
         """
-        res = compute(generations, references, dataset=self.get_dataset()[:2])
+        res = compute(generations, references, dataset=self.get_dataset())
         return res
