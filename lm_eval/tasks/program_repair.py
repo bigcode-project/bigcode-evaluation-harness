@@ -1,6 +1,6 @@
 from collections import Counter
-from dataclasses import dataclass
-from typing import List, Dict, NewType, Any
+from dataclasses import dataclass, asdict
+from typing import List, Dict, NewType, Any, Set, Iterable
 
 from datasets import Dataset, load_dataset
 import datasets
@@ -172,27 +172,13 @@ class ProgramRepair(Task):
         return doc[self.dataset_features_names.FINAL_STATE]
 
     def postprocess_generation(self, generation: str, idx: int = -1) -> str:
-        """
-        Return the generation until a stop token is encountered. Remove blank lines.
-        """
-
-        def slice_until_stop_token() -> None:
-            """
-            Slice the generation until a stop token is encountered.
-            """
-            nonlocal generation
-            for stop_token in self.stop_words:
-                if stop_token in generation:
-                    generation = generation[: generation.index(stop_token)]
-                    break
-
-        slice_until_stop_token()
         return generation
 
     def process_results(
         self,
         generations: List[List[str]],
         references: List[str],
+        to_strip_surrounding_lines_and_leading_substrings_from_generation: bool = True,
         to_strip_surrounding_whitespaces: bool = True,
     ) -> EvaluatedMetric:
         """
@@ -200,8 +186,30 @@ class ProgramRepair(Task):
         For each reference and its corresponding generations, compute the maximal exact match score. The maximal
         exact match score is 1 if there is at least one generation that is equal to the reference, and 0 otherwise.
         Additionally, returns a histogram of the ratio of references that have an exact match score equal to the key.
+        If `to_strip_surrounding_lines_and_leading_substrings_from_generation` is True, extract the generation while
+        ignoring the new special tokens at the beginning of lines, based on CarperAI's diff models evaluation method,
+        https://carper.ai/diff-models-a-new-way-to-edit-code.
         """
+
         n: int = len(generations)
+
+        if to_strip_surrounding_whitespaces:
+            references: List[str] = [reference.strip() for reference in references]
+
+        if to_strip_surrounding_lines_and_leading_substrings_from_generation:
+            new_special_tokens: Set[str] = set(asdict(self.new_special_tokens).values())
+            for i in range(n):
+                reference: str = references[i]
+                generation: str
+                for j, generation in enumerate(generations[i]):
+                    generations[i][j]: str = extract_patch(
+                        patch=reference,
+                        multiple_patches=generation,
+                        leading_substrings_to_remove=new_special_tokens,
+                    )
+                    if to_strip_surrounding_whitespaces:
+                        generations[i][j]: str = generations[i][j].strip()
+
         exact_match: str = "exact_match"
         exact_match_avg_max: str = (
             f"ratio_of_references_with_at_least_one_{exact_match}"
@@ -239,3 +247,45 @@ class ProgramRepair(Task):
             key: value / n for key, value in ret[exact_match_hist].items()
         }
         return ret
+
+
+def extract_patch(
+    patch: str,
+    multiple_patches: str,
+    leading_substrings_to_remove: Iterable[str],
+) -> str:
+    patch_lines: List[str] = patch.split("\n")
+    multiple_patches_lines: List[str] = multiple_patches.split("\n")
+    multiple_patches_lines = [
+        remove_leading_substrings(line=line, substrings=leading_substrings_to_remove)
+        for line in multiple_patches_lines
+    ]
+
+    max_matching_lines = 0
+    matched_patch_start = -1
+
+    for i in range(len(multiple_patches_lines)):
+        matching_lines = 0
+        for j, patch_line in enumerate(patch_lines):
+            if (
+                i + j < len(multiple_patches_lines)
+                and patch_line == multiple_patches_lines[i + j]
+            ):
+                matching_lines += 1
+        if matching_lines >= max_matching_lines:
+            max_matching_lines = matching_lines
+            matched_patch_start = i
+
+    matched_patch = multiple_patches_lines[
+        matched_patch_start : matched_patch_start + len(patch_lines)
+    ]
+    return "\n".join(matched_patch)
+
+
+def remove_leading_substrings(line: str, substrings: Iterable[str]) -> str:
+    substring: str
+    for substring in substrings:
+        if line.startswith(substring):
+            line: str = line[len(substring) :].lstrip()
+            break
+    return line
