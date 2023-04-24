@@ -1,12 +1,13 @@
 from pprint import pprint
 
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
-               concode, ds1000, gsm, humaneval, mbpp, program_repair)
+               concode, ds1000, gsm, humaneval, mbpp, multiple, program_repair)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
     **codexglue_code_to_text.create_all_tasks(),
     **codexglue_text_to_text.create_all_tasks(),
+    **multiple.create_all_tasks(),
     "codexglue_code_to_text-python-left": codexglue_code_to_text.LeftCodeToText,
     "conala": conala.Conala,
     "concode": concode.Concode,

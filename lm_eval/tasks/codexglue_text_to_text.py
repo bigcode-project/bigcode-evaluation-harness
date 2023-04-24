@@ -5,10 +5,13 @@ https://arxiv.org/abs/2102.04664
 Text to text task from CodeXGlue (documentation translation)
 """
 
-import os, re, json
-from evaluate import load
-from lm_eval.base import Task
+import json
+import os
+import re
 
+from evaluate import load
+
+from lm_eval.base import Task
 
 _CITATION = """
 @article{CodeXGLUE,
@@ -22,6 +25,7 @@ SOURCE_LANG = {
     "no_en": "norwegian",
     "lv_en": "latvian",
 }
+
 
 def create_all_tasks():
     """Creates a dictionary of tasks from a list of languages
@@ -39,7 +43,8 @@ def create_task(translation_task):
         def __init__(self):
             super().__init__(translation_task)
 
-    return CodexglueTextToTextTask 
+    return CodexglueTextToTextTask
+
 
 class CodexglueTextToText(Task):
 

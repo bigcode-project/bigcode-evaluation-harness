@@ -4,17 +4,12 @@ Fine-Tune LM on APPS train split
 
 import argparse
 import os
-import torch
 
+import torch
 from apps_dataset import APPSBaseDataset
 from datasets import load_dataset
-from transformers import (
-    AutoModelForCausalLM,
-    Trainer,
-    TrainingArguments,
-    logging,
-    set_seed,
-)
+from transformers import (AutoModelForCausalLM, Trainer, TrainingArguments,
+                          logging, set_seed)
 
 
 def get_args():
@@ -59,22 +54,20 @@ def run_training(args, train_data, val_data):
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         dataloader_drop_last=True,
-        evaluation_strategy = "steps",
+        evaluation_strategy="steps",
         num_train_epochs=args.num_epochs,
-        max_steps = args.max_steps,
-        eval_steps = args.eval_freq,
+        max_steps=args.max_steps,
+        eval_steps=args.eval_freq,
         save_steps=args.save_freq,
         logging_steps=args.log_freq,
-
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
         learning_rate=args.learning_rate,
         lr_scheduler_type=args.lr_scheduler_type,
-        warmup_steps = args.num_warmup_steps,
+        warmup_steps=args.num_warmup_steps,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         weight_decay=args.weight_decay,
         fp16=args.fp16,
-
         run_name="apps-train",
         report_to="wandb",
     )
@@ -99,8 +92,14 @@ def main(args):
     dataset.shuffle(seed=args.seed)
     data = get_dataset(dataset, args)
     train_size = int(0.95 * len(data))
-    train_data, val_data = torch.utils.data.random_split(data, [train_size, len(data) - train_size], generator=torch.Generator().manual_seed(args.seed))
-    print(f"size of training data {len(train_data)}\nsize of validation data {len(val_data)}")
+    train_data, val_data = torch.utils.data.random_split(
+        data,
+        [train_size, len(data) - train_size],
+        generator=torch.Generator().manual_seed(args.seed),
+    )
+    print(
+        f"size of training data {len(train_data)}\nsize of validation data {len(val_data)}"
+    )
     run_training(args, train_data, val_data)
 
 
