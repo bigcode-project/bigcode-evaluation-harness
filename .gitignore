@@ -162,3 +162,7 @@ cython_debug/
 .vscode/
 .trunk
 .DS_Store
+
+# Script outputs
+evaluation*.json
+generations*.json

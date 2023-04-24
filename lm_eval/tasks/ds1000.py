@@ -180,12 +180,24 @@ class GeneralDS1000(Task):
         """
         dataset = self.get_dataset()
         num_correct = 0
+        extras = []
         print("Scoring generations...")
         for i, ref in tqdm.tqdm(enumerate(references), total=len(references)):
             test = [doc for doc in dataset if doc["reference_code"] == ref][0]
+            gen_is_correct = []
             for gen in generations[i]:
                 is_correct = test.test(gen)
+                gen_is_correct.append(is_correct)
                 if is_correct:
                     num_correct += 1
+            extras.append(
+                {
+                    "predictions": generations[i],
+                    "references": ref,
+                    "is_correct": gen_is_correct,
+                    # "code_context": test.data['code_context'],
+                    "prompt": test.data['prompt']
+                }
+            )
         accuracy = num_correct / len(references) / len(generations[0])
-        return {f"mean pass@1 accuracy ({len(generations[0])} samples)": accuracy}
+        return {f"mean pass@1 accuracy ({len(generations[0])} samples)": accuracy}, extras
