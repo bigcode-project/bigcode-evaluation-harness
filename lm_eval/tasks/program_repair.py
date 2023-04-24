@@ -200,11 +200,10 @@ class ProgramRepair(Task):
             new_special_tokens: Set[str] = set(asdict(self.new_special_tokens).values())
             for i in range(n):
                 reference: str = references[i]
-                generation: str
-                for j, generation in enumerate(generations[i]):
+                for j in range(len(generations[i])):
                     generations[i][j]: str = extract_patch(
                         patch=reference,
-                        multiple_patches=generation,
+                        multiple_patches=generations[i][j],
                         leading_substrings_to_remove=new_special_tokens,
                     )
                     if to_strip_surrounding_whitespaces:
