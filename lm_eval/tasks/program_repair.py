@@ -196,7 +196,7 @@ class ProgramRepair(Task):
         to_strip_surrounding_whitespaces: bool = True,
     ) -> EvaluatedMetric:
         """
-        Returns the number of references that have an exact match generation divided by the number of references.
+        Returns the ratio of references that have an exact match generation divided by the number of references.
         For each reference and its corresponding generations, compute the maximal exact match score. The maximal
         exact match score is 1 if there is at least one generation that is equal to the reference, and 0 otherwise.
         Additionally, returns a histogram of the ratio of references that have an exact match score equal to the key.
