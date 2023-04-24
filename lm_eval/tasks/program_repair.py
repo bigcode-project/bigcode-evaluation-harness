@@ -227,18 +227,17 @@ class ProgramRepair(Task):
         )
         metric: EvaluationModule = load(exact_match)
         i: int
-        corresponding_generations: List[str]
-        for i, corresponding_generations in enumerate(generations):
+        for i in range(len(generations)):
             # Strip surrounding whitespaces
             reference: str = references[i]
             if to_strip_surrounding_whitespaces:
                 reference = reference.strip()
-                corresponding_generations = [
-                    gen.strip() for gen in corresponding_generations
+                generations[i] = [
+                    gen.strip() for gen in generations[i]
                 ]
             curr: EvaluatedMetric = metric.compute(
-                predictions=corresponding_generations,
-                references=[reference] * len(corresponding_generations),
+                predictions=generations[i],
+                references=[reference] * len(generations[i]),
             )
             ret[exact_match_avg_max] += curr[exact_match] > 0
             ret[exact_match_hist][curr[exact_match]] += 1
