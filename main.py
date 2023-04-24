@@ -181,6 +181,7 @@ def main():
             revision=args.revision,
             use_auth_token=args.use_auth_token,
             truncation_side="left",
+            padding_side="right",
         )
         if not tokenizer.eos_token:
             if tokenizer.bos_token:
@@ -207,7 +208,7 @@ def main():
             else:
                 results[task], extras[task] = evaluator.evaluate(task)
 
-    results["config"] = {"model": args.model, "temperature": args.temperature, "n_samples": args.n_samples}
+    results["config"] = vars(args)
     if not args.generation_only:
         dumped = json.dumps(results, indent=2)
         if accelerator.is_main_process:
