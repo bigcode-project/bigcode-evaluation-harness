@@ -1,4 +1,0 @@
-LOW
-HIGH
-HIGH
-LOW

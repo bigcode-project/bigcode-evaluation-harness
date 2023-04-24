@@ -1,5 +1,0 @@
-3 1 1 1
-3
-inv: at b b b
-at: [ATG] b
-b: [C]

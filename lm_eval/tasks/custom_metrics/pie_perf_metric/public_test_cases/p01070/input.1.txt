@@ -1,6 +1,0 @@
-aaaaaaaaaa 5
-0 9 aaa
-0 9 aa
-5 9 aaaa
-2 8 aa
-1 2 a

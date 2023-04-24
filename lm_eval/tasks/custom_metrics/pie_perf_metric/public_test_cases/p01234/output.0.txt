@@ -1,6 +1,0 @@
-Case 1:
-Fire at 37.995392 degree(s).
-Projectile destroyed in 2.290123 second(s).
-
-Case 2:
-Projectile reaches the land.

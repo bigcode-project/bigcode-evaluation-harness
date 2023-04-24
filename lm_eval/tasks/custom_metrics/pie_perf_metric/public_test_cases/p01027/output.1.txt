@@ -1,9 +1,0 @@
-10
-chinax 0 austraria 0
-austraria 0 ok 0
------
-7
-ok 0 austraria 1
-austraria 1 austraria 0
-austraria 0 chinax 0
------

@@ -1,9 +1,0 @@
-8 24
-05:30 Kyoto 06:37 Maibara
-06:50 Maibara 07:36 Tsuruga
-07:42 Tsuruga 10:03 Kanazawa
-10:58 Kanazawa 12:07 Toyama
-12:15 Toyama 14:12 Naoetsu
-14:29 Naoetsu 15:57 Nagaoka
-16:11 Nagaoka 17:14 Niitsu
-17:38 Niitsu 20:06 AizuWakamatsu

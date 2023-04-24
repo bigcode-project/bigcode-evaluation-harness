@@ -1,4 +1,0 @@
-white
-black
-white
-fuchsia

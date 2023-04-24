@@ -5,6 +5,8 @@ https://arxiv.org/pdf/2302.07867.pdf
 
 Homepage: https://pie4perf.com/
 """
+import logging
+import subprocess
 from lm_eval.base import Task
 from lm_eval.tasks.custom_metrics.pie_perf_metric.code_exec import compute
 
@@ -46,9 +48,10 @@ class PiePerf(Task):
     # `DATASET_PATH`. If there aren't specific subsets you need, leave this as `None`.
     DATASET_NAME = "codegen_1shot_test"
 
+    #todo: Removed the stopwords
     def __init__(self):
         super().__init__(
-            stop_words=['\n\n'],
+            stop_words=[],
             requires_execution=True,
         )
 
@@ -111,5 +114,20 @@ class PiePerf(Task):
             list of str containing refrences
         :return: dict[str: float]
         """
-        res = compute(generations, references, dataset=self.get_dataset())
+        limit = len(references)
+
+        # preparing testcases
+        cmd = "git clone https://huggingface.co/datasets/rootacess/pie-perf-testcases lm_eval/tasks/custom_metrics/pie_perf_metric/public_test_cases"
+        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
+        logging.error(f'An error occurred: {error}')
+
+        # running evaluations
+        res = compute(generations, references, dataset=self.get_dataset()[:limit])
+
+        # cleaning up
+        cmd = "rm -rf lm_eval/tasks/custom_metrics/pie_perf_metric/public_test_cases"
+        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
+        logging.error(error)
         return res

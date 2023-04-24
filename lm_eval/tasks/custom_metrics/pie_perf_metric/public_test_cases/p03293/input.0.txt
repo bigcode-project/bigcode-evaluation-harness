@@ -1,2 +1,0 @@
-kyoto
-tokyo

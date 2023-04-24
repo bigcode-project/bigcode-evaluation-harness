@@ -1,5 +1,0 @@
-4
-1 lock 1
-2 lock 2
-1 wait 2
-2 wait 1

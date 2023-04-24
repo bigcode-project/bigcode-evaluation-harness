@@ -1,5 +1,0 @@
-main 2
-main 2
-menu 0
-OUT OF MAIN PANEL 1
-primary 0

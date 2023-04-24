@@ -1,6 +1,0 @@
-2
-white 10
-black 10
-2
-black
-white

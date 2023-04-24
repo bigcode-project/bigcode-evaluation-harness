@@ -1,8 +1,0 @@
-6 5 4 2
-aaaaaa
-aaaaaa
-aaaaaa
-aaaaaa
-aaaaaa
-aaaa
-aaaa

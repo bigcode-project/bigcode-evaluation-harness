@@ -1,8 +1,0 @@
-4 3
-huda
-leide
-loar
-sheza
-huda leide
-leide loar
-loar sheza

@@ -1,4 +1,0 @@
-.no.such.property
-object:
-prop1: str
-prop2: str

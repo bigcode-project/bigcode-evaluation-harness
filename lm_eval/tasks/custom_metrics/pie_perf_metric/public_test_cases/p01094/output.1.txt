@@ -1,7 +1,0 @@
-A 1
-TIE
-TIE
-K 4
-X 5
-A 7
-U 8

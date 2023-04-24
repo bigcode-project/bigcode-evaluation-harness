@@ -1,3 +1,0 @@
-getUserName
-GetUserName
-get_user_name

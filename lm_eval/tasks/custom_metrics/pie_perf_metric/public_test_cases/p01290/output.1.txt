@@ -1,6 +1,0 @@
-Queen can not escape and Army can not catch Queen.
-Army can catch Queen.
-Queen can escape.
-Queen can not escape and Army can not catch Queen.
-Army can catch Queen.
-Army can catch Queen.

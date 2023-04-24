@@ -1,2 +1,0 @@
-ICPC
-CPCPC

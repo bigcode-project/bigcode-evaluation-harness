@@ -1,3 +1,0 @@
-Asampleinput^
-Hello,  Worl^d.
-^

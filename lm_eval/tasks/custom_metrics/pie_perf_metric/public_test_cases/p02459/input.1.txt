@@ -1,8 +1,0 @@
-7
-0 blue 4
-0 red 1
-0 white 5
-1 red
-1 blue
-0 black 8
-1 black

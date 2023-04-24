@@ -19,7 +19,7 @@ lang2file_ending = {
 }
 
 # path to test cases
-inputs_outputs_basepath = "lm_eval/tasks/custom_metrics/pie_perf_metric/public_test_cases"
+inputs_outputs_basepath = "lm_eval/tasks/custom_metrics/pie_perf_metric/public_test_cases/public_test_cases"
 output_report_file_path = "codegen_1shot.jsonl.report"
 
 

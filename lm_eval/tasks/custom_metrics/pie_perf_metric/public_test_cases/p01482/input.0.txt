@@ -1,4 +1,0 @@
-100
-A=malloc(10)
-B=clone(A)
-free(A)

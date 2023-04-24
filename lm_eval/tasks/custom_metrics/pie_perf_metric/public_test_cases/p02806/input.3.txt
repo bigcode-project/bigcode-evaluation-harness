@@ -1,3 +1,0 @@
-1
-abcde 1000
-abcde

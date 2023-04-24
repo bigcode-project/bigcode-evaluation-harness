@@ -1,4 +1,0 @@
-3
-111 SET c 1
-12 SUB c c 2
-777 SET a 4

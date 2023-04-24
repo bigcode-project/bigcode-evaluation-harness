@@ -1,6 +1,0 @@
-3 4
-ABC
-A L
-B L
-B R
-A R

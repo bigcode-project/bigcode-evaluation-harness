@@ -1,3 +1,0 @@
-Stable
-S 1
-H 1

@@ -1,9 +1,0 @@
-7
-abc
-ab
-bc
-a
-b
-c
-aa
-aaabcbccababbc

@@ -1,6 +1,0 @@
-5 2
-3 bread milk banana
-2 milk cornflakes
-3 potato bread milk
-4 cornflakes bread milk butter
-2 potato bread

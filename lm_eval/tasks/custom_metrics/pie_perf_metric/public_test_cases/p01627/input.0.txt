@@ -1,5 +1,0 @@
-N T
-st_time1 st_name1 ar_time1 ar_name1
-st_time2 st_name2 ar_time2 ar_name2
-...
-st_timeN st_nameN ar_timeN ar_nameN

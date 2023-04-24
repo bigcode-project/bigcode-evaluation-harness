@@ -1,5 +1,0 @@
-8 3
-AABCBDBA
-A L
-B R
-A R

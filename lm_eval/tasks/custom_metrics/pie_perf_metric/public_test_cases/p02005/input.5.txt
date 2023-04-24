@@ -1,8 +1,0 @@
-3
-white 10
-red 20
-white 30
-3
-white
-red
-white

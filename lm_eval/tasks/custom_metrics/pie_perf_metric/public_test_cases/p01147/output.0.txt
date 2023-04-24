@@ -1,4 +1,0 @@
-applengthings
-icpc
-zetalphabet
-untill
