@@ -6,6 +6,7 @@ https://arxiv.org/pdf/2302.07867.pdf
 Homepage: https://pie4perf.com/
 """
 import logging
+import os.path
 import subprocess
 from lm_eval.base import Task
 from lm_eval.tasks.custom_metrics.pie_perf_metric.code_exec import compute
@@ -21,7 +22,7 @@ _CITATION = """
 """
 
 _COMMAND = '''
-accelerate launch  main.py --model "Salesforce/codegen-350M-mono" --tasks "pieperf" --temperature 0.7 --do_sample True --n_samples 100 --batch_size 10 --allow_code_execution
+accelerate launch  main.py --model "Salesforce/codegen-350M-mono" --tasks "pieperf" --temperature 0.7 --do_sample True --n_samples 1 --batch_size 1 --allow_code_execution
 '''
 
 
@@ -117,10 +118,11 @@ class PiePerf(Task):
         limit = len(references)
 
         # preparing testcases
-        cmd = "git clone https://huggingface.co/datasets/rootacess/pie-perf-testcases lm_eval/tasks/custom_metrics/pie_perf_metric/public_test_cases"
-        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-        output, error = process.communicate()
-        logging.error(f'An error occurred: {error}')
+        if not os.path.exists("lm_eval/tasks/custom_metrics/pie_perf_metric/public_test_cases"):
+            cmd = "git clone https://huggingface.co/datasets/rootacess/pie-perf-testcases lm_eval/tasks/custom_metrics/pie_perf_metric/public_test_cases"
+            process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+            output, error = process.communicate()
+            logging.error(f'An error occurred: {error}')
 
         # running evaluations
         res = compute(generations, references, dataset=self.get_dataset()[:limit])
