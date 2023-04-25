@@ -75,12 +75,17 @@ class Evaluator:
             generations, references = self.generate_text(task_name)
         else:
             with open(self.args.load_generations_path) as f:
+                logging.info(f"Loading generations from {self.args.load_generations_path}")
                 generations = json.load(f)
             with open(self.args.load_references_path) as f:
+                logging.info(f"Loading references from {self.args.load_references_path}")
                 references = json.load(f)
 
         if self.accelerator.is_main_process:
-            if not self.args.load_generations_path:
+            if self.args.load_generations_path:
+                logging.debug(f"Will not save generations nor references, because pre-calculated generations were given"
+                              f" (loaded from {self.args.load_generations_path}).")
+            else:
                 if self.args.save_generations:
                     with open(self.args.save_generations_path, "w") as fp:
                         json.dump(generations, fp)
