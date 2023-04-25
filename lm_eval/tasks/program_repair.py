@@ -252,6 +252,14 @@ def extract_patch(
     multiple_patches: str,
     leading_substrings_to_remove: Iterable[str],
 ) -> str:
+    """
+    Given a patch and a string that may contain multiple patches, returns the patch that is the most similar to the
+    given target patch. The similarity is measured by the number of lines that are equal between the two patches.
+    :param patch: The target patch.
+    :param multiple_patches: A string.
+    :param leading_substrings_to_remove: A list of substrings to remove from the beginning of each line.
+    :return: The patch that is the most similar to the given target patch.
+    """
     patch_lines: List[str] = patch.split("\n")
     multiple_patches_lines: List[str] = multiple_patches.split("\n")
     multiple_patches_lines = [

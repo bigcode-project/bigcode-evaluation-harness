@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import warnings
 
@@ -52,6 +53,7 @@ class Evaluator:
             args=self.args,
         )
         if self.args.load_references_path:
+            logging.info(f"Loading references from {self.args.load_references_path}")
             with open(self.args.load_references_path) as f:
                 references = json.load(f)
         else:

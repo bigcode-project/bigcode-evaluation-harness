@@ -1,4 +1,5 @@
 import json
+import logging
 from math import ceil
 
 from accelerate.utils import set_seed
@@ -37,7 +38,7 @@ class EndOfFunctionCriteria(StoppingCriteria):
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
     if args.load_generations_path:
-        # load generated code
+        logging.info(f"Loading generations from {args.load_generations_path}")
         with open(args.load_generations_path) as fp:
             generations = json.load(fp)
             if accelerator.is_main_process:

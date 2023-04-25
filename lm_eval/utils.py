@@ -117,11 +117,12 @@ def complete_code(
     """
 
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
+    total: int = math.ceil(
+        n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
+    )
     for step, batch in tqdm(
         enumerate(dataloader),
-        total=math.ceil(
-            n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
-        ),
+        total=total,
     ):
         with torch.no_grad():
             if task.stop_words:

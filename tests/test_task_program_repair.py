@@ -107,12 +107,12 @@ def test_process_results(references, generations, expected_score):
 
 
 def test_extract_patch():
-    generation: str = """This is an example.
+    reference: str = """This is an example.
 Note that some lines may exactly match, and some may not.
 Also, it is possible that lines appears more than once.
 Also, it is possible that lines appears more than once.
 So we should be aware of that."""
-    reference: str = """This is the multiple_patches string.
+    generation: str = """This is the multiple_patches string.
 It may contain multiple lines. Some may be duplicates.
 Note that some lines may exactly match, and some may not.
 Also, it is possible that lines appears more than once.
@@ -148,7 +148,7 @@ This is an example.
     )
     assert (
         extract_patch(
-            generation, reference, leading_substrings_to_remove=new_special_tokens
+            patch=reference, multiple_patches=generation, leading_substrings_to_remove=new_special_tokens
         )
         == "This is the correct location, because it is the last location with maximum matches (two).--START HERE--\n"
         "Watch closely.\n"
@@ -203,10 +203,10 @@ Also, it is possible that lines appears more than once.
 """
     assert (
         extract_patch(
-            generation, reference, leading_substrings_to_remove=new_special_tokens
+            patch=reference, multiple_patches=generation, leading_substrings_to_remove=new_special_tokens
         )
         == "Note that the extracted patch may contain less lines than the original patch.\n"
-        "Note that some lines may exactly match, and some may not.\n"
-        "Also, it is possible that lines appears more than once.\n"
-        "Also, it is possible that lines appears more than once.\n"
+           "Note that some lines may exactly match, and some may not.\n"
+           "Also, it is possible that lines appears more than once.\n"
+           "Also, it is possible that lines appears more than once.\n"
     )
