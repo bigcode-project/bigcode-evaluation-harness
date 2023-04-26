@@ -1,6 +1,6 @@
-from collections import defaultdict
 import math
 import warnings
+from collections import defaultdict
 
 import torch
 from torch.utils.data import IterableDataset
