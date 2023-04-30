@@ -113,7 +113,7 @@ This can be useful if you don't want to execute code in the machine you're using
 
 ### Evaluation only
 
-If you already have the generations in a json file from this evaluation harness and want to evaluate them, specify the path of the generations via the `load_generations_path` argument. You may need to reconfigure `accelerate` to use multiple CPUs. For this mode, you can also find an example of setup instructions in `evaluation_setup.sh`.
+If you already have the generations in a json file from this evaluation harness and want to evaluate them, specify the path of the generations via the `load_generations_path` argument. You may need to reconfigure `accelerate` to use multiple CPUs.
 
 Below is an example, be mind of specifying arguments proper to the task you are evaluating on, and note that `model` value here only serves for documenting the experiment. Also add `--n_samples` to specify the number of samples to evaluate per problem (usually the same value used in generation).
 
