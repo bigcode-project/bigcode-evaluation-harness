@@ -72,6 +72,8 @@ accelerate config
 
 This evaluation harness can also be used in an evaluation only mode, you can use a Multi-CPU setting. For large model, set up the precision of the model using the `--precision` flag instead of accelerate config to have only one copy of the model in memory.
 
+The evaluation part (solutions execution) for [MultiPL-E](https://github.com/nuprl/MultiPL-E) requires extra dependencies for some programming languages, we provide a Dockerfile with all dependencies, see section [Docker](#docker-containers) for more details.
+
 ## Usage
 You can use this evaluation harness to generate text solutions to code benchmarks with your model, to evaluate (and execute) the solutions or to do both. While it is better to use GPUs for the generation, the evaluation only requires CPUs. So it might be beneficial to separate these two steps. By default both generation and evaluation are performed.
 
@@ -90,6 +92,7 @@ accelerate launch  main.py \
   --do_sample True \
   --n_samples 100 \
   --batch_size 10 \
+  --precision <PRECISION> \
   --allow_code_execution \
   --save_generations
 ```
@@ -151,7 +154,7 @@ accelerate launch  main.py \
     --save_generations_path generations_py.json
 ```
 
-To run the container (here from image `evaluation-harness`) to evaluate on `generations_py.json`, or another file mount it with `-v`, specify `n_samples` and allow code execution with `--allow_code_execution` (and add the number of problems `--limit`  if it was used during generation):
+To run the container (here from image `evaluation-harness-multiple`) to evaluate on `generations_py.json`, or another file mount it with `-v`, specify `n_samples` and allow code execution with `--allow_code_execution` (and add the number of problems `--limit`  if it was used during generation):
 ```bash
 $ sudo docker run -v $(pwd)/generations_py.json:/app/generations_py.json:ro -it evaluation-harness-multiple python3 main.py \
     --model bigcode/santacoder \
