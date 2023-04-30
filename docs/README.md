@@ -100,6 +100,8 @@ TF_CPP_MIN_LOG_LEVEL=3 accelerate launch main.py \
 
 ### MultiPL-E
 [MultiPL-E](https://huggingface.co/datasets/nuprl/MultiPL-E): is a benchamrk for evaluating large language models for code generation that supports 18 programming languages. It takes the OpenAI "HumanEval" Python benchmark and uses little compilers to translate them to other languages. We use similar implementation as [the original repository](https://github.com/nuprl/MultiPL-E/tree/main) and evaluation parameters are similar to HumanEval. Although for this benchmark, we strongly recommend using the provided Dockerfile to build the MultiPL-E container with all required dependencies, and for more safety especially when evaluating on languages like `bash`.
+Tasks are named `multiple-<LANG>` where `<LANG>` is the language name, e.g. `multiple-py` for python.
+
 ```bash
 $ sudo make DOCKERFILE=Dockerfile-multiple all
 ```
