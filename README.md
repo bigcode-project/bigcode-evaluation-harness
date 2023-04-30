@@ -70,7 +70,7 @@ We use [`accelerate`](https://huggingface.co/docs/accelerate/index) to generate 
 accelerate config
 ```
 
-This evaluation harness can also be used in an evaluation only mode, you can use a Multi-CPU setting. For large model, set up the precision of the model using the `--precision` flag instead of accelerate config to have only one copy of the model in memory.
+This evaluation harness can also be used in an evaluation only mode, you can use a Multi-CPU setting. For large models, we recommend specifying the precision of the model using the `--precision` flag instead of accelerate config to have only one copy of the model in memory.
 
 The evaluation part (solutions execution) for [MultiPL-E](https://github.com/nuprl/MultiPL-E) requires extra dependencies for some programming languages, we provide a Dockerfile with all dependencies, see section [Docker](#docker-containers) for more details.
 
@@ -172,9 +172,7 @@ To implement a new task in this evaluation harness, see the guide in [`docs/guid
 We provide documentation for the existing benchmarks and how we make the evaluation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md).
 
 ## Remarks
-* Currenltly, we use parallel evaluation across multiple GPUs using `accelerate`, this assumes that you can fit the model in one GPU. 
-* Please note this evaluation harness tries to cover a wide set of models, but there could still be room for improvement based on each model, some might require different prompt engineering or post-processing of the code generations.
-* For some scores of ongoing experiments please refer to [`example_scores/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/master/example_scores/README.md).
+* Currenltly, we use data parallel evaluation across multiple GPUs using `accelerate`, this assumes that you can fit the model in one GPU. 
 
 ## Acknowledgements
 We thank EleutherAI for their work on the [lm-evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness) from which this repository is inspired.
