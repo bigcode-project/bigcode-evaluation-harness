@@ -179,36 +179,26 @@ def complete_code(
     code_gens = [[] for _ in range(n_tasks)]
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
-            if INFILL_MODE:
-                gen_code = parse_infill(
-                    tokenizer.decode(
-                        s, skip_special_tokens=False, clean_up_tokenization_spaces=False
-                    ),
-                    tokenizer,
-                )
-            elif tokenizer.eos_token in task.stop_words:
+            if INFILL_MODE or tokenizer.eos_token in task.stop_words:
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                 )
+                if INFILL_MODE:
+                    gen_code = parse_infill(gen_code, tokenizer)
             else:
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=True, clean_up_tokenization_spaces=True
                 )
+            if not INFILL_MODE:
+                gen_code = gen_code[len(prefix) :]
             if postprocess:
-                if INFILL_MODE:
-                    code_gens[sample].append(
-                        task.postprocess_generation(gen_code, int(sample))
-                    )
-                else:
-                    code_gens[sample].append(
-                        task.postprocess_generation(
-                            gen_code[len(prefix) :], int(sample)
-                        )
-                    )
+                code_gens[sample].append(
+                    task.postprocess_generation(gen_code, int(sample))
+                )
             else:
                 warnings.warn(
                     "model output is not postprocessed, this might lower evaluation scores"
                 )
-                code_gens[sample].append(gen_code[len(prefix) :])
+                code_gens[sample].append(gen_code)
 
     return code_gens
