@@ -1,5 +1,5 @@
-import os
 import json
+import os
 import tempfile
 
 from accelerate import Accelerator
@@ -11,9 +11,17 @@ from lm_eval.evaluator import Evaluator
 
 # TODO add more tasks
 
-TASKS = ["humaneval", "mbpp"]
+# Tasks for generation test
+GEN_TASKS = ["humaneval", "mbpp"]
+# Tasks for evaluator tests
+EVAL_TASKS = ["humaneval", "mbpp", "pal-gsm8k-greedy"]
 TMPDIR = tempfile.mkdtemp()
 TEST_MODEL = "hf-internal-testing/tiny-random-gpt2"
+REF_EVAL_SCORES = {
+    "humaneval": {"pass@1": 0.25},
+    "mbpp": {"pass@1": 0.25},
+    "pal-gsm8k-greedy": {"accuracy": 1.0, "num_failed_execution": 0},
+}
 
 
 def update_args(args):
@@ -21,9 +29,10 @@ def update_args(args):
     # the executed code for the tests is safe (see tests/data/*_eval_gens.json)
     args.allow_code_execution = True
     args.save_generations = False
+    args.save_generations_path = ""
     args.save_references = False
-    args.output_path = TMPDIR
-    args.generations_path = None
+    args.metric_output_path = TMPDIR
+    args.load_generations_path = None
     args.generation_only = False
     args.check_references = False
     # postprocessing for HumanEval and MBPP makes generations
@@ -38,6 +47,7 @@ def update_args(args):
     args.n_samples = 1
     args.seed = 0
     args.mutate_method = None
+    args.precision = None
     return args
 
 
@@ -68,7 +78,7 @@ model, tokenizer, accelerator = setup()
 def test_generation():
     args.generation_only = True
     evaluator = Evaluator(accelerator, model, tokenizer, args)
-    for task in TASKS:
+    for task in GEN_TASKS:
         print(f"testing task {task}")
         generations, references = evaluator.generate_text(task)
         true_gens, true_refs = load_generation_examples(task)
@@ -80,11 +90,11 @@ def test_generation():
 def test_evaluation():
     # TODO add scores for each task
     args.n_samples = 2
-    for task in TASKS:
+    for task in EVAL_TASKS:
         print(f"testing task {task}")
         # path to generation examples to evaluate
-        args.generations_path = f"tests/data/{task}_eval_gens.json"
+        args.load_generations_path = f"tests/data/{task}_eval_gens.json"
         evaluator = Evaluator(accelerator, None, None, args)
         results = evaluator.evaluate(task)
-        assert results == {"pass@1": 0.25}
+        assert results == REF_EVAL_SCORES[task]
     print("passed eval")

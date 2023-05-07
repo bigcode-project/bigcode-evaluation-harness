@@ -1,6 +1,7 @@
-from abc import abstractmethod, ABC
-from datasets import load_dataset
+from abc import ABC, abstractmethod
 from warnings import warn
+
+from datasets import load_dataset
 
 
 class Task(ABC):

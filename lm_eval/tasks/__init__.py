@@ -2,12 +2,13 @@ import inspect
 from pprint import pprint
 
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
-               concode, ds1000, humaneval, humaneval_x_bugs, mbpp, parity, python_bugs, quixbugs)
+               concode, ds1000, gsm, humaneval, humaneval_x_bugs, mbpp, multiple, parity, python_bugs, quixbugs)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
     **codexglue_code_to_text.create_all_tasks(),
     **codexglue_text_to_text.create_all_tasks(),
+    **multiple.create_all_tasks(),
     "codexglue_code_to_text-python-left": codexglue_code_to_text.LeftCodeToText,
     "conala": conala.Conala,
     "concode": concode.Concode,
@@ -18,6 +19,7 @@ TASK_REGISTRY = {
     "parity": parity.Parity,
     "python_bugs": python_bugs.PythonBugs,
     "quixbugs": quixbugs.QuixBugs,
+    **gsm.create_all_tasks(),
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))

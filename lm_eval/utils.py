@@ -1,6 +1,6 @@
-from collections import defaultdict
 import math
 import warnings
+from collections import defaultdict
 
 import torch
 from torch.utils.data import IterableDataset
@@ -93,6 +93,8 @@ class TokenizedDataset(IterableDataset):
             return f"{prefix}<|mask:0|>{suffix}<|mask:0|>"
         elif model_id in ["bigcode/santacoder"]:
             return f"<fim-prefix>{prefix}<fim-suffix>{suffix}<fim-middle>"
+        elif model_id in ["bigcode/large-model"]:
+            return f"<fim_prefix>{prefix}<fim_suffix>{suffix}<fim_middle>"
         else:
             raise ValueError(f"Infilling not yet supported for: {model_id}")
 
@@ -125,15 +127,19 @@ def complete_code(
         with torch.no_grad():
             if task.stop_words:
                 # Set the start_length after which to check for stopping to be the longest input ignoring padding
-                gen_kwargs["stopping_criteria"][0].start_length = batch["input_len"].max().item()
+                gen_kwargs["stopping_criteria"][0].start_length = (
+                    batch["input_len"].max().item()
+                )
             if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
                 idx = 1 if task.stop_words else 0
-                gen_kwargs["stopping_criteria"][idx].input_length = batch["input_len"].max().item()
-            generated_tokens = accelerator.unwrap_model(model).generate(
+                gen_kwargs["stopping_criteria"][idx].input_length = batch["input_len"].max().item()                
+            generated_tokens = model.generate(
                 input_ids=batch["ids"][:, : batch["input_len"]],
                 num_return_sequences=batch_size,
                 **gen_kwargs,
             )
+
+
             # each task is generated batch_size times
             generated_tasks = batch["task_id"].repeat(batch_size)
             generated_tokens = accelerator.pad_across_processes(
@@ -159,6 +165,10 @@ def complete_code(
             prefix, rest = code.split("<fim-suffix>", 1)
             suffix, infill = rest.split("<fim-middle>", 1)
             infill = infill.split("<|endoftext|>")[0]
+        elif model_id in ["bigcode/large-model"]:
+            prefix, rest = code.split("<fim_suffix>", 1)
+            suffix, infill = rest.split("<fim_middle>", 1)
+            infill = infill.split("<|endoftext|>")[0]
         else:
             raise ValueError(f"Infilling not yet supported for: {model_id}")
         for k, v in tokenizer.special_tokens_map.items():
@@ -179,11 +189,11 @@ def complete_code(
                     ),
                     tokenizer,
                 )
-            # Treat eos token as a regular stop word not removing it from the output
-            # If it's removed it may have the effect of removing it in the middle of a
-            # longer generation in case a batch size > 1 is used, which will result in
-            # a wrong generation as it won't be used for splitting lateron
             elif tokenizer.eos_token in task.stop_words:
+                # Treat eos token as a regular stop word not removing it from the output
+                # If it's removed it may have the effect of removing it in the middle of a
+                # longer generation in case a batch size > 1 is used, which will result in
+                # a wrong generation as it won't be used for splitting lateron                
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                 )
