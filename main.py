@@ -213,7 +213,6 @@ def main():
         # Padding on the right is needed to cut off padding in `complete_code`
         tokenizer.padding_side = "right"
         
-        args.generations_path = "generations.json" if args.generations_path is None else args.generations_path
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
         for task in task_names:
