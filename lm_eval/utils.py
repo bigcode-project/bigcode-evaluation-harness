@@ -95,7 +95,7 @@ class TokenizedDataset(IterableDataset):
             return f"{preprefix}{prefix}<|mask:0|>{suffix}<|mask:0|>"
         elif model_id in ["bigcode/santacoder"]:
             return f"<fim-prefix>{preprefix}{prefix}<fim-suffix>{suffix}<fim-middle>"
-        elif model_id in ["bigcode/large-model", "bigcode/temp-model"]:
+        elif model_id in ["bigcode/starcoder", "bigcode/starcoderbase"]:
             return f"<fim_prefix>{preprefix}{prefix}<fim_suffix>{suffix}<fim_middle>"
         else:
             raise ValueError(f"Infilling not yet supported for: {model_id}")
