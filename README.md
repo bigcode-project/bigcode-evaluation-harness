@@ -148,7 +148,7 @@ accelerate launch  main.py \
     --do_sample True  \
     --n_samples 200  \
     --batch_size 200  \
-    --trsut_remote_code \
+    --trust_remote_code \
     --generation_only \
     --save_generations \
     --save_generations_path generations_py.json
