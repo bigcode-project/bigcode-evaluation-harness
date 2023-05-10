@@ -162,7 +162,7 @@ def complete_code(
             prefix, rest = code.split("<fim-suffix>", 1)
             suffix, infill = rest.split("<fim-middle>", 1)
             infill = infill.split("<|endoftext|>")[0]
-        elif model_id in ["bigcode/large-model", "bigcode/temp-model"]:
+        elif model_id in ["bigcode/starcoder", "bigcode/starcoderbase"]:
             prefix, rest = code.split("<fim_suffix>", 1)
             suffix, infill = rest.split("<fim_middle>", 1)
             infill = infill.split("<|endoftext|>")[0]
