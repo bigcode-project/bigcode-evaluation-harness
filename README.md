@@ -185,7 +185,7 @@ We thank EleutherAI for their work on the [lm-evaluation harness](https://github
                   Muennighoff, Niklas and
                   Kumar Umapathi, Logesh and
                   Lipkin, Ben and
-                  Von Werra, Leandro},
+                  von Werra, Leandro},
   title = {A framework for the evaluation of code generation models},
   howpublished = {\url{https://github.com/bigcode-project/bigcode-evaluation-harness}},
   year = 2022,
