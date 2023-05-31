@@ -186,6 +186,7 @@ def main():
             trust_remote_code=args.trust_remote_code,
             use_auth_token=args.use_auth_token,
             truncation_side="left",
+            padding_side="right",
         )
         if not tokenizer.eos_token:
             if tokenizer.bos_token:
