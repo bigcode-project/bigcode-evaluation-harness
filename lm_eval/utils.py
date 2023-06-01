@@ -180,6 +180,8 @@ def complete_code(
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
             if INFILL_MODE or tokenizer.eos_token in task.stop_words:
+                if s[0] == tokenizer.bos_token_id:
+                    s = s[1:]
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                 )
