@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from lm_eval.base import Task
 from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import \
-    evaluate_problem
+    evaluate_problem, get_test_results_json_path, evaluate_programs
 from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import \
     for_file
 
@@ -180,8 +180,10 @@ class GeneralMultiPLE(Task):
 
         # execute the problems to evaluate them
         max_workers = cpu_count() - 1 if cpu_count() > 1 else 1
-        for file in tqdm(list_files):
-            evaluate_problem(temp_dir, file, max_workers)
+
+        programs, test_results_list, test_results_paths, languages =  self.unroll_problems(temp_dir, list_files)
+
+        evaluate_programs(programs, test_results_list, test_results_paths, languages, max_workers)
 
         # compute pass@k scores
         result_array = np.array(
@@ -199,3 +201,32 @@ class GeneralMultiPLE(Task):
             if k <= len(generations[0])
         }
         return results
+    
+
+    def unroll_problems(self, output_dir, problem_json_paths):
+        programs = list()
+        test_results_list = list()
+        test_results_paths = list()
+        languages = list()
+        for problem_json_path in problem_json_paths:
+            with open(problem_json_path, "r") as f:
+                problem = json.load(f)
+            test_results_path = get_test_results_json_path(
+                output_dir, problem_json_path, None
+            )
+            test_results_path.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+            test_results = problem.copy()
+            del test_results["completions"]
+            if "results" not in test_results:
+                test_results["results"] = []
+
+            num_problems = len(problem["completions"])
+            min_problem = len(test_results["results"])
+
+            for index in range(min_problem, num_problems): 
+                programs.append(problem["completions"][index] + "\n" + problem["tests"])
+                test_results_list.append(test_results)
+                test_results_paths.append(test_results_path)
+                languages.append(problem["language"])
+            
+        return programs, test_results_list, test_results_paths, languages
