@@ -108,7 +108,7 @@ def cached_eval_script_per_program(program, language) -> dict:
 def evaluate_programs(programs: list[str], test_results_list: list[dict], test_result_paths: list[Path], languages: list[str], max_workers: int):
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for j, test_results, test_results_path in zip(executor.map(
-            lambda program, test_result_path, language: cached_eval_script_per_program(program, test_result_path, language),
+            lambda program, language: cached_eval_script_per_program(program, language),
             programs,
             languages
         ), test_results_list, test_result_paths):
