@@ -46,7 +46,9 @@ class TokenizedDataset(IterableDataset):
             elif isinstance(prompt_contents, dict):
                 assert set(prompt_contents.keys()) == {"prefix", "suffix"}
                 infill.append(True)
-                prompt = self.prefix + self._make_infill_prompt(**prompt_contents)
+                prompt = self._make_infill_prompt(
+                    **prompt_contents, preprefix=self.prefix
+                )
             else:
                 raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
             prompts.append(prompt)
@@ -83,18 +85,18 @@ class TokenizedDataset(IterableDataset):
                     "input_len": outputs.attention_mask[sample].sum(),
                 }
 
-    def _make_infill_prompt(self, prefix, suffix):
+    def _make_infill_prompt(self, prefix, suffix, preprefix=""):
         """Make a prompt for infilling.
         Currently supported only for official InCoder and SantaCoder implementations.
         """
         model_id = self.tokenizer.name_or_path
         if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
             self.tokenizer.add_special_tokens({"pad_token": "<pad>"})
-            return f"{prefix}<|mask:0|>{suffix}<|mask:0|>"
+            return f"{preprefix}{prefix}<|mask:0|>{suffix}<|mask:0|>"
         elif model_id in ["bigcode/santacoder"]:
-            return f"<fim-prefix>{prefix}<fim-suffix>{suffix}<fim-middle>"
-        elif model_id in ["bigcode/large-model"]:
-            return f"<fim_prefix>{prefix}<fim_suffix>{suffix}<fim_middle>"
+            return f"<fim-prefix>{preprefix}{prefix}<fim-suffix>{suffix}<fim-middle>"
+        elif model_id in ["bigcode/starcoder", "bigcode/starcoderbase"]:
+            return f"<fim_prefix>{preprefix}{prefix}<fim_suffix>{suffix}<fim_middle>"
         else:
             raise ValueError(f"Infilling not yet supported for: {model_id}")
 
@@ -165,7 +167,7 @@ def complete_code(
             prefix, rest = code.split("<fim-suffix>", 1)
             suffix, infill = rest.split("<fim-middle>", 1)
             infill = infill.split("<|endoftext|>")[0]
-        elif model_id in ["bigcode/large-model"]:
+        elif model_id in ["bigcode/starcoder", "bigcode/starcoderbase"]:
             prefix, rest = code.split("<fim_suffix>", 1)
             suffix, infill = rest.split("<fim_middle>", 1)
             infill = infill.split("<|endoftext|>")[0]
@@ -182,33 +184,32 @@ def complete_code(
     code_gens = [[] for _ in range(n_tasks)]
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
-            if INFILL_MODE:
-                gen_code = parse_infill(
-                    tokenizer.decode(
-                        s, skip_special_tokens=False, clean_up_tokenization_spaces=False
-                    ),
-                    tokenizer,
-                )
-            elif tokenizer.eos_token in task.stop_words:
+            if INFILL_MODE or tokenizer.eos_token in task.stop_words:
+                if s[0] == tokenizer.bos_token_id:
+                    s = s[1:]
                 # Treat eos token as a regular stop word not removing it from the output
                 # If it's removed it may have the effect of removing it in the middle of a
                 # longer generation in case a batch size > 1 is used, which will result in
-                # a wrong generation as it won't be used for splitting lateron                
+                # a wrong generation as it won't be used for splitting lateron 
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                 )
+                if INFILL_MODE:
+                    gen_code = parse_infill(gen_code, tokenizer)
             else:
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=True, clean_up_tokenization_spaces=True
                 )
+            if not INFILL_MODE:
+                gen_code = gen_code[len(prefix) :]
             if postprocess:
                 code_gens[sample].append(
-                    task.postprocess_generation(gen_code[len(prefix) :], int(sample))
+                    task.postprocess_generation(gen_code, int(sample))
                 )
             else:
                 warnings.warn(
                     "model output is not postprocessed, this might lower evaluation scores"
                 )
-                code_gens[sample].append(gen_code[len(prefix) :])
+                code_gens[sample].append(gen_code)
 
     return code_gens
