@@ -11,8 +11,10 @@ INFILL_MODE = False
 
 class TokenizedDataset(IterableDataset):
     """Tokenize and preprocess the dataset
-    Multiple copies of the same prompt are sent sequentially.
-    See compute_code for more details.
+    Multiple copies of the same prompt are sent sequentially. See compute_code for more details.
+    The prompt can either be:
+    - one prompt: normal code completion
+    - two prompts: for infilling mode (prefix, suffix) or instructin-tuning mode (instruction, context)
     """
 
     def __init__(
@@ -25,6 +27,7 @@ class TokenizedDataset(IterableDataset):
         n_tasks=None,
         n_copies=1,
         prefix="",
+        instruction_tokens=None,
     ):
         self.task = task
         self.dataset = dataset
@@ -34,27 +37,42 @@ class TokenizedDataset(IterableDataset):
         self.n_tasks = n_tasks
         self.n_copies = n_copies
         self.prefix = prefix
+        self.instruction_tokens = instruction_tokens
 
     def __iter__(self):
         prompts = []
         infill = []
+        instruction = []
         for sample in range(self.n_tasks):
             prompt_contents = self.task.get_prompt(self.dataset[sample])
             if isinstance(prompt_contents, str):
+                # Normal code completion mode
                 infill.append(False)
+                instruction.append(False)
                 prompt = self.prefix + prompt_contents
             elif isinstance(prompt_contents, dict):
-                assert set(prompt_contents.keys()) == {"prefix", "suffix"}
-                infill.append(True)
-                prompt = self._make_infill_prompt(
-                    **prompt_contents, preprefix=self.prefix
-                )
+                if set(prompt_contents.keys()) == {"prefix", "suffix"}:
+                    # Infilling mode
+                    infill.append(True)
+                    instruction.append(False)
+                    prompt = self._make_infill_prompt(
+                        **prompt_contents, preprefix=self.prefix
+                    )
+                elif set(prompt_contents.keys()) == {"instruction", "context"}:
+                    # Instruction-tuning mode
+                    instruction.append(False)
+                    infill.append(False)
+                    prompt = self._make_instruction_prompt(
+                        **prompt_contents, preprefix=self.prefix
+                    )
             else:
                 raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
             prompts.append(prompt)
 
-        if not len(set(infill)) == 1:
-            raise ValueError("Mixed infill and completion prompts are not supported.")
+        if not len(set(infill)) == 1 or not len(set(instruction)) == 1:
+            raise ValueError(
+                "Mixed infill/instruction and completion prompts are not supported."
+            )
         global INFILL_MODE
         INFILL_MODE = infill[0]
         if INFILL_MODE:
@@ -99,6 +117,29 @@ class TokenizedDataset(IterableDataset):
             return f"<fim_prefix>{preprefix}{prefix}<fim_suffix>{suffix}<fim_middle>"
         else:
             raise ValueError(f"Infilling not yet supported for: {model_id}")
+
+    def _make_instruction_prompt(self, instruction, context, prefix=""):
+        """Make a prompt for instruction-tuning. Delimit instruction and context with specific tokens if provided."""
+        if not self.instruction_tokens:
+            warnings.warn(
+                "Instruction-tuning tokens are not provided for an instruction-tuning task, we will leave them empty."
+            )
+            user_token, end_token, assistant_token = "", "", "\n"
+        else:
+            instruction_tokens = self.instruction_tokens.split(",")
+            if len(instruction_tokens) != 3:
+                raise ValueError(
+                    "Instruction tokens should contain exactly 3 tokens separated by a comma. If a token is empty, represent it as ''"
+                )
+            user_token, end_token, assistant_token = instruction_tokens
+            if not user_token or not assistant_token or not end_token:
+                warnings.warn(
+                    "Instruction-tuning tokens provided but one or more are empty. Ignore warning if this was intended"
+                )
+        prompt = (
+            prefix + user_token + instruction + end_token + assistant_token + context
+        )
+        return prompt
 
 
 def complete_code(
