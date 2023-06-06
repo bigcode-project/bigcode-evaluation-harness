@@ -13,7 +13,7 @@ TASK_REGISTRY = {
     **ds1000.create_all_tasks(),
     "humaneval": humaneval.HumanEval,
     "mbpp": mbpp.MBPP,
-    "instruct_humaneval": instruct_humaneval.InstructHumanEval,
+    **instruct_humaneval.create_all_tasks(),
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))
