@@ -62,7 +62,11 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
             [EndOfFunctionCriteria(0, task.stop_words, tokenizer)]
         )
-
+    if args.instruction_tokens:
+        instruction_tokens = args.instruction_tokens.split(",")
+        task.stop_words.extend(instruction_tokens)
+    else:
+        instruction_tokens = None
     if accelerator.is_main_process:
         print(f"number of problems for this task is {n_tasks}")
     n_copies = ceil(args.n_samples / args.batch_size)
@@ -76,6 +80,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         n_tasks=n_tasks,
         n_copies=n_copies,
         prefix=args.prefix,
+        instruction_tokens=instruction_tokens,
     )
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
