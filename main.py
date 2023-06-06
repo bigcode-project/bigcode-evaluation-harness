@@ -6,7 +6,7 @@ import datasets
 import torch
 import transformers
 from accelerate import Accelerator
-from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
+from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer, HfArgumentParser
 
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
@@ -38,6 +38,11 @@ def parse_args():
         default="codeparrot/codeparrot-small",
         help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
     )
+    parser.add_argument(
+        "--modeltype",
+        default="causal",
+        help="AutoModel to use",
+    )    
     parser.add_argument(
         "--revision",
         default=None,
@@ -189,13 +194,26 @@ def main():
                 f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16"
             )
         print(f"Loading tokenizer and model (in {args.precision})")
-        model = AutoModelForCausalLM.from_pretrained(
-            args.model,
-            revision=args.revision,
-            torch_dtype=dict_precisions[args.precision],
-            trust_remote_code=args.trust_remote_code,
-            use_auth_token=args.use_auth_token,
-        )
+        if args.modeltype == "causal":
+            model = AutoModelForCausalLM.from_pretrained(
+                args.model,
+                revision=args.revision,
+                torch_dtype=dict_precisions[args.precision],
+                trust_remote_code=args.trust_remote_code,
+                use_auth_token=args.use_auth_token,
+            )
+        elif args.modeltype == "seq2seq":
+            model = AutoModelForSeq2SeqLM.from_pretrained(
+                args.model,
+                revision=args.revision,
+                torch_dtype=dict_precisions[args.precision],
+                trust_remote_code=args.trust_remote_code,
+                use_auth_token=args.use_auth_token,
+            )
+        else:
+            raise ValueError(
+                f"Non valid modeltype {args.modeltype}, choose from: causal, seq2seq"
+            )
         tokenizer = AutoTokenizer.from_pretrained(
             args.model,
             revision=args.revision,
