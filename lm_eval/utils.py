@@ -127,10 +127,6 @@ class TokenizedDataset(IterableDataset):
             user_token, end_token, assistant_token = "", "", "\n"
         else:
             instruction_tokens = self.instruction_tokens.split(",")
-            if len(instruction_tokens) != 3:
-                raise ValueError(
-                    "Instruction tokens should contain exactly 3 tokens separated by a comma. If a token is empty, represent it as ''"
-                )
             user_token, end_token, assistant_token = instruction_tokens
             if not user_token or not assistant_token or not end_token:
                 warnings.warn(
@@ -139,6 +135,7 @@ class TokenizedDataset(IterableDataset):
         prompt = (
             prefix + user_token + instruction + end_token + assistant_token + context
         )
+        print(f"Prompt instruction tuning:\n{prompt}")
         return prompt
 
 
