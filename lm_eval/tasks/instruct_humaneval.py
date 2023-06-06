@@ -8,11 +8,7 @@ They were handwritten to ensure not to be included in the training set of code g
 Homepage: https://github.com/openai/human-eval
 """
 
-
-import re
 from evaluate import load
-from datasets import Dataset, DatasetDict, load_dataset
-
 from lm_eval.base import Task
 
 _CITATION = """
@@ -26,61 +22,16 @@ _CITATION = """
 }
 """
 
-user_token = "<|user|>"
-end_token = "<|end|>"
-assistant_token = "<|assistant|>"
-system_token = "<|system|>"
-header = "```python\n"
 
-humaneval = load_dataset("openai_humaneval")
-
-
-def process_humaneval(completion=False):
-    examples = []
-    prefixes = []
-    for i, prompt in enumerate(humaneval["test"]["prompt"]):
-        number_of_def = len(re.findall(r"def ", prompt))
-        if number_of_def >= 1:
-            idx = prompt.rfind("def ")
-            prefix = prompt[0:idx]
-            function = prompt[idx:]
-        else:
-            print("This example does not have the right format.")
-            continue
-        splits = re.split("(\"{3}|'{3})", function)
-        if len(splits) != 5:
-            print("This examples does not have the right format.")
-            continue
-
-        left, middle, _ = splits[0], splits[2], splits[4]
-        if completion:
-            instruction = (
-                f"{user_token}\nWrite a function "
-                + re.sub(r"^\s+|\s+$", "", left[4:])
-                + " to solve the following problem:\n"
-                + re.sub(r"^\s+|\s+$", "", middle)
-                + f"\n{end_token}\n{assistant_token}\n"
-                + f"{header}"
-                + re.sub(r"^\s+|\s+$", "", prefix)
-                + "\n"
-                + re.sub(r"^\s+|\s+$", "", left)
-                + "\n"
-            )
-        else:
-            instruction = (
-                f"{user_token}\nWrite a function "
-                + re.sub(r"^\s+|\s+$", "", left[4:])
-                + " to solve the following problem:\n"
-                + re.sub(r"^\s+|\s+$", "", middle)
-                + f"\n{end_token}\n{assistant_token}"
-            )
-
-        example = humaneval["test"][i]
-        example["prompt"] = instruction
-        examples.append(example)
-        prefixes.append(prefix)
-
-    return DatasetDict({"test": Dataset.from_list(examples)}), prefixes
+def create_all_tasks():
+    """Creates a dictionary of tasks corresponding for the 2 settings currently available
+    - code completion
+    - docstring to code
+    """
+    return {
+        "humaneval-with-context": InstructHumanEvalWithContext,
+        "humaneval-without-context": InstructHumanEvalWithoutContext,
+    }
 
 
 class InstructHumanEval(Task):
@@ -88,7 +39,7 @@ class InstructHumanEval(Task):
     answers, generation settings and evaluation methods.
     """
 
-    DATASET_PATH = ""
+    DATASET_PATH = "codeparrot/humaneval"
 
     DATASET_NAME = None
 
@@ -99,10 +50,6 @@ class InstructHumanEval(Task):
             stop_words=[
                 "if __name__",
                 "\nprint",
-                user_token,
-                assistant_token,
-                end_token,
-                system_token,
                 "<|endoftext|>",
                 "<jupyter_text>",
                 "<jupyter_output>",
@@ -110,10 +57,6 @@ class InstructHumanEval(Task):
             ],
             requires_execution=True,
         )
-        self.completion = True
-        ds, prefixes = process_humaneval(completion=self.completion)
-        self.dataset = ds
-        self.prefixes = prefixes
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -121,7 +64,7 @@ class InstructHumanEval(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        return doc["prompt"].strip() + "\n"
+        pass
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -144,71 +87,6 @@ class InstructHumanEval(Task):
                 min_stop_index = stop_index
         return decoded_string[:min_stop_index]
 
-    def postprocess_generation(self, generation, idx):
-        """Defines the postprocessing for a LM generation.
-        :param generation: str
-            code generation from LM
-        :param idx: int
-            index of doc in the dataset to which the generation belongs
-            (not used for Humaneval-Task)
-        """
-        if self.completion:
-            a = generation.find(f"{assistant_token}")
-            generation = generation[
-                a + len(assistant_token) + len("\n") + len(header) :
-            ]
-
-            generation = self._stop_at_stop_token(generation, self.stop_words)
-            function_name = self.dataset["test"]["entry_point"][idx]
-            id1 = generation.find(function_name)
-            id2 = generation[id1:].rfind("  return ")
-            n = len(generation)
-            j = id1 + id2
-            while j < n and generation[j : j + 2] != "\n\n":
-                j += 1
-
-            idz = generation.find("```")
-            if idz == -1:
-                return generation[0:j]
-            else:
-                return generation[0 : min(j, idz)]
-        else:
-            a = generation.find(f"{assistant_token}")
-            b = generation[a:].find("```")
-            if b == -1:
-                generation = generation[a + len(assistant_token) :]
-            else:
-                if (
-                    generation[a + b + len("```") : a + b + len("```python")]
-                    == "python"
-                ):
-                    generation = generation[a + b + len("```python") :]
-                else:
-                    generation = generation[a + b + len("```") :]
-
-            generation = self._stop_at_stop_token(generation, self.stop_words)
-            function_name = self.dataset["test"]["entry_point"][idx]
-            id1 = generation.find("def " + function_name)
-
-            if id1 == -1:
-                id1 = 0
-
-            id2 = generation[id1:].rfind("  return ")
-            if id2 == -1:
-                id2 = 0
-
-            j = id1 + id2
-            n = len(generation)
-
-            while j < n and generation[j : j + 2] != "\n\n":
-                j += 1
-
-            idz = generation.find("```")
-            if idz == -1:
-                return self.prefixes[idx].strip() + "\n" + generation[id1:j]
-            else:
-                return self.prefixes[idx].strip() + "\n" + generation[id1 : min(j, idz)]
-
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
         returning the metric for the generations.
@@ -223,3 +101,91 @@ class InstructHumanEval(Task):
             predictions=generations,
         )
         return results
+
+
+class InstructHumanEvalWithContext(InstructHumanEval):
+    def __init__(self):
+        super().__init__()
+
+    def get_prompt(self, doc):
+        """Builds the prompt for the LM to generate from."""
+        return {"instruction": doc["instruction"], "context": doc["context"]}
+
+    def postprocess_generation(self, generation, idx):
+        """Defines the postprocessing for a LM generation.
+        :param generation: str
+            code generation from LM
+        :param idx: int
+            index of doc in the dataset to which the generation belongs
+            (not used for Humaneval-Task)
+        """
+        generation = self._stop_at_stop_token(generation, self.stop_words)
+        function_name = self.get_dataset()["entry_point"][idx]
+
+        func_index = generation.find(function_name)
+        return_index = generation[func_index:].rfind("  return ")
+
+        n = len(generation)
+        j = func_index + return_index
+        while j < n and generation[j : j + 2] != "\n\n":
+            j += 1
+
+        sep_index = generation.find("```")
+        if sep_index == -1:
+            return generation[0:j]
+        else:
+            return generation[0 : min(j, sep_index)]
+
+
+class InstructHumanEvalWithoutContext(InstructHumanEval):
+    def __init__(self):
+        super().__init__()
+
+    def get_prompt(self, doc):
+        """Builds the prompt for the LM to generate from."""
+        return {"instruction": doc["instruction"], "context": ""}
+
+    def postprocess_generation(self, generation, idx):
+        """Defines the postprocessing for a LM generation.
+        :param generation: str
+            code generation from LM
+        :param idx: int
+            index of doc in the dataset to which the generation belongs
+            (not used for Humaneval-Task)
+        """
+        example = self.get_dataset()[idx]
+        prompt, function_name = example["prompt"], example["entry_point"]
+        prefix = prompt[0 : prompt.find("def " + function_name)]
+
+        sep_index = generation.find("```")
+        if sep_index == -1:
+            pass
+        else:
+            if (
+                generation[sep_index + len("```") : sep_index + len("```python")]
+                == "python"
+            ):
+                generation = generation[sep_index + len("```python") :]
+            else:
+                generation = generation[sep_index + len("```") :]
+
+        generation = self._stop_at_stop_token(generation, self.stop_words)
+
+        func_index = generation.find("def " + function_name)
+        if func_index == -1:
+            func_index = 0
+        return_index = generation[func_index:].rfind("  return ")
+        if return_index == -1:
+            return_index = 0
+
+        j = func_index + return_index
+        n = len(generation)
+
+        while j < n and generation[j : j + 2] != "\n\n":
+            j += 1
+
+        sep_index_2 = generation.find("```")
+        if sep_index_2 == -1:
+            return prefix.strip() + "\n" + generation[func_index:j]
+        else:
+            return prefix.strip() + "\n" + generation[func_index : min(j, sep_index_2)]
