@@ -101,6 +101,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         n_tasks=n_tasks,
         batch_size=args.batch_size,
         prefix=args.prefix,
+        instruction_tokens=instruction_tokens,
         postprocess=args.postprocess,
         **gen_kwargs,
     )

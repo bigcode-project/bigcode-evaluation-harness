@@ -7,7 +7,7 @@ from torch.utils.data import IterableDataset
 from tqdm import tqdm
 
 INFILL_MODE = False
-
+INSTRUCTION_MODE = False
 
 class TokenizedDataset(IterableDataset):
     """Tokenize and preprocess the dataset
@@ -74,7 +74,9 @@ class TokenizedDataset(IterableDataset):
                 "Mixed infill/instruction and completion prompts are not supported."
             )
         global INFILL_MODE
+        global INSTRUCTION_MODE
         INFILL_MODE = infill[0]
+        INSTRUCTION_MODE = instruction[0]
         if INFILL_MODE:
             return_token_type_ids = False
         else:
@@ -126,8 +128,7 @@ class TokenizedDataset(IterableDataset):
             )
             user_token, end_token, assistant_token = "", "", "\n"
         else:
-            instruction_tokens = self.instruction_tokens.split(",")
-            user_token, end_token, assistant_token = instruction_tokens
+            user_token, end_token, assistant_token = self.instruction_tokens.split(",")
             if not user_token or not assistant_token or not end_token:
                 warnings.warn(
                     "Instruction-tuning tokens provided but one or more are empty. Ignore warning if this was intended"
@@ -139,6 +140,51 @@ class TokenizedDataset(IterableDataset):
         return prompt
 
 
+def _parse_infill(code, tokenizer):
+    """Reorder infill code and remove remaining special tokens."""
+    model_id = tokenizer.name_or_path
+    if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
+        prefix, suffix, infill = code.split("<|mask:0|>", 2)
+        infill = infill.split("<|endofmask|>")[0]
+    elif model_id in ["bigcode/santacoder"]:
+        prefix, rest = code.split("<fim-suffix>", 1)
+        suffix, infill = rest.split("<fim-middle>", 1)
+        infill = infill.split("<|endoftext|>")[0]
+    elif model_id in ["bigcode/starcoder", "bigcode/starcoderbase"]:
+        prefix, rest = code.split("<fim_suffix>", 1)
+        suffix, infill = rest.split("<fim_middle>", 1)
+        infill = infill.split("<|endoftext|>")[0]
+    else:
+        raise ValueError(f"Infilling not yet supported for: {model_id}")
+    for k, v in tokenizer.special_tokens_map.items():
+        if k == "additional_special_tokens":
+            for t in v:
+                infill = infill.replace(t, "")
+        else:
+            infill = infill.replace(v, "")
+    return infill
+
+
+def _parse_instruction(code, instruction_tokens):
+    """Return code block after assistant_token/end_token"""
+    _, end_token, assistant_token = instruction_tokens.split(",")
+
+    if not assistant_token and end_token:
+        assistant_token = end_token
+    elif not assistant_token and not end_token:
+        return code
+
+    idx = code.find(assistant_token)
+    shift = len(assistant_token)
+    if idx == -1:
+        return code
+
+    if '```python' in assistant_token:
+        idx = code.find('```python', idx)
+        shift = len('```python' )
+    return code[idx + shift:]
+
+
 def complete_code(
     task,
     accelerator,
@@ -148,6 +194,7 @@ def complete_code(
     n_tasks,
     batch_size=20,
     prefix="",
+    instruction_tokens=None,
     postprocess=True,
     **gen_kwargs,
 ):
@@ -190,29 +237,6 @@ def complete_code(
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
 
-    def parse_infill(code, tokenizer):
-        """Reorder infill code and remove remaining special tokens."""
-        model_id = tokenizer.name_or_path
-        if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
-            prefix, suffix, infill = code.split("<|mask:0|>", 2)
-            infill = infill.split("<|endofmask|>")[0]
-        elif model_id in ["bigcode/santacoder"]:
-            prefix, rest = code.split("<fim-suffix>", 1)
-            suffix, infill = rest.split("<fim-middle>", 1)
-            infill = infill.split("<|endoftext|>")[0]
-        elif model_id in ["bigcode/starcoder", "bigcode/starcoderbase"]:
-            prefix, rest = code.split("<fim_suffix>", 1)
-            suffix, infill = rest.split("<fim_middle>", 1)
-            infill = infill.split("<|endoftext|>")[0]
-        else:
-            raise ValueError(f"Infilling not yet supported for: {model_id}")
-        for k, v in tokenizer.special_tokens_map.items():
-            if k == "additional_special_tokens":
-                for t in v:
-                    infill = infill.replace(t, "")
-            else:
-                infill = infill.replace(v, "")
-        return infill
 
     code_gens = [[] for _ in range(n_tasks)]
     for sample, generated_tokens in gen_token_dict.items():
@@ -224,7 +248,9 @@ def complete_code(
                     s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                 )
                 if INFILL_MODE:
-                    gen_code = parse_infill(gen_code, tokenizer)
+                    gen_code = _parse_infill(gen_code, tokenizer)
+                if INSTRUCTION_MODE:
+                    gen_code = _parse_instruction(gen_code, instruction_tokens)
             else:
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=True, clean_up_tokenization_spaces=True
