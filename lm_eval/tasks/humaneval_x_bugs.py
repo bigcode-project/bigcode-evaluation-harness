@@ -248,6 +248,10 @@ class GeneralHumanEvalXBugs(Task):
                 prompt = f"<NME> {doc['entry_point']}.go" + "\n"
             elif self.DATASET_NAME == "js":
                 prompt = f"<NME> {doc['entry_point']}.js" + "\n"
+            elif self.DATASET_NAME == "cpp":
+                prompt = f"<NME> {doc['entry_point']}.cpp" + "\n"
+            elif self.DATASET_NAME == "rust":
+                prompt = f"<NME> {doc['entry_point']}.rs" + "\n"
             prompt += "<BEF> " + prompt_base + doc["buggy_solution"] + "\n"
             prompt += "<MSG> " + "Fix bug in " + doc["entry_point"] + "\n"
             prompt += "<DFF>"   
