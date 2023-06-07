@@ -228,9 +228,13 @@ class GeneralHumanEvalXBugs(Task):
             prompt += "\n<commit_msg>\n" + "Fix bug in " + doc["entry_point"]
             prompt += "\n<commit_after>\n" + doc["prompt"]
         elif self.mutate_method == "edit":
+            prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
+            prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
+            prompt += "<commit_after>" + doc["prompt"]
+        elif self.mutate_method == "edit-newline":
             prompt = "<commit_before>\n" + doc["prompt"] + doc["buggy_solution"]
             prompt += "\n<commit_msg>\n" + "Fix bug in " + doc["entry_point"]
-            prompt += "\n<commit_after>\n" + doc["prompt"]
+            prompt += "\n<commit_after>\n" + doc["prompt"]            
         elif self.mutate_method == "edit-type":
             prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix " + doc["bug_type"] + " in " + doc["entry_point"]
