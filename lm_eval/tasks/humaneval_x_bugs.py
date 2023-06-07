@@ -152,6 +152,9 @@ class GeneralHumanEvalXBugs(Task):
 
         stop_words.append("<|endoftext|>")
 
+        if self.mutate_method == "diff-carper":
+            self.max_length_multiplier = 1.5 # Allow 1.5 times the length of the prompt
+
         super().__init__(
             stop_words=stop_words,
             requires_execution=True,
