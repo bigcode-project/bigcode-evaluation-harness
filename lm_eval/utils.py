@@ -25,6 +25,7 @@ class TokenizedDataset(IterableDataset):
         n_tasks=None,
         n_copies=1,
         prefix="",
+        has_encoder=False,
     ):
         self.task = task
         self.dataset = dataset
@@ -34,9 +35,11 @@ class TokenizedDataset(IterableDataset):
         self.n_tasks = n_tasks
         self.n_copies = n_copies
         self.prefix = prefix
+        self.has_encoder = has_encoder
 
     def __iter__(self):
         prompts = []
+        prompts_encoder = []
         infill = []
         for sample in range(self.n_tasks):
             prompt_contents = self.task.get_prompt(self.dataset[sample])
@@ -52,6 +55,11 @@ class TokenizedDataset(IterableDataset):
             else:
                 raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
             prompts.append(prompt)
+            if self.has_encoder:
+                prompt_encoder = self.task.get_prompt_encoder(self.dataset[sample])
+                if isinstance(prompt_encoder, str):
+                    prompt_encoder = self.prefix + prompt_encoder
+                prompts_encoder.append(prompt_encoder)
 
         if not len(set(infill)) == 1:
             raise ValueError("Mixed infill and completion prompts are not supported.")
@@ -70,6 +78,17 @@ class TokenizedDataset(IterableDataset):
             max_length=self.max_length,
             return_token_type_ids=return_token_type_ids,
         )
+        if self.has_encoder:
+            outputs_encoder = self.tokenizer(
+                prompts_encoder,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
+                max_length=self.max_length,
+                return_token_type_ids=return_token_type_ids,
+            )
+
+
 
         if self.n_copies == 1 and self.n_tasks % self.num_devices != 0:
             self.n_copies = 2
@@ -79,11 +98,19 @@ class TokenizedDataset(IterableDataset):
 
         for sample in range(self.n_tasks):
             for _ in range(self.n_copies):
-                yield {
-                    "ids": outputs.input_ids[sample],
-                    "task_id": sample,
-                    "input_len": outputs.attention_mask[sample].sum(),
-                }
+                if self.has_encoder:
+                    yield {
+                        "ids": outputs.input_ids[sample],
+                        "ids_encoder": outputs_encoder.input_ids[sample],
+                        "task_id": sample,
+                        "input_len": outputs.attention_mask[sample].sum(),
+                    }
+                else:
+                    yield {
+                        "ids": outputs.input_ids[sample],
+                        "task_id": sample,
+                        "input_len": outputs.attention_mask[sample].sum(),
+                    }
 
     def _make_infill_prompt(self, prefix, suffix, preprefix=""):
         """Make a prompt for infilling.
@@ -135,11 +162,20 @@ def complete_code(
             if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
                 idx = 1 if task.stop_words else 0
                 gen_kwargs["stopping_criteria"][idx].input_length = batch["input_len"].max().item()                
-            generated_tokens = model.generate(
-                input_ids=batch["ids"][:, : batch["input_len"]],
-                num_return_sequences=batch_size,
-                **gen_kwargs,
-            )
+            
+            if "ids_encoder" in batch:
+                generated_tokens = model.generate(
+                    decoder_input_ids=batch["ids"][:, : batch["input_len"]],
+                    input_ids=batch["ids_encoder"][:, : batch["input_len"]],
+                    num_return_sequences=batch_size,
+                    **gen_kwargs,
+                )
+            else:
+                generated_tokens = model.generate(
+                    input_ids=batch["ids"][:, : batch["input_len"]],
+                    num_return_sequences=batch_size,
+                    **gen_kwargs,
+                )
 
 
             # each task is generated batch_size times

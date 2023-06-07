@@ -95,6 +95,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         n_tasks=n_tasks,
         n_copies=n_copies,
         prefix=args.prefix,
+        has_encoder=args.modeltype == "seq2seq",
     )
 
     # do not confuse args.batch_size, which is actually the num_return_sequences

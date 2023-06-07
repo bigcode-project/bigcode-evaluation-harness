@@ -216,6 +216,21 @@ class GeneralHumanEvalXBugs(Task):
         else:
             raise ValueError("Not supporting the dataset for file name")
         return file_name
+    
+    def get_prompt_encoder(self, doc):
+        """Encoder input for models with Enc-Dec architecture like CodeT5"""
+        assert self.mutate_method == "prompt", "Only prompt mutation is supported for Enc-Dec models"
+        if self.DATASET_NAME == "rust":
+            main = "\nfn main(){ \n } \n"
+            prompt_base = doc["prompt"] + main + doc["declaration"]
+        else:
+            prompt_base = doc["prompt"]
+        # This is the simplest, most natural way of prompting regardless of language
+        prompt = prompt_base + doc["buggy_solution"]
+        # One could add a comment here, but then it becomes language-specific & for some languages it may not
+        # compile anyways since repeating the prompt results in double imports, so let's keep it simple
+        prompt += "\n" + "Fix bug in " + doc["entry_point"] # This will be cut-off, so it will compile
+        return prompt
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
