@@ -110,7 +110,7 @@ class InstructHumanEvalWithContext(InstructHumanEval):
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         return {"instruction": doc["instruction"], "context": doc["context"]}
-
+    
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
         :param generation: str
@@ -124,7 +124,10 @@ class InstructHumanEvalWithContext(InstructHumanEval):
 
         func_index = generation.find(function_name)
         return_index = generation[func_index:].rfind("  return ")
-
+        
+        if return_index == -1 :
+            return generation
+        
         n = len(generation)
         j = func_index + return_index
         while j < n and generation[j : j + 2] != "\n\n":
@@ -154,7 +157,7 @@ class InstructHumanEvalWithoutContext(InstructHumanEval):
             (not used for Humaneval-Task)
         """
         example = self.get_dataset()[idx]
-        prompt, function_name = example["prompt"], example["entry_point"]
+        prompt, function_name = example["context"], example["entry_point"]
         prefix = prompt[0 : prompt.find("def " + function_name)]
 
         sep_index = generation.find("```")

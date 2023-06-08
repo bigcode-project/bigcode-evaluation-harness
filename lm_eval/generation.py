@@ -1,10 +1,10 @@
-from tqdm import tqdm
 import json
 from math import ceil
 
-from torch.utils.data.dataloader import DataLoader
-from transformers import StoppingCriteria, StoppingCriteriaList
 from accelerate.utils import set_seed
+from torch.utils.data.dataloader import DataLoader
+from tqdm import tqdm
+from transformers import StoppingCriteria, StoppingCriteriaList
 
 from lm_eval.utils import TokenizedDataset, complete_code
 
@@ -36,9 +36,9 @@ class EndOfFunctionCriteria(StoppingCriteria):
 
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
-    if args.generations_path:
+    if args.load_generations_path:
         # load generated code
-        with open(args.generations_path) as fp:
+        with open(args.load_generations_path) as fp:
             generations = json.load(fp)
             if accelerator.is_main_process:
                 print(
@@ -57,10 +57,22 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         "max_length": args.max_length_generation,
     }
     if task.stop_words:
+        if tokenizer.eos_token:
+            task.stop_words.append(tokenizer.eos_token)
         gen_kwargs["stopping_criteria"] = StoppingCriteriaList(
             [EndOfFunctionCriteria(0, task.stop_words, tokenizer)]
         )
-
+    if args.instruction_tokens:
+        instruction_tokens = args.instruction_tokens.split(",")
+        if len(instruction_tokens) != 3:
+            raise ValueError(
+                "Instruction tokens should contain exactly 3 tokens separated by a comma. If a token is empty, represent it as ''"
+            )
+        for token in instruction_tokens :
+            if token.strip() != '' :
+                task.stop_words.append(token)
+    else:
+        instruction_tokens = None
     if accelerator.is_main_process:
         print(f"number of problems for this task is {n_tasks}")
     n_copies = ceil(args.n_samples / args.batch_size)
@@ -74,12 +86,14 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         n_tasks=n_tasks,
         n_copies=n_copies,
         prefix=args.prefix,
+        instruction_tokens=instruction_tokens,
     )
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
+    model = model.to(accelerator.device)
+    ds_loader = accelerator.prepare(ds_loader)
 
-    model, ds_loader = accelerator.prepare(model, ds_loader)
     generations = complete_code(
         task,
         accelerator,
@@ -89,6 +103,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         n_tasks=n_tasks,
         batch_size=args.batch_size,
         prefix=args.prefix,
+        instruction_tokens=instruction_tokens,
         postprocess=args.postprocess,
         **gen_kwargs,
     )
