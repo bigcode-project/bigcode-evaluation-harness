@@ -1,6 +1,14 @@
+"""
+StudentEval is a dataset of 1,749 prompts for 48 problems, authored by 80
+students who have only completed a one-semester Python programming class.
+Unlike many other benchmarks, it has multiple prompts per problem and multiple
+attempts by the same participant.
+
+Web page: https://huggingface.co/datasets/wellesley-easel/StudentEval
+"""
+
 from lm_eval.base import Task
 from datasets import load_dataset
-from warnings import warn
 from multiprocessing import cpu_count
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
@@ -8,6 +16,16 @@ import tempfile
 import pandas as pd
 import numpy as np
 import subprocess
+
+_CITATION = """\
+@misc{babe2023studenteval,
+      title={StudentEval: A Benchmark of Student-Written Prompts for Large Language Models of Code}, 
+      author={Hannah McLean Babe and Sydney Nguyen and Yangtian Zi and Arjun Guha and Molly Q Feldman and Carolyn Jane Anderson},
+      year={2023},
+      eprint={2306.04556},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}"""
 
 EXECUTION_TIMEOUT = 15
 
