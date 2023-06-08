@@ -55,12 +55,23 @@ LANGUAGE_TO_TIMEOUT = {
 }
 
 # Java sometimes fails with more workers; For JS it's twice as fast with 4 workers
+"""
 LANGUAGE_TO_NUM_WORKERS = {
     "python": 4,
     "cpp": 4,
     "js": 4,
     "java": 1,
     "go": 4,
+    "rust": 1,
+}
+"""
+# Temp: Only 1 worker for all languages
+LANGUAGE_TO_NUM_WORKERS = {
+    "python": 4,
+    "cpp": 1,
+    "js": 1,
+    "java": 1,
+    "go": 1,
     "rust": 1,
 }
 
