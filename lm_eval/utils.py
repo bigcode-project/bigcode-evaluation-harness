@@ -104,6 +104,7 @@ class TokenizedDataset(IterableDataset):
                         "ids_encoder": outputs_encoder.input_ids[sample],
                         "task_id": sample,
                         "input_len": outputs.attention_mask[sample].sum(),
+                        "input_len_encoder": outputs_encoder.attention_mask[sample].sum(),
                     }
                 else:
                     yield {
@@ -166,7 +167,7 @@ def complete_code(
             if "ids_encoder" in batch:
                 generated_tokens = model.generate(
                     decoder_input_ids=batch["ids"][:, : batch["input_len"]],
-                    input_ids=batch["ids_encoder"][:, : batch["input_len"]],
+                    input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
                     num_return_sequences=batch_size,
                     **gen_kwargs,
                 )
