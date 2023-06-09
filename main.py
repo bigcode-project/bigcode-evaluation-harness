@@ -194,13 +194,26 @@ def main():
                 f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16"
             )
         print(f"Loading tokenizer and model (in {args.precision})")
-        if args.modeltype == "causal":
+        if args.max_memory_per_gpu:
+            import torch
+            model = AutoModelForCausalLM.from_pretrained(
+                args.model,     
+                revision=args.revision,
+                trust_remote_code=args.trust_remote_code,
+                use_auth_token=args.use_auth_token,                   
+                device_map="auto", 
+                torch_dtype=torch.bfloat16,
+                max_memory=get_gpus_max_memory(args.max_memory_per_gpu),
+                offload_folder="offload",
+            )
+        elif args.modeltype == "causal":
             model = AutoModelForCausalLM.from_pretrained(
                 args.model,
                 revision=args.revision,
                 torch_dtype=dict_precisions[args.precision],
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,
+
             )
         elif args.modeltype == "seq2seq":
             model = AutoModelForSeq2SeqLM.from_pretrained(
