@@ -80,12 +80,16 @@ class GeneralMultiPLE(Task):
 
     DATASET_PATH = "nuprl/MultiPL-E"
     DATASET_NAME = None
+    DATASET_REVISION = "5d2abbb8ced9a0e37db985c47d24c24f45a16655"
 
     def __init__(self, language):
         self.language = language
         self.DATASET_NAME = f"humaneval-{language}"
         # we need the dataset to get stop words for each language
-        self.dataset = load_dataset(GeneralMultiPLE.DATASET_PATH, self.DATASET_NAME)
+        self.dataset = load_dataset(
+            GeneralMultiPLE.DATASET_PATH,
+            self.DATASET_NAME,
+            revision=self.DATASET_REVISION)
         stop_words = self.dataset["test"][0]["stop_tokens"]
         super().__init__(
             stop_words=stop_words,
