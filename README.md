@@ -122,16 +122,31 @@ accelerate launch  main.py   --tasks mbpp  --allow_code_execution  --load_genera
 ```
 
 ## Docker containers
-For safety, we provide a Dockerfiles to do the execution inside a docker container. To do that, first, do the generation on your machine and save them in `generations.json` for example by adding the flag `--generation_only` to the command. Then build the docker container and run the evaluation inside it.
+For safety, we provide a Dockerfiles to do the execution inside a docker container. To do that, first, do the generation on your machine and save them in `generations.json` for example by adding the flag `--generation_only` to the command. Then use the Docker image that we provide:
 
-### Building  Docker image
+```bash
+$ docker pull ghcr.io/bigcode-project/evaluation-harness
+$ docker tag ghcr.io/bigcode-project/evaluation-harness evaluation-harness
+```
+
+If you want to evaluate on MultiPL-E, we have a different Dockerfile since it requires more dependencies, use:
+```bash
+$ docker pull ghcr.io/bigcode-project/evaluation-harness-multiple
+$ docker tag ghcr.io/bigcode-project/evaluation-harness-multiple evaluation-harness-multiple
+```
+
+
+### Building  Docker images
+
+If you modify the evaluation harness, you may want to rebuild the docker images.
+
 Here's how to build a docker image for the evaluation harness:
 ```bash
 $ sudo make DOCKERFILE=Dockerfile  all
 ```
 This creates an image called `evaluation-harness`, and runs a test on it. To skip the test remove `all` form the command.
 
-If you want to evaluate on MultiPL-E, we have a different Dockerfile since it requires more dependencies, use:
+For MultiPL-E:
 ```bash
 $ sudo make DOCKERFILE=Dockerfile-multiple all
 ```
