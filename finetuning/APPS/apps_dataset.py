@@ -50,7 +50,7 @@ class APPSBaseDataset(torch.utils.data.Dataset):
 
             answer_type = (
                 "\nUse Standard Input format\n"
-                if fn_name
+                if not fn_name
                 else "\nUse Call-Based format\n"
             )
 
