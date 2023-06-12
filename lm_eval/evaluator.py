@@ -72,7 +72,7 @@ class Evaluator:
 
         # If both generations and references are provided, skip generation
         if not bool(self.args.load_generations_path and self.args.load_references_path):
-            generations, references = self.generate_text(task_name)
+            generations, references = self.generate_text(task_name, **task_kwargs)
         else:
             with open(self.args.load_generations_path) as f:
                 logging.info(f"Loading generations from {self.args.load_generations_path}")
