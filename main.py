@@ -156,7 +156,6 @@ def pattern_match(patterns, source_list):
     return list(task_names)
 
 def get_gpus_max_memory(max_memory):
-    import torch
     max_memory = {i: max_memory for i in range(torch.cuda.device_count())}
     return max_memory
 
@@ -195,14 +194,13 @@ def main():
             )
         print(f"Loading tokenizer and model (in {args.precision})")
         if args.max_memory_per_gpu:
-            import torch
             model = AutoModelForCausalLM.from_pretrained(
                 args.model,     
                 revision=args.revision,
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,                   
                 device_map="auto", 
-                torch_dtype=torch.bfloat16,
+                torch_dtype=dict_precisions[args.precision],
                 max_memory=get_gpus_max_memory(args.max_memory_per_gpu),
                 offload_folder="offload",
             )

@@ -157,9 +157,10 @@ def complete_code(
         with torch.no_grad():
             if task.stop_words:
                 # Set the start_length after which to check for stopping to be the longest input ignoring padding
-                gen_kwargs["stopping_criteria"][0].start_length = (
-                    batch["input_len"].max().item()
-                )
+                max_len =  batch["input_len"].max().item()
+                if "ids_encoder" in batch:
+                    max_len += 1 # Add 1 for decoder_start_token_id
+                gen_kwargs["stopping_criteria"][0].start_length = max_len
             if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
                 idx = 1 if task.stop_words else 0
                 gen_kwargs["stopping_criteria"][idx].input_length = batch["input_len"].max().item()                
@@ -169,6 +170,8 @@ def complete_code(
                     decoder_input_ids=batch["ids"][:, : batch["input_len"]],
                     input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
                     num_return_sequences=batch_size,
+                    decoder_start_token_id=tokenizer.pad_token_id,
+                    eos_token_id=tokenizer.eos_token_id,
                     **gen_kwargs,
                 )
             else:

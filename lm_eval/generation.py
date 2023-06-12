@@ -100,7 +100,10 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
-    model = model.to(accelerator.device)
+    if args.max_memory_per_gpu:
+        model = accelerator.prepare(model)
+    else:
+        model = model.to(accelerator.device)
     ds_loader = accelerator.prepare(ds_loader)
 
     generations = complete_code(

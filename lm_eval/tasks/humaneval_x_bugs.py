@@ -457,6 +457,9 @@ class GeneralHumanEvalXBugs(Task):
             for gen, doc in zip(generations, ds):
                 old_code = doc["prompt"] + doc["buggy_solution"]
                 for i, diff_hunk in enumerate(gen):
+                    if not(diff_hunk):
+                        gen[i] = ""
+                        continue
                     res: str = apply_diff(old_code, diff_hunk)        
                     gen[i] = res
         # See https://github.com/THUDM/CodeGeeX/blob/ebeb850f227a90c79de39f7e26b1302f374f3240/codegeex/benchmark/evaluate_humaneval_x.py
