@@ -10,6 +10,7 @@ Homepage: https://github.com/openai/human-eval
 
 from evaluate import load
 from lm_eval.base import Task
+from lm_eval.utils import remove_after_return
 
 _CITATION = """
 @misc{chen2021evaluating,
@@ -39,7 +40,7 @@ class InstructHumanEval(Task):
     answers, generation settings and evaluation methods.
     """
 
-    DATASET_PATH = "codeparrot/humaneval"
+    DATASET_PATH = "codeparrot/instructhumaneval"
 
     DATASET_NAME = None
 
@@ -50,10 +51,7 @@ class InstructHumanEval(Task):
             stop_words=[
                 "if __name__",
                 "\nprint",
-                "<|endoftext|>",
-                "<jupyter_text>",
-                "<jupyter_output>",
-                "<empty_output>",
+                "\nclass"
             ],
             requires_execution=True,
         )
@@ -120,24 +118,10 @@ class InstructHumanEvalWithContext(InstructHumanEval):
             (not used for Humaneval-Task)
         """
         generation = self._stop_at_stop_token(generation, self.stop_words)
+        
         function_name = self.get_dataset()["entry_point"][idx]
-
-        func_index = generation.find(function_name)
-        return_index = generation[func_index:].rfind("  return ")
-        
-        if return_index == -1 :
-            return generation
-        
-        n = len(generation)
-        j = func_index + return_index
-        while j < n and generation[j : j + 2] != "\n\n":
-            j += 1
-
-        sep_index = generation.find("```")
-        if sep_index == -1:
-            return generation[0:j]
-        else:
-            return generation[0 : min(j, sep_index)]
+        func_index = generation.find(f"def {function_name}")
+        return generation[0:func_index]+remove_after_return(generation[func_index:])
 
 
 class InstructHumanEvalWithoutContext(InstructHumanEval):
@@ -158,7 +142,7 @@ class InstructHumanEvalWithoutContext(InstructHumanEval):
         """
         example = self.get_dataset()[idx]
         prompt, function_name = example["context"], example["entry_point"]
-        prefix = prompt[0 : prompt.find("def " + function_name)]
+        prefix = prompt[0 : prompt.find(f"def {function_name}")]
 
         sep_index = generation.find("```")
         if sep_index == -1:
@@ -174,7 +158,7 @@ class InstructHumanEvalWithoutContext(InstructHumanEval):
 
         generation = self._stop_at_stop_token(generation, self.stop_words)
 
-        func_index = generation.find("def " + function_name)
+        func_index = generation.find(f"def {function_name}")
         if func_index == -1:
             func_index = 0
         return_index = generation[func_index:].rfind("  return ")
@@ -184,7 +168,7 @@ class InstructHumanEvalWithoutContext(InstructHumanEval):
         j = func_index + return_index
         n = len(generation)
 
-        while j < n and generation[j : j + 2] != "\n\n":
+        while j < n and generation[j] != "\n":
             j += 1
 
         sep_index_2 = generation.find("```")

@@ -2,6 +2,7 @@ import fnmatch
 import json
 
 import datasets
+import torch
 import transformers
 from accelerate import Accelerator
 from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
@@ -58,6 +59,11 @@ def parse_args():
         help=f"Evaluation tasks from {ALL_TASKS}",
     )
     parser.add_argument(
+        "--instruction_tokens",
+        default=None,
+        help="A series of instruction tokens used for instruction-tuning benchamrks separated by comma e.g. <user_message>,<end_user_message>,<assistant_message>",
+    )
+    parser.add_argument(
         "--batch_size",
         type=int,
         default=1,
@@ -68,6 +74,12 @@ def parse_args():
         type=int,
         default=512,
         help="Maximum length of generated sequence (prompt+generation)",
+    )
+    parser.add_argument(
+        "--precision",
+        type=str,
+        default="fp32",
+        help="Model precision, from: fp32, fp16 or bf16",
     )
     parser.add_argument(
         "--limit",
@@ -91,13 +103,13 @@ def parse_args():
         help="Do code generation but no evaluation",
     )
     parser.add_argument(
-        "--generations_path",
+        "--load_generations_path",
         type=str,
         default=None,
         help="Path of file with previously generated solutions, if provided generation is skipped and only evaluation is done",
     )
     parser.add_argument(
-        "--output_path",
+        "--metric_output_path",
         type=str,
         default="evaluation_results.json",
         help="Path to save the results",
@@ -106,6 +118,12 @@ def parse_args():
         "--save_generations",
         action="store_true",
         help="Whether to save code generations",
+    )
+    parser.add_argument(
+        "--save_generations_path",
+        type=str,
+        default="generations.json",
+        help="Path for saving the code generations",
     )
     parser.add_argument(
         "--save_references",
@@ -140,7 +158,7 @@ def main():
         print(f"Selected Tasks: {task_names}")
 
     results = {}
-    if args.generations_path:
+    if args.load_generations_path:
         # here we don't generate code but only evaluate previously computed generations
         if accelerator.is_main_process:
             print("evaluation only mode")
@@ -150,18 +168,31 @@ def main():
 
     else:
         # here we generate code and save it (evaluation is optional but True by default)
-        print("Loading the model and tokenizer")
+        dict_precisions = {
+            "fp32": torch.float32,
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+        }
+        if args.precision not in dict_precisions:
+            raise ValueError(
+                f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16"
+            )
+        print(f"Loading tokenizer and model (in {args.precision})")
         model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            revision=args.revision,
+            torch_dtype=dict_precisions[args.precision],
+            trust_remote_code=args.trust_remote_code,
+            use_auth_token=args.use_auth_token,
+        )
+
+        tokenizer = AutoTokenizer.from_pretrained(
             args.model,
             revision=args.revision,
             trust_remote_code=args.trust_remote_code,
             use_auth_token=args.use_auth_token,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            args.model,
-            revision=args.revision,
-            use_auth_token=args.use_auth_token,
             truncation_side="left",
+            padding_side="right",
         )
         if not tokenizer.eos_token:
             if tokenizer.bos_token:
@@ -170,6 +201,7 @@ def main():
             else:
                 raise ValueError("No eos_token or bos_token found")
         tokenizer.pad_token = tokenizer.eos_token
+
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
         for task in task_names:
@@ -178,9 +210,9 @@ def main():
                     print("generation mode only")
                 generations, references = evaluator.generate_text(task)
                 if accelerator.is_main_process:
-                    with open("generations.json", "w") as fp:
+                    with open(args.save_generations_path, "w") as fp:
                         json.dump(generations, fp)
-                        print("generations were saved")
+                        print(f"generations were saved at {args.save_generations_path}")
                     if args.save_references:
                         with open("references.json", "w") as fp:
                             json.dump(references, fp)
@@ -188,13 +220,18 @@ def main():
             else:
                 results[task] = evaluator.evaluate(task)
 
-    results["config"] = {"model": args.model}
+    results["config"] = {
+        "model": args.model,
+        "revision": args.revision,
+        "temperature": args.temperature,
+        "n_samples": args.n_samples,
+    }
     if not args.generation_only:
         dumped = json.dumps(results, indent=2)
         if accelerator.is_main_process:
             print(dumped)
 
-        with open(args.output_path, "w") as f:
+        with open(args.metric_output_path, "w") as f:
             f.write(dumped)
 
 

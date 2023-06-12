@@ -270,3 +270,21 @@ def complete_code(
                 code_gens[sample].append(gen_code)
 
     return code_gens
+
+import re
+
+def remove_after_return(code):
+    """
+    Takes as input a code, and removes everything that is after the return.
+    That is, the first line that does not start with a space character
+    """
+    pattern = r"[^\n]+(\n|$)"
+    end_last_match = None
+    # Go trough the regex to match any sequence of characters ending with a \n
+    for match in re.finditer(pattern, code):
+        start_match, end_match = match.span()
+        # Search for the first line which does not start by a space character
+        if end_last_match is not None and start_match < len(code) and code[start_match].strip() != '':
+            return code[0:start_match]
+        end_last_match = end_match
+    return code
