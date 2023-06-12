@@ -138,6 +138,8 @@ You can format your changes and perform `black` standard checks
 ```sh
 black lm_eval/tasks/<task-name>.py
 ```
+## Task documentation
+Please document your task with advised parameters for execution from litterature in the [docs](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md) like it's done for the other benchamrks.
 
 ## Pull request
 Please specify in your pull request if you followed the orginal paper's approach to build the prompts or if some changes were introduced (especially if you build few shot examples). Ideally, you can evaluate some public models and compare the scores to the published results and see if they match.
