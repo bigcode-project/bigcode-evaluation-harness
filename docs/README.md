@@ -99,7 +99,7 @@ accelerate launch  main.py \
   --allow_code_execution
 ```
 The main change is the use of the `instruction_tokens` argument which represents the 3 tokens we mentionned above separated from each other by a comma `,`.
-
+For [StarChat-Beta](https://huggingface.co/HuggingFaceH4/starchat-beta) for example we used these tokens`<|user|>\n,<|end|>\n and <|assistant|>\n`. You might need to escape `|` and `\` characters in bash with `--instruction_tokens \<\|user\|\>$'\n',\<\|end\|\>$'\n',\<\|assistant\|\>$'\n'`
 ### MBPP
 [MBPP](https://huggingface.co/datasets/mbpp):  consists of around 1,000 crowd-sourced Python programming problems, 
 designed to be solvable by entry-level programmers. Each problem consists of a task description in English, a code solution and 3 automated test cases. We evaluate on the test set of samples from index 11 to 511.
