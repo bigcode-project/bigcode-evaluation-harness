@@ -10,7 +10,9 @@ class APPSBaseDataset(torch.utils.data.Dataset):
     def __init__(self, dataset, max_tokens, tokenizer_path):
         self.dataset = dataset
         self.max_tokens = max_tokens
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer_path, use_auth_token=True
+        )
         self.samples = []  # Should be set in initialize()
 
         self.initialize(self.tokenizer)
@@ -48,7 +50,7 @@ class APPSBaseDataset(torch.utils.data.Dataset):
 
             answer_type = (
                 "\nUse Standard Input format\n"
-                if fn_name
+                if not fn_name
                 else "\nUse Call-Based format\n"
             )
 

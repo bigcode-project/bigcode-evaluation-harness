@@ -8,9 +8,10 @@ Homepage: https://github.com/hendrycks/apps
 """
 
 import json
-from evaluate import load
-from lm_eval.base import Task
 
+from evaluate import load
+
+from lm_eval.base import Task
 
 _CITATION = """
 @article{hendrycksapps2021,
@@ -77,7 +78,7 @@ class GeneralAPPS(Task):
         prompt += doc["question"]
         if starter_code:
             prompt += starter_code
-        if fn_name:
+        if not fn_name:
             call_format = "\nUse Standard Input format"
             prompt += call_format
         else:

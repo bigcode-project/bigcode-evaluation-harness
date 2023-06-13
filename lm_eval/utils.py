@@ -136,7 +136,7 @@ class TokenizedDataset(IterableDataset):
         prompt = (
             prefix + user_token + instruction + end_token + assistant_token + context
         )
-        #print(f"Prompt instruction tuning:\n{prompt}")
+
         return prompt
 
 
@@ -238,7 +238,7 @@ def complete_code(
 
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
-
+                
 
     code_gens = [[] for _ in range(n_tasks)]
     for sample, generated_tokens in gen_token_dict.items():

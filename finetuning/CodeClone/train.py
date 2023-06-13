@@ -3,22 +3,17 @@ from copy import deepcopy
 
 import numpy as np
 from datasets import ClassLabel, load_dataset
-
 from evaluate import load
-from transformers import (
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    DataCollatorWithPadding,
-    Trainer,
-    TrainerCallback,
-    TrainingArguments,
-    set_seed,
-)
+from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
+                          DataCollatorWithPadding, Trainer, TrainerCallback,
+                          TrainingArguments, set_seed)
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_ckpt", type=str, default="microsoft/unixcoder-base-nine")
+    parser.add_argument(
+        "--model_ckpt", type=str, default="microsoft/unixcoder-base-nine"
+    )
     parser.add_argument("--max_length", type=int, default=1024)
     parser.add_argument("--num_epochs", type=int, default=5)
     parser.add_argument("--batch_size", type=int, default=6)
@@ -52,7 +47,9 @@ class CustomCallback(TrainerCallback):
     def on_epoch_end(self, args, state, control, **kwargs):
         if control.should_evaluate:
             control_copy = deepcopy(control)
-            self._trainer.evaluate(eval_dataset=self._trainer.train_dataset, metric_key_prefix="train")
+            self._trainer.evaluate(
+                eval_dataset=self._trainer.train_dataset, metric_key_prefix="train"
+            )
             return control_copy
 
 
@@ -61,13 +58,15 @@ def main():
     set_seed(args.seed)
 
     ds = load_dataset("code_x_glue_cc_clone_detection_big_clone_bench")
-    labels = ClassLabel(num_classes = 2, names=[True, False])
+    labels = ClassLabel(num_classes=2, names=[True, False])
     ds = ds.cast_column("label", labels)
 
     print("Loading tokenizer and model")
     tokenizer = AutoTokenizer.from_pretrained(args.model_ckpt)
     tokenizer.pad_token = tokenizer.eos_token
-    model = AutoModelForSequenceClassification.from_pretrained(args.model_ckpt, num_labels=2)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        args.model_ckpt, num_labels=2
+    )
     model.config.pad_token_id = model.config.eos_token_id
 
     if args.freeze:
@@ -75,7 +74,12 @@ def main():
             param.requires_grad = False
 
     def tokenize(example):
-        inputs = tokenizer(example["func1"], example["func2"], truncation=True, max_length=args.max_length)  
+        inputs = tokenizer(
+            example["func1"],
+            example["func2"],
+            truncation=True,
+            max_length=args.max_length,
+        )
         return {
             "input_ids": inputs["input_ids"],
             "attention_mask": inputs["attention_mask"],
@@ -121,10 +125,11 @@ def main():
 
     result = trainer.evaluate(eval_dataset=tokenized_datasets["test"])
     print(f"Evaluation accuracy on the test set: {result['eval_accuracy']}")
-    
+
     # push the model to the Hugging Face hub
     if args.push_to_hub:
         model.push_to_hub(args.model_hub_name)
+
 
 if __name__ == "__main__":
     main()

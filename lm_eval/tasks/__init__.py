@@ -3,7 +3,6 @@ from pprint import pprint
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
                concode, ds1000, gsm, humaneval, mbpp, multiple, instruct_humaneval)
 
-
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
     **codexglue_code_to_text.create_all_tasks(),

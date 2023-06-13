@@ -75,6 +75,65 @@ accelerate launch  main.py \
 
 Low temperatures generally work better for small $k$ in pass@k.
 
+### DS-1000
+[DS-1000](https://ds1000-code-gen.github.io/): Code generation benchmark with 1000 data science questions spanning seven Python libraries that (1) reflects diverse, realistic, and practical use cases, (2) has a reliable metric, (3) defends against memorization by perturbing questions.
+
+The task can be specified as `--tasks ds1000-$SUBSET-$MODE`, where subset can include `all` libraries or any of the following subsets: `numpy`, `scipy`, `pandas`, `tensorflow`, `pytorch`, `sklearn`, `matplotlib`. Supported generation modes are `completion` (purely autoregressive) or `insertion` (via fill-in-middle [FIM]).
+
+- Prompts & Generation: prompts include partial code with one or more missing lines. The form of such prompts varies between `completion` and `insertion` modes (`[insert]` token used to reflect FIM region). Default generation args are reflected below.
+- Evaluation: generations are evaluated via execution of unit tests. As in the original manuscript, $pass@1$ is evaluated over each of `num_samples` and the mean pass rate is returned as the metric. Default evaluation args are presented below.
+
+Below is the command to run evaluation on the full benchmark in insertion mode with the arguments that correspond to the original manuscript.
+
+```bash
+export TF_FORCE_GPU_ALLOW_GROWTH=true
+TF_CPP_MIN_LOG_LEVEL=3 accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --batch_size <BATCH_SIZE> \
+  --tasks ds1000-all-insertion \
+  --n_samples 40 \
+  --max_length_generation 1024 \
+  --temperature 0.2 \
+  --top_p 0.95 \
+  --allow_code_execution
+```
+
+### MultiPL-E
+[MultiPL-E](https://huggingface.co/datasets/nuprl/MultiPL-E): is a benchamrk for evaluating large language models for code generation that supports 18 programming languages. It takes the OpenAI "HumanEval" Python benchmark and uses little compilers to translate them to other languages. We use similar implementation as [the original repository](https://github.com/nuprl/MultiPL-E/tree/main) and evaluation parameters are similar to HumanEval. Although for this benchmark, we strongly recommend using the provided Dockerfile to build the MultiPL-E container with all required dependencies, and for more safety especially when evaluating on languages like `bash`.
+Tasks are named `multiple-<LANG>` where `<LANG>` is the language name, e.g. `multiple-py` for python.
+
+```bash
+$ sudo make DOCKERFILE=Dockerfile-multiple all
+```
+This creates an image called `evaluation-harness-multiple`.
+
+Suppose you generated text with the `bigcode/santacoder` model and saved it in `generations_py.json` with:
+```bash
+accelerate launch  main.py \
+    --model bigcode/santacoder  \
+    --tasks multiple-py  \
+    --max_length_generation 650 \
+    --temperature 0.8   \
+    --do_sample True  \
+    --n_samples 200  \
+    --batch_size 200  \
+    --trsut_remote_code \
+    --generation_only \
+    --save_generations \
+    --save_generations_path generations_py.json
+```
+To run the container (here from image `evaluation-harness-multiple`) to evaluate on `generations_py.json`, or another file mount it with `-v`, specify `n_samples` and allow code execution with `--allow_code_execution` (and add the number of problems `--limit`  if it was used during generation):
+```bash
+$ sudo docker run -v $(pwd)/generations_py.json:/app/generations_py.json:ro -it evaluation-harness-multiple python3 main.py \
+    --model bigcode/santacoder \
+    --tasks multiple-py \
+    --load_generations_path /app/generations_py.json \
+    --allow_code_execution  \
+    --temperature 0.8 \
+    --n_samples 200
+```
+Execution time may vary depending on the programming languages.
+
 ### APPS
 [APPS](https://huggingface.co/datasets/codeparrot/apps): is a challenging benchmark for code generation with 10,000 Python problems, 
 5,000 for the training and 5000 for the evaluation. It has three difficulty levels: introductory, interview and competition. 
@@ -144,28 +203,6 @@ accelerate launch  main.py \
 We expect a model [finetuned](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS) on the train split of APPS.
 TODO: add few-shot setup for APPS.
 
-### DS-1000
-[DS-1000](https://ds1000-code-gen.github.io/): Code generation benchmark with 1000 data science questions spanning seven Python libraries that (1) reflects diverse, realistic, and practical use cases, (2) has a reliable metric, (3) defends against memorization by perturbing questions.
-
-The task can be specified as `--tasks ds1000-$SUBSET-$MODE`, where subset can include `all` libraries or any of the following subsets: `numpy`, `scipy`, `pandas`, `tensorflow`, `pytorch`, `sklearn`, `matplotlib`. Supported generation modes are `completion` (purely autoregressive) or `insertion` (via fill-in-middle [FIM]).
-
-- Prompts & Generation: prompts include partial code with one or more missing lines. The form of such prompts varies between `completion` and `insertion` modes (`[insert]` token used to reflect FIM region). Default generation args are reflected below.
-- Evaluation: generations are evaluated via execution of unit tests. As in the original manuscript, $pass@1$ is evaluated over each of `num_samples` and the mean pass rate is returned as the metric. Default evaluation args are presented below.
-
-Below is the command to run evaluation on the full benchmark in insertion mode with the arguments that correspond to the original manuscript.
-
-```bash
-export TF_FORCE_GPU_ALLOW_GROWTH=true
-TF_CPP_MIN_LOG_LEVEL=3 accelerate launch main.py \
-  --model <MODEL_NAME> \
-  --batch_size <BATCH_SIZE> \
-  --tasks ds1000-all-insertion \
-  --n_samples 40 \
-  --max_length_generation 1024 \
-  --temperature 0.2 \
-  --top_p 0.95 \
-  --allow_code_execution
-```
 
 ## Code generation benchmarks without unit tests
 
@@ -217,6 +254,55 @@ These are classification tasks for Java and C, we provide the code to finetune m
 * [Java Complexity prediction](https://huggingface.co/datasets/codeparrot/codecomplex)
 * [Java code equivalence prediction](https://huggingface.co/datasets/code_x_glue_cc_clone_detection_big_clone_bench)
 * [C code defect prediction](https://huggingface.co/datasets/code_x_glue_cc_defect_detection)
+
+## Natural language reasoning tasks
+
+These are reasoning tasks involving mathematical , symbolic and procedural reasoning with the task description / questions are in natural language.
+
+#### PAL - Program-aided Language Models
+
+In PAL, Large Language Models solve reasoning problems by generating reasoning chains with code. PAL datasets that are currently supported:
+
+* [GSM8K](https://huggingface.co/datasets/gsm8k) - Grade School Math 8K
+* [GSM-HARD](https://huggingface.co/datasets/reasoning-machines/gsm-hard) - Created by replacing the numbers in the questions of GSM8K with larger numbers 
+
+The model is prompted with few-shot examples of questions and reasoning steps as code. It then generates reasoning steps for a new question as Python code, which is executed to get the model's predicted answer.
+
+PAL uses two types of few-shot evaluation - 
+
+- `greedy` - samples one generation by greedy decoding and evaluates against reference answers
+- `majority_voting` - samples k (k=40 in paper) generations and takes majority voted answer to evaluate against the reference.
+
+**Task signature** : `pal-{dataset_name}-{evaluation_type}` (eg: `pal-gsm8k-greedy`,`pal-gsmhard-majority_voting`)
+
+Commands to run the evaluation:
+
+**Greedy Decoding**
+
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks pal-gsm8k-greedy \
+  --n_samples 1 \
+  --batch_size 1 \
+  --do_sample False \
+  --allow_code_execution
+```
+
+**Majority Voting**
+
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks pal-gsmhard-majority_voting \
+  --n_samples 40 \
+  --batch_size 1 \
+  --temperature 0.7 \
+  --top_p 0.95 \
+  --allow_code_execution
+```
 
 ## How to add a new benchmark
 
