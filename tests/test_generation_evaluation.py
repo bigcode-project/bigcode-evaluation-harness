@@ -49,6 +49,7 @@ def update_args(args):
     args.mutate_method = None
     args.precision = None
     args.modeltype = None
+    args.max_memory_per_gpu = None
     return args
 
 
