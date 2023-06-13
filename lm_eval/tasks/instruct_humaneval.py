@@ -46,8 +46,6 @@ class InstructHumanEval(Task):
 
     def __init__(self):
         super().__init__(
-            # TODO: Specify the list of stop words in `stop_words` for the code generation task \
-            # and if the evaluation requires executing the generated code in `requires_execution`.
             stop_words=[
                 "if __name__",
                 "\nprint",
