@@ -9,6 +9,7 @@ from tqdm import tqdm
 INFILL_MODE = False
 INSTRUCTION_MODE = False
 
+
 class TokenizedDataset(IterableDataset):
     """Tokenize and preprocess the dataset
     Multiple copies of the same prompt are sent sequentially. See compute_code for more details.
@@ -181,10 +182,10 @@ def _parse_instruction(code, instruction_tokens):
         )
         return code
 
-    if '```python' in assistant_token:
-        idx = code.find('```python', idx)
-        shift = len('```python' )
-    return code[idx + shift:]
+    if "```python" in assistant_token:
+        idx = code.find("```python", idx)
+        shift = len("```python")
+    return code[idx + shift :]
 
 
 def complete_code(
@@ -238,7 +239,6 @@ def complete_code(
 
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
-                
 
     code_gens = [[] for _ in range(n_tasks)]
     for sample, generated_tokens in gen_token_dict.items():
@@ -271,7 +271,9 @@ def complete_code(
 
     return code_gens
 
+
 import re
+
 
 def remove_after_return(code):
     """
@@ -284,7 +286,11 @@ def remove_after_return(code):
     for match in re.finditer(pattern, code):
         start_match, end_match = match.span()
         # Search for the first line which does not start by a space character
-        if end_last_match is not None and start_match < len(code) and code[start_match].strip() != '':
+        if (
+            end_last_match is not None
+            and start_match < len(code)
+            and code[start_match].strip() != ""
+        ):
             return code[0:start_match]
         end_last_match = end_match
     return code

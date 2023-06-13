@@ -68,8 +68,8 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
             raise ValueError(
                 "Instruction tokens should contain exactly 3 tokens separated by a comma. If a token is empty, represent it as ''"
             )
-        for token in instruction_tokens :
-            if token.strip() != '' :
+        for token in instruction_tokens:
+            if token.strip() != "":
                 task.stop_words.append(token)
     else:
         instruction_tokens = None

@@ -12,16 +12,7 @@ from evaluate import load
 from lm_eval.base import Task
 from lm_eval.utils import remove_after_return
 
-_CITATION = """
-@misc{chen2021evaluating,
-      title={Evaluating Large Language Models Trained on Code},
-      author={Mark Chen and Jerry Tworek and Heewoo Jun and Qiming Yuan and Henrique Ponde de Oliveira Pinto and Jared Kaplan and Harri Edwards and Yuri Burda and Nicholas Joseph and Greg Brockman and Alex Ray and Raul Puri and Gretchen Krueger and Michael Petrov and Heidy Khlaaf and Girish Sastry and Pamela Mishkin and Brooke Chan and Scott Gray and Nick Ryder and Mikhail Pavlov and Alethea Power and Lukasz Kaiser and Mohammad Bavarian and Clemens Winter and Philippe Tillet and Felipe Petroski Such and Dave Cummings and Matthias Plappert and Fotios Chantzis and Elizabeth Barnes and Ariel Herbert-Voss and William Hebgen Guss and Alex Nichol and Alex Paino and Nikolas Tezak and Jie Tang and Igor Babuschkin and Suchir Balaji and Shantanu Jain and William Saunders and Christopher Hesse and Andrew N. Carr and Jan Leike and Josh Achiam and Vedant Misra and Evan Morikawa and Alec Radford and Matthew Knight and Miles Brundage and Mira Murati and Katie Mayer and Peter Welinder and Bob McGrew and Dario Amodei and Sam McCandlish and Ilya Sutskever and Wojciech Zaremba},
-      year={2021},
-      eprint={2107.03374},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
-}
-"""
+_CITATION = ""
 
 
 def create_all_tasks():
@@ -30,8 +21,8 @@ def create_all_tasks():
     - instruction to code generation: we only give the instruction without the function signature/imports..
     """
     return {
-        "humaneval-with-context": InstructHumanEvalWithContext,
-        "humaneval-without-context": InstructHumanEvalWithoutContext,
+        "instruct-humaneval": InstructHumanEvalWithContext,
+        "instruct-humaneval-nocontext": InstructHumanEvalWithoutContext,
     }
 
 
@@ -46,11 +37,7 @@ class InstructHumanEval(Task):
 
     def __init__(self):
         super().__init__(
-            stop_words=[
-                "if __name__",
-                "\nprint",
-                "\nclass"
-            ],
+            stop_words=["if __name__", "\nprint", "\nclass"],
             requires_execution=True,
         )
 
@@ -106,7 +93,7 @@ class InstructHumanEvalWithContext(InstructHumanEval):
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         return {"instruction": doc["instruction"], "context": doc["context"]}
-    
+
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
         :param generation: str
@@ -116,10 +103,10 @@ class InstructHumanEvalWithContext(InstructHumanEval):
             (not used for Humaneval-Task)
         """
         generation = self._stop_at_stop_token(generation, self.stop_words)
-        
+
         function_name = self.get_dataset()["entry_point"][idx]
         func_index = generation.find(f"def {function_name}")
-        return generation[0:func_index]+remove_after_return(generation[func_index:])
+        return generation[0:func_index] + remove_after_return(generation[func_index:])
 
 
 class InstructHumanEvalWithoutContext(InstructHumanEval):
