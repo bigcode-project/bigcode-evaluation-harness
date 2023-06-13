@@ -48,6 +48,7 @@ def update_args(args):
     args.seed = 0
     args.mutate_method = None
     args.precision = None
+    args.modeltype = None
     return args
 
 
