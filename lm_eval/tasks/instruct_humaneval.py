@@ -26,8 +26,8 @@ _CITATION = """
 
 def create_all_tasks():
     """Creates a dictionary of tasks corresponding for the 2 settings currently available
-    - code completion
-    - docstring to code
+    - instruction with code completion: we provide function signature/imports.. to the model after the instruction
+    - instruction to code generation: we only give the instruction without the function signature/imports..
     """
     return {
         "humaneval-with-context": InstructHumanEvalWithContext,
