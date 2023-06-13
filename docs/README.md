@@ -49,6 +49,57 @@ accelerate launch  main.py \
 
 If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `limit` argument to $n$. 
 
+### InstructHumanEval
+[InstructHumanEval](https://huggingface.co/datasets/codeparrot/instructhumaneval): 164 handwritten Python programming problems described by an instruction (derived from the HumanEval docstring), a function signature and several unit tests.
+
+This evaluation suite is similar to HumanEval but it is dedicated to instruction-tuned models. Each prompt is built as  an instruction followed by a context, which are separated by delimiter tokens (those used in the instruction-tuning of the model). Here we focus on 3 of such tokens:
+- <user_token> : this token represents the role of the person who uses/prompts the model to solve a given task. It can be `Question:`, `USER` etc.
+- <end_token> : this token is used to designate the end of the user turn (the end of their request). It can be `<|end|>` or `</s>`. It can even be as simple as `\n`, ` `, or `\n\n`.
+- <assistant_token> : similar to <user_token>, this represents the LLM. Some common templates include `Assistant:`, `Response:`, `Answer:`, `<|Assistant|>` etc.
+
+Our evaluation supports two scenarios :
+- *Code completion* (`tasks = instruct-humaneval`)
+Here the model is prompted with the following instruction
+```bash
+<user_token> + <instruction> + <end_token> + <assistant_token> + <context>
+```
+The model is expected to complete a function signature. Make sure to add a `\n` at the end of your `<assistant_token>` to trigger a return to line for the function declaration.
+- *Docstring to code* (`tasks = instruct-humaneval-nocontext`)
+Here the model is prompted with the following instruction
+```bash
+<user_token> + <instruction> + <end_token> + <assistant_token>
+```
+The model is expected to solve the problem formulated as instruction. There is no additional guidance provided by `<context>` (which contains imports, auxiliary functions and the function signature), which increases the complexity of the task.
+
+Here are the commands to run the evaluation in each setting:
+
+for code completion
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks instruction-humaneval \
+  --instruction_tokens <user_token>,<end_token>,<assistant_token>\
+  --temperature 0.2 \
+  --n_samples 200 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+
+for docstring to code
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks instruction-humaneval-nocontext \
+  --instruction_tokens <user_token>,<end_token>,<assistant_token>\
+  --temperature 0.2 \
+  --n_samples 200 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+The main change is the use of the `instruction_tokens` argument which represents the 3 tokens we mentionned above separated from each other by a comma `,`.
+For [StarChat-Beta](https://huggingface.co/HuggingFaceH4/starchat-beta) for example we used these tokens`<|user|>\n,<|end|>\n and <|assistant|>\n`. You might need to escape `|` and `\` characters in bash with `--instruction_tokens \<\|user\|\>$'\n',\<\|end\|\>$'\n',\<\|assistant\|\>$'\n'`
 ### MBPP
 [MBPP](https://huggingface.co/datasets/mbpp):  consists of around 1,000 crowd-sourced Python programming problems, 
 designed to be solvable by entry-level programmers. Each problem consists of a task description in English, a code solution and 3 automated test cases. We evaluate on the test set of samples from index 11 to 511.

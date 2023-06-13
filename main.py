@@ -59,6 +59,11 @@ def parse_args():
         help=f"Evaluation tasks from {ALL_TASKS}",
     )
     parser.add_argument(
+        "--instruction_tokens",
+        default=None,
+        help="A series of instruction tokens used for instruction-tuning benchamrks separated by comma e.g. <user_message>,<end_user_message>,<assistant_message>",
+    )
+    parser.add_argument(
         "--batch_size",
         type=int,
         default=1,
@@ -180,6 +185,7 @@ def main():
             trust_remote_code=args.trust_remote_code,
             use_auth_token=args.use_auth_token,
         )
+
         tokenizer = AutoTokenizer.from_pretrained(
             args.model,
             revision=args.revision,
@@ -195,6 +201,7 @@ def main():
             else:
                 raise ValueError("No eos_token or bos_token found")
         tokenizer.pad_token = tokenizer.eos_token
+
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
         for task in task_names:
@@ -215,6 +222,7 @@ def main():
 
     results["config"] = {
         "model": args.model,
+        "revision": args.revision,
         "temperature": args.temperature,
         "n_samples": args.n_samples,
     }
