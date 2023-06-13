@@ -52,7 +52,7 @@ If you want to evaluate only on the first $n$ samples instead of all the test da
 ### InstructHumanEval
 [InstructHumanEval](https://huggingface.co/datasets/codeparrot/instructhumaneval): 164 handwritten Python programming problems described by an instruction (derived from the HumanEval docstring), a function signature and several unit tests.
 
-This evaluation suite is similar to HumanEval but it is dedicated to instruction-tuned models. The prompts are built by adding the delimiter tokens to the provided instructions. Here we focus on 3 of such tokens:
+This evaluation suite is similar to HumanEval but it is dedicated to instruction-tuned models. Each prompt is built as  an instruction followed by a context, which are separated by delimiter tokens (those used in the instruction-tuning of the model). Here we focus on 3 of such tokens:
 - <user_token> : this token represents the role of the person who uses/prompts the model to solve a given task. It can be `Question:`, `USER` etc.
 - <end_token> : this token is used to designate the end of the user turn (the end of their request). It can be `<|end|>` or `</s>`. It can even be as simple as `\n`, ` `, or `\n\n`.
 - <assistant_token> : similar to <user_token>, this represents the LLM. Some common templates include `Assistant:`, `Response:`, `Answer:`, `<|Assistant|>` etc.
