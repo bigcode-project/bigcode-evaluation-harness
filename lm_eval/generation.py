@@ -92,12 +92,13 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
     is_loaded_in_8bit = getattr(model, "is_loaded_in_8bit", False)
-    if not is_loaded_in_8bit:
+    is_loaded_in_4bit = getattr(model, "is_loaded_in_4bit", False)
+    if not is_loaded_in_8bit and not is_loaded_in_4bit:
         # we only wrap data loader to avoid extra memory occupation
         model = model.to(accelerator.device)
         ds_loader = accelerator.prepare(ds_loader)
     else:
-        # model.to() is not supported for 8bit models
+        # model.to() is not supported for 8bit and 4bit models
         model, ds_loader = accelerator.prepare(model, ds_loader)
 
     generations = complete_code(
@@ -111,7 +112,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         prefix=args.prefix,
         instruction_tokens=instruction_tokens,
         postprocess=args.postprocess,
-        is_loaded_in_8bit=is_loaded_in_8bit,
+        is_wrapped=is_loaded_in_8bit or is_loaded_in_4bit,
         **gen_kwargs,
     )
     return generations

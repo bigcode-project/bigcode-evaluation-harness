@@ -87,6 +87,11 @@ def parse_args():
         help="Load model in 8bit",
     )
     parser.add_argument(
+        "--load_in_4bit",
+        action="store_true",
+        help="Load model in 4bit",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=None,
@@ -192,11 +197,22 @@ def main():
                 load_in_8bit=args.load_in_8bit,
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,
-                device_map={'': current_device},
+                device_map={"": current_device},
             )
-
+        elif args.load_in_4bit:
+            print("Loading model in 4bit")
+            current_device = accelerator.process_index
+            # the model needs to fit in one GPU
+            model = AutoModelForCausalLM.from_pretrained(
+                args.model,
+                revision=args.revision,
+                load_in_4bit=args.load_in_4bit,
+                trust_remote_code=args.trust_remote_code,
+                use_auth_token=args.use_auth_token,
+                device_map={"": current_device},
+            )
         else:
-            print(f"Loading model (in {args.precision})")
+            print(f"Loading model in {args.precision}")
             model = AutoModelForCausalLM.from_pretrained(
                 args.model,
                 revision=args.revision,
