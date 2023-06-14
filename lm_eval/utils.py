@@ -199,6 +199,7 @@ def complete_code(
     prefix="",
     instruction_tokens=None,
     postprocess=True,
+    is_loaded_in_8bit=False,
     **gen_kwargs,
 ):
     """Generate multiple codes for each task in the dataset using multiple GPUs with accelerate.
@@ -220,11 +221,20 @@ def complete_code(
                 gen_kwargs["stopping_criteria"][0].start_length = (
                     batch["input_len"].max().item()
                 )
-            generated_tokens = model.generate(
-                input_ids=batch["ids"][:, : batch["input_len"]],
-                num_return_sequences=batch_size,
-                **gen_kwargs,
-            )
+            inputs = batch["ids"][:, : batch["input_len"]]
+            if is_loaded_in_8bit:
+                # 8bit models are wrapped in accelerator
+                generated_tokens = accelerator.unwrap_model(model).generate(
+                    input_ids=inputs,
+                    num_return_sequences=batch_size,
+                    **gen_kwargs,
+                )
+            else:
+                generated_tokens = model.generate(
+                    input_ids=inputs,
+                    num_return_sequences=batch_size,
+                    **gen_kwargs,
+                )
             # each task is generated batch_size times
             generated_tasks = batch["task_id"].repeat(batch_size)
             generated_tokens = accelerator.pad_across_processes(
