@@ -26,7 +26,7 @@ Below are the features and tasks of this framework:
     - We provide Multi-GPU text generation with `accelerate` and Dockerfiles for evaluating on Docker containers for security and reproducibility.
 
 - Tasks:
-    - 4 code generation **Python** tasks (with unit tests): [HumanEval](https://huggingface.co/datasets/openai_humaneval), [APPS](https://huggingface.co/datasets/codeparrot/apps), [MBPP](https://huggingface.co/datasets/mbpp) and [DS-1000](https://github.com/HKUNLP/DS-1000/) for both completion (left-to-right) and insertion (FIM) mode.
+    - 5 code generation **Python** tasks (with unit tests): [HumanEval](https://huggingface.co/datasets/openai_humaneval), [InstructHumanEval](https://huggingface.co/datasets/codeparrot/instructhumaneval), [APPS](https://huggingface.co/datasets/codeparrot/apps), [MBPP](https://huggingface.co/datasets/mbpp) and [DS-1000](https://github.com/HKUNLP/DS-1000/) for both completion (left-to-right) and insertion (FIM) mode.
     - [MultiPL-E](https://github.com/nuprl/MultiPL-E) evaluation suite (HumanEval translated into **18** programming languages).
     - [Pal](https://github.com/reasoning-machines/pal) Program-aided Language Models evaluation for grade school math problems : [GSM8K](https://huggingface.co/datasets/gsm8k) and [GSM-HARD](https://huggingface.co/datasets/reasoning-machines/gsm-hard). These problems are solved by generating reasoning chains of text and code.
     - Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text) (zero-shot & fine-tuning) for 6 languages: **Python, Go, Ruby, Java, JavaScript and PHP.**  Documentation translation task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_tt_text_to_text).
@@ -122,16 +122,31 @@ accelerate launch  main.py   --tasks mbpp  --allow_code_execution  --load_genera
 ```
 
 ## Docker containers
-For safety, we provide a Dockerfiles to do the execution inside a docker container. To do that, first, do the generation on your machine and save them in `generations.json` for example by adding the flag `--generation_only` to the command. Then build the docker container and run the evaluation inside it.
+For safety, we provide a Dockerfiles to do the execution inside a docker container. To do that, first, do the generation on your machine and save them in `generations.json` for example by adding the flag `--generation_only` to the command. Then use the Docker image that we provide:
 
-### Building  Docker image
+```bash
+$ docker pull ghcr.io/bigcode-project/evaluation-harness
+$ docker tag ghcr.io/bigcode-project/evaluation-harness evaluation-harness
+```
+
+If you want to evaluate on MultiPL-E, we have a different Dockerfile since it requires more dependencies, use:
+```bash
+$ docker pull ghcr.io/bigcode-project/evaluation-harness-multiple
+$ docker tag ghcr.io/bigcode-project/evaluation-harness-multiple evaluation-harness-multiple
+```
+
+
+### Building  Docker images
+
+If you modify the evaluation harness, you may want to rebuild the docker images.
+
 Here's how to build a docker image for the evaluation harness:
 ```bash
 $ sudo make DOCKERFILE=Dockerfile  all
 ```
 This creates an image called `evaluation-harness`, and runs a test on it. To skip the test remove `all` form the command.
 
-If you want to evaluate on MultiPL-E, we have a different Dockerfile since it requires more dependencies, use:
+For MultiPL-E:
 ```bash
 $ sudo make DOCKERFILE=Dockerfile-multiple all
 ```
