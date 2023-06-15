@@ -5,7 +5,6 @@ import warnings
 
 from lm_eval import tasks
 from lm_eval.generation import parallel_generations
-from main import references_filepath
 
 _WARNING = """
 ################################################################################
@@ -100,9 +99,9 @@ class Evaluator:
                             f"generations were saved at {self.args.save_generations_path}"
                         )
                 if self.args.save_references:
-                    with open(references_filepath, "w") as fp:
+                    with open(self.args.save_references_path, "w") as fp:
                         json.dump(references, fp)
-                        print(f"references were saved at {references_filepath}")
+                        print(f"references were saved at {self.args.save_references_path}")
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"

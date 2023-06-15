@@ -34,7 +34,6 @@ class MultiChoice:
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 default_outputs_dirpath = Path(f"outputs/{timestamp}")
 default_outputs_dirpath.mkdir(parents=True, exist_ok=False)
-references_filepath: Path = default_outputs_dirpath / "references.json"
 
 
 def parse_args():
@@ -140,6 +139,12 @@ def parse_args():
         action="store_true",
         help="Whether to save reference solutions/tests",
     )
+    parser.add_argument(
+        "--save_references_path",
+        type=str,
+        default=str(default_outputs_dirpath / "references.json"),
+        help="Path to save the results",
+    )
     return parser.parse_args()
 
 
@@ -224,9 +229,9 @@ def main():
                         json.dump(generations, fp)
                         print(f"generations were saved at {args.save_generations_path}")
                     if args.save_references:
-                        with open(references_filepath, "w") as fp:
+                        with open(args.save_references_path, "w") as fp:
                             json.dump(references, fp)
-                            print(f"references were saved in {references_filepath}")
+                            print(f"references were saved in {args.save_references_path}")
             else:
                 results[task] = evaluator.evaluate(task, **vars(args))
 
