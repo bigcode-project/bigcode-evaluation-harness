@@ -1,5 +1,7 @@
 import fnmatch
 import json
+from datetime import datetime
+from pathlib import Path
 
 import datasets
 import torch
@@ -27,6 +29,12 @@ class MultiChoice:
     def __iter__(self):
         for choice in self.choices:
             yield choice
+
+
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+default_outputs_dirpath = Path(f"outputs/{timestamp}")
+default_outputs_dirpath.mkdir(parents=True, exist_ok=False)
+references_filepath: Path = default_outputs_dirpath / "references.json"
 
 
 def parse_args():
@@ -108,12 +116,12 @@ def parse_args():
         type=str,
         default=None,
         help="Path of file with pre-processed corresponding references. If provided, the evaluation is done on the "
-             "provided targets."
+        "provided targets.",
     )
     parser.add_argument(
         "--metric_output_path",
         type=str,
-        default="evaluation_results.json",
+        default=str(default_outputs_dirpath / "evaluation_results.json"),
         help="Path to save the results",
     )
     parser.add_argument(
@@ -124,7 +132,7 @@ def parse_args():
     parser.add_argument(
         "--save_generations_path",
         type=str,
-        default="generations.json",
+        default=str(default_outputs_dirpath / "generations.json"),
         help="Path for saving the code generations",
     )
     parser.add_argument(
@@ -158,6 +166,8 @@ def main():
     accelerator = Accelerator()
     if accelerator.is_main_process:
         print(f"Selected Tasks: {task_names}")
+    accelerator.print("Number of available devices: ", accelerator.num_processes)
+    accelerator.print("Type of available devices: ", accelerator.device.type)
 
     results = {}
     if args.load_generations_path:
@@ -214,9 +224,9 @@ def main():
                         json.dump(generations, fp)
                         print(f"generations were saved at {args.save_generations_path}")
                     if args.save_references:
-                        with open("references.json", "w") as fp:
+                        with open(references_filepath, "w") as fp:
                             json.dump(references, fp)
-                            print("references were saved")
+                            print(f"references were saved in {references_filepath}")
             else:
                 results[task] = evaluator.evaluate(task, **vars(args))
 
