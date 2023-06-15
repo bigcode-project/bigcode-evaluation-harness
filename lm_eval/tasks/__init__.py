@@ -27,7 +27,11 @@ ALL_TASKS = sorted(list(TASK_REGISTRY))
 def get_task(task_name, **kwargs):
     try:
         task = TASK_REGISTRY[task_name]
-        return task(**kwargs) if kwargs else task()
+        if kwargs:
+            # NOTE: Not all tasks have a constructor that takes kwargs
+            try: return task(**kwargs)
+            except TypeError: pass
+        return task()
     except KeyError:
         print("Available tasks:")
         pprint(TASK_REGISTRY)
