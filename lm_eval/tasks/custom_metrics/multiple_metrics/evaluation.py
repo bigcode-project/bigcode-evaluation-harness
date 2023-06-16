@@ -105,11 +105,10 @@ def cached_eval_script_per_program(program, language) -> dict:
             result_yaml["timestamp"] = int(time.time())
         return result_yaml
     
-def evaluate_programs(programs: list[str], test_results_list: list[dict], languages: list[str], max_workers: int):
+def evaluate_programs(programs: list[str], test_results_list: list[dict], language: str, max_workers: int):
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for j, test_results, in zip(executor.map(
-            lambda program, language: cached_eval_script_per_program(program, language),
-            programs,
-            languages
+            lambda program: cached_eval_script_per_program(program, language),
+            programs
         ), test_results_list):
             test_results["results"].append(j)

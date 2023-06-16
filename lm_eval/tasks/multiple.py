@@ -7,21 +7,15 @@ It takes the OpenAI "HumanEval" and the MBPP Python benchmarks and uses little c
 Homepage: https://nuprl.github.io/MultiPL-E/
 """
 
-import json
-import os
 import re
-import tempfile
 from multiprocessing import cpu_count
-from pathlib import Path
-from time import time
 
 import numpy as np
 from datasets import load_dataset
-from tqdm import tqdm
 
 from lm_eval.base import Task
 from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import \
-    get_test_results_json_path, evaluate_programs
+    evaluate_programs
 from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import \
     for_result
 
@@ -157,42 +151,32 @@ class GeneralMultiPLE(Task):
             if i < len(generations)
         ]
         # a common temp dir for all the problems
-        with tempfile.TemporaryDirectory() as temp_dir:
-            list_files = []
-            for (prompt_name, generation, reference) in zip(
-                prompts_names, generations, references
-            ):
-                problem = {
-                    "name": prompt_name["name"],
-                    "language": self.language,
-                    "prompt": prompt_name["prompt"],
-                    "completions": generation,
-                    "tests": reference,
-                }
-                # each problem is save in a json file
-                temp_file_name = os.path.join(temp_dir, f"{prompt_name['name']}.json")
-                list_files.append(temp_file_name)
-                with open(temp_file_name, "wt") as f:
-                    json.dump(problem, f)
-            print(
-                f"Saved {len(list_files)} problems in {temp_dir} for evaluation, each problem has {len(generations[0])} completions"
-            )
+        problems = []
+        for (prompt_name, generation, reference) in zip(
+            prompts_names, generations, references
+        ):
+            problems.append({
+                "name": prompt_name["name"],
+                "language": self.language,
+                "prompt": prompt_name["prompt"],
+                "completions": generation,
+                "tests": reference,
+            })            
+        print(
+            f"Assembled {len(problems)} problems for evaluation, each problem has {len(generations[0])} completions"
+        )
 
-            # execute the problems to evaluate them
-            max_workers = cpu_count() - 1 if cpu_count() > 1 else 1
+        # execute the problems to evaluate them
+        max_workers = cpu_count() - 1 if cpu_count() > 1 else 1
+        programs, test_results_list =  self.unroll_problems(problems)
+        evaluate_programs(programs, test_results_list, self.language, max_workers)
 
-            programs, test_results_list, languages =  self.unroll_problems(list_files)
+        # Purge duplicates
+        result_array = []
+        [result_array.append(result) for result in test_results_list if result not in result_array]
 
-            evaluate_programs(programs, test_results_list, languages, max_workers)
-
-            # Purge duplicates
-            result_array = []
-            [result_array.append(result) for result in test_results_list if result not in result_array]
-
-            #print([[r["stderr"] for r in result["results"]] for result in result_array])
-
-            # compute pass@k scores
-            result = np.mean([for_result(result) for result in result_array], axis=0)
+        # compute pass@k scores
+        result = np.mean([for_result(result) for result in result_array], axis=0)
         results = {
             f"pass@{k}": v
             for k, v in zip([1, 10, 100], result)
@@ -201,14 +185,10 @@ class GeneralMultiPLE(Task):
         return results
     
 
-    def unroll_problems(self, problem_json_paths):
+    def unroll_problems(self, problems):
         programs = list()
         test_results_list = list()
-        languages = list()
-        for problem_json_path in problem_json_paths:
-            with open(problem_json_path, "r") as f:
-                problem = json.load(f)
-            print(problem)
+        for problem in problems:
             test_results = problem.copy()
             del test_results["completions"]
             test_results["results"] = []
@@ -219,6 +199,5 @@ class GeneralMultiPLE(Task):
             for index in range(min_problem, num_problems): 
                 programs.append(problem["completions"][index] + "\n" + problem["tests"])
                 test_results_list.append(test_results)
-                languages.append(problem["language"])
             
-        return programs, test_results_list, languages
+        return programs, test_results_list
