@@ -23,7 +23,7 @@ from lm_eval.base import Task
 from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import \
     get_test_results_json_path, evaluate_programs
 from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import \
-    for_file
+    for_result
 
 _CITATION = """
 @article{cassano2022scalable,
@@ -181,15 +181,18 @@ class GeneralMultiPLE(Task):
             # execute the problems to evaluate them
             max_workers = cpu_count() - 1 if cpu_count() > 1 else 1
 
-            programs, test_results_list, test_results_paths, languages =  self.unroll_problems(temp_dir, list_files)
+            programs, test_results_list, languages =  self.unroll_problems(list_files)
 
-            evaluate_programs(programs, test_results_list, test_results_paths, languages, max_workers)
+            evaluate_programs(programs, test_results_list, languages, max_workers)
+
+            # Purge duplicates
+            result_array = []
+            [result_array.append(result) for result in test_results_list if result not in result_array]
+
+            #print([[r["stderr"] for r in result["results"]] for result in result_array])
 
             # compute pass@k scores
-            result_array = np.array(
-                [for_file(p) for p in Path(temp_dir).glob("*.results.json")]
-            )
-            result = result_array.mean(axis=0)
+            result = np.mean([for_result(result) for result in result_array], axis=0)
         results = {
             f"pass@{k}": v
             for k, v in zip([1, 10, 100], result)
@@ -198,22 +201,17 @@ class GeneralMultiPLE(Task):
         return results
     
 
-    def unroll_problems(self, output_dir, problem_json_paths):
+    def unroll_problems(self, problem_json_paths):
         programs = list()
         test_results_list = list()
-        test_results_paths = list()
         languages = list()
         for problem_json_path in problem_json_paths:
             with open(problem_json_path, "r") as f:
                 problem = json.load(f)
-            test_results_path = get_test_results_json_path(
-                output_dir, problem_json_path, None
-            )
-            test_results_path.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+            print(problem)
             test_results = problem.copy()
             del test_results["completions"]
-            if "results" not in test_results:
-                test_results["results"] = []
+            test_results["results"] = []
 
             num_problems = len(problem["completions"])
             min_problem = len(test_results["results"])
@@ -221,7 +219,6 @@ class GeneralMultiPLE(Task):
             for index in range(min_problem, num_problems): 
                 programs.append(problem["completions"][index] + "\n" + problem["tests"])
                 test_results_list.append(test_results)
-                test_results_paths.append(test_results_path)
                 languages.append(problem["language"])
             
-        return programs, test_results_list, test_results_paths, languages
+        return programs, test_results_list, languages

@@ -105,13 +105,11 @@ def cached_eval_script_per_program(program, language) -> dict:
             result_yaml["timestamp"] = int(time.time())
         return result_yaml
     
-def evaluate_programs(programs: list[str], test_results_list: list[dict], test_result_paths: list[Path], languages: list[str], max_workers: int):
+def evaluate_programs(programs: list[str], test_results_list: list[dict], languages: list[str], max_workers: int):
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for j, test_results, test_results_path in zip(executor.map(
+        for j, test_results, in zip(executor.map(
             lambda program, language: cached_eval_script_per_program(program, language),
             programs,
             languages
-        ), test_results_list, test_result_paths):
+        ), test_results_list):
             test_results["results"].append(j)
-            with open(test_results_path, "w") as f:
-                f.write(json.dumps(test_results, indent=2))
