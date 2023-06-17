@@ -108,18 +108,20 @@ class GeneralHumanEvalXGenerate(Task):
     """
     DATASET_PATH = "bigcode/humaneval-x-bugs"
     DATASET_NAME = None
-    
-    def __init__(self, mutate_method="prompt"):
+
+    def __init__(self, mutate_method="prompt", language="python"):
         
-        stop_words = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
-        self.mutate_method = mutate_method
-        if self.mutate_method == "edit":
-            stop_words = [
-                "<commit_before>", 
-                "<commit_msg>", 
-                "<commit_after>", 
-                "<|endoftext|>",
-            ]
+        self.DATASET_NAME = language
+        self.mutate_method = mutate_method        
+        stop_words = LANGUAGE_TO_STOP_WORDS[language]
+        if self.mutate_method.startswith("edit"):
+            stop_words.extend([
+                "<commit_before>",
+                "<commit_msg>",
+                "<commit_after>",
+            ])
+
+        stop_words.append("<|endoftext|>")
 
         super().__init__(
             stop_words=stop_words,
