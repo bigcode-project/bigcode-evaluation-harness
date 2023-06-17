@@ -55,7 +55,6 @@ LANGUAGE_TO_TIMEOUT = {
 }
 
 # Java sometimes fails with more workers; For JS it's twice as fast with 4 workers
-"""
 LANGUAGE_TO_NUM_WORKERS = {
     "python": 4,
     "cpp": 4,
@@ -64,16 +63,7 @@ LANGUAGE_TO_NUM_WORKERS = {
     "go": 4,
     "rust": 1,
 }
-"""
-# Temp: Only 1 worker for all languages
-LANGUAGE_TO_NUM_WORKERS = {
-    "python": 4,
-    "cpp": 1,
-    "js": 1,
-    "java": 1,
-    "go": 1,
-    "rust": 1,
-}
+
 
 # https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L6
 IMPORT_HELPER = {
@@ -228,16 +218,22 @@ class GeneralHumanEvalXBugs(Task):
             raise ValueError("Not supporting the dataset for file name")
         return file_name
     
+    def get_prompt_base(self, doc):
+        # See 
+        # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
+        # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
+        if self.DATASET_NAME == "rust":
+            main = "\nfn main(){ \n } \n"
+            prompt_base = main + doc["declaration"] + doc["prompt"]
+        else:
+            prompt_base = doc["prompt"]
+        return prompt_base
+
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
         assert self.mutate_method == "prompt", "Only prompt mutation is supported for Enc-Dec models"
-        if self.DATASET_NAME == "rust":
-            main = "\nfn main(){ \n } \n"
-            prompt_base = doc["prompt"] + main + doc["declaration"]
-        else:
-            prompt_base = doc["prompt"]
         # This is the simplest, most natural way of prompting regardless of language
-        prompt = prompt_base + doc["buggy_solution"]
+        prompt = self.get_prompt_base(doc) + doc["buggy_solution"]
         # One could add a comment here, but then it becomes language-specific & for some languages it may not
         # compile anyways since repeating the prompt results in double imports, so let's keep it simple
         prompt += "\n" + "Fix bug in " + doc["entry_point"] # This will be cut-off, so it will compile
@@ -245,25 +241,21 @@ class GeneralHumanEvalXBugs(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        if self.DATASET_NAME == "rust":
-            main = "\nfn main(){ \n } \n"
-            prompt_base = doc["prompt"] + main + doc["declaration"]
-        else:
-            prompt_base = doc["prompt"]
+        prompt_base = self.get_prompt_base(doc)
 
         if self.mutate_method == "file":
             file_name = self.get_filename_with_extension(input_file=doc["entry_point"])
-            prompt = "<file_name>\n" + file_name + "\n<commit_before>\n" + doc["prompt"] + doc["buggy_solution"]
+            prompt = "<file_name>\n" + file_name + "\n<commit_before>\n" + prompt_base + doc["buggy_solution"]
             prompt += "\n<commit_msg>\n" + "Fix bug in " + doc["entry_point"]
-            prompt += "\n<commit_after>\n" + doc["prompt"]
+            prompt += "\n<commit_after>\n" + prompt_base
         elif self.mutate_method == "edit":
-            prompt = "<commit_before>" + doc["prompt"] + doc["buggy_solution"]
+            prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
-            prompt += "<commit_after>" + doc["prompt"]
+            prompt += "<commit_after>" + prompt_base
         elif self.mutate_method == "edit-newline":
-            prompt = "<commit_before>\n" + doc["prompt"] + doc["buggy_solution"]
+            prompt = "<commit_before>\n" + prompt_base + doc["buggy_solution"]
             prompt += "\n<commit_msg>\n" + "Fix bug in " + doc["entry_point"]
-            prompt += "\n<commit_after>\n" + doc["prompt"]            
+            prompt += "\n<commit_after>\n" + prompt_base
         elif self.mutate_method == "edit-type":
             prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix " + doc["bug_type"] + " in " + doc["entry_point"]
@@ -310,7 +302,7 @@ class GeneralHumanEvalXBugs(Task):
         else:
             raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
         # Strip off the final \n to make the tokens more natural
-        # Essentially, we want to make sure that if there was no distrinction between
+        # Essentially, we want to make sure that if there was no distinction between
         # input & output, the tokens would be the same
         # E.g. for SantaCoder:
         # tokenize("""def hi()\n   return""")
@@ -327,18 +319,19 @@ class GeneralHumanEvalXBugs(Task):
     def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""
         if get_solution:
+            prompt_base = self.get_prompt_base(doc)
             if self.mutate_method == "diff":
                 from diff_match_patch import diff_match_patch
-                text1 = doc["prompt"] + doc["buggy_solution"]
-                text2 = doc["prompt"] + doc["canonical_solution"]
+                text1 = prompt_base + doc["buggy_solution"]
+                text2 = prompt_base + doc["canonical_solution"]
                 dmp = diff_match_patch()
                 patches = dmp.patch_make(text1, text2)
                 diff = dmp.patch_toText(patches)
                 return diff
             else:
-                return doc["prompt"] + doc["canonical_solution"]
+                return prompt_base + doc["canonical_solution"]
                 # To check that all buggy solutions result in a 0 score:
-                # return doc["prompt"] + doc["buggy_solution"]
+                # return prompt_base + doc["buggy_solution"]
         else:
             test_func = doc["test"]
             # check(func_name) is already included
@@ -419,7 +412,8 @@ class GeneralHumanEvalXBugs(Task):
                 return gen
             else:
                 # Strip on the right to maintain same behavior as with get_prompt
-                return doc["prompt"].rstrip() + gen
+                prompt_base = self.get_prompt_base(doc)
+                return prompt_base.rstrip() + gen
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -441,7 +435,8 @@ class GeneralHumanEvalXBugs(Task):
             dmp = diff_match_patch()
             ds = self.get_dataset().select(range(len(generations)))
             for gen, doc in zip(generations, ds):
-                old_code = doc["prompt"] + doc["buggy_solution"]
+                prompt_base = self.get_prompt_base(doc)
+                old_code = prompt_base + doc["buggy_solution"]
                 for i, diff in enumerate(gen): 
                     try:
                         # Strip away anything to the left such as \n
@@ -455,7 +450,8 @@ class GeneralHumanEvalXBugs(Task):
             from lm_eval.tasks.custom_metrics.diff_eval import apply_diff
             ds = self.get_dataset().select(range(len(generations)))
             for gen, doc in zip(generations, ds):
-                old_code = doc["prompt"] + doc["buggy_solution"]
+                prompt_base = self.get_prompt_base(doc)
+                old_code = prompt_base + doc["buggy_solution"]
                 for i, diff_hunk in enumerate(gen):
                     if not(diff_hunk):
                         gen[i] = ""
