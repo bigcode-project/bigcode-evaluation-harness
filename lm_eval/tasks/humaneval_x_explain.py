@@ -70,7 +70,11 @@ class GeneralHumanEvalXExplain(Task):
         prompt = self.get_prompt(doc)
         gen = generation[len(prompt):].strip()[:self.token_budget].rstrip()
         return gen
-    
+
+    def get_reference(self, doc, get_solution=False):
+        """Builds the reference solution for the doc (sample from the test dataset)."""
+        return None
+            
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
         returning the metric for the generations.
