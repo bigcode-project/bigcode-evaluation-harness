@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from evaluate import load
@@ -96,8 +97,8 @@ def create_all_tasks():
 
 def create_task(language):
     class HumanEvalXGenerate(GeneralHumanEvalXGenerate):
-        def __init__(self, mutate_method="prompt", language=language):
-            super().__init__(mutate_method=mutate_method, language=language)
+        def __init__(self, mutate_method="prompt", load_data_path=None, language=language):
+            super().__init__(mutate_method=mutate_method, load_data_path=load_data_path, language=language)
 
     return HumanEvalXGenerate
 
@@ -109,9 +110,15 @@ class GeneralHumanEvalXGenerate(Task):
     DATASET_PATH = "bigcode/humaneval-x-bugs"
     DATASET_NAME = None
 
-    def __init__(self, mutate_method="prompt", language="python"):
+    def __init__(self, mutate_method="prompt", load_data_path=None, language="python"):
         
         self.DATASET_NAME = language
+        self.descriptions = None
+        if load_data_path is not None:
+            with open(load_data_path) as fp:
+                self.descriptions = json.load(fp)
+                print(f"{len(self.descriptions)} descriptions with {len(self.descriptions[0])} description candidates loaded.")            
+
         self.mutate_method = mutate_method        
         stop_words = LANGUAGE_TO_STOP_WORDS[language]
         if self.mutate_method.startswith("edit"):
@@ -122,7 +129,8 @@ class GeneralHumanEvalXGenerate(Task):
             ])
 
         stop_words.append("<|endoftext|>")
-
+        
+        
         super().__init__(
             stop_words=stop_words,
             requires_execution=True,
@@ -176,6 +184,11 @@ class GeneralHumanEvalXGenerate(Task):
         else:
             prompt_base = doc["prompt"]
         return prompt_base
+
+    def get_prompt_encoder(self, doc):
+        """Encoder input for models with Enc-Dec architecture like CodeT5"""
+        assert self.mutate_method == "instruct", "Only instruct mutation is supported for Enc-Dec models"
+        return doc["instruction"].strip()
     
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
@@ -194,6 +207,10 @@ class GeneralHumanEvalXGenerate(Task):
             prompt = prompt_base
         
         return prompt.rstrip()
+
+    def get_prompt_description(self, doc):
+        self.descriptions
+
 
     def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""
