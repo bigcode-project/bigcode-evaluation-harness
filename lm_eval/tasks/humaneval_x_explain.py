@@ -73,7 +73,11 @@ class GeneralHumanEvalXExplain(Task):
 
     def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""
-        return None
+        raise ValueError("""
+        HumanEval-X-Explain should be run with the flag `--generation_only`.
+        Once generations are done run HumanEval-X-Generate with `--mutate_method path/to/generations.json`
+        It will load the explanations, generate from them and evaluate.
+        """)
             
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
