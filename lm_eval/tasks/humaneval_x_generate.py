@@ -107,7 +107,8 @@ class GeneralHumanEvalXGenerate(Task):
     answers, generation settings and evaluation methods.
     """
     DATASET_PATH = "bigcode/humaneval-x-bugs"
-
+    DATASET_NAME = None
+    
     def __init__(self, mutate_method="prompt"):
         
         stop_words = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]

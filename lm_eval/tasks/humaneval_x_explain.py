@@ -11,7 +11,7 @@ def create_all_tasks():
     :return: {task_name: task}
         e.g. {apps-interview: Task, apps-competitoon: Task}
     """
-    return {f"humaneval-x-bugs-{language}": create_task(language) for language in LANGUAGES}
+    return {f"humaneval-x-explain-{language}": create_task(language) for language in LANGUAGES}
 
 
 def create_task(language):
