@@ -1,11 +1,20 @@
 import json
-import re
 
 from evaluate import load
+from datasets import load_dataset
 from lm_eval.base import Task
 
 
 LANGUAGES = ["python", "cpp", "js", "java", "go", "rust"]
+
+LANGUAGE_TO_NAME = {
+    "python": "Python",
+    "cpp": "C++",
+    "js": "JavaScript",
+    "java": "Java",
+    "go": "Go",
+    "rust": "Rust",
+}
 
 # Taken from https://huggingface.co/datasets/nuprl/MultiPL-E/ & https://github.com/THUDM/CodeGeeX
 LANGUAGE_TO_STOP_WORDS = {
@@ -106,7 +115,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
     """A task represents an entire benchmark including its dataset, problems,
     answers, generation settings and evaluation methods.
     """
-    DATASET_PATH = None
+    DATASET_PATH = "bigcode/humaneval-x-bugs"
     DATASET_NAME = None
 
     def __init__(self, mutate_method="prompt", language="python", load_data_path=None):
@@ -117,33 +126,118 @@ class GeneralHumanEvalXExplainGenerate(Task):
         with open(load_data_path) as fp:
             self.descriptions = json.load(fp)
             print(f"{len(self.descriptions)} descriptions with {len(self.descriptions[0])} description candidates loaded.")            
+        self.dataset = load_dataset(path=self.DATASET_PATH, name=self.DATASET_NAME)
 
         self.mutate_method = mutate_method        
-        stop_words = LANGUAGE_TO_STOP_WORDS[language]
+        self.stop_words = LANGUAGE_TO_STOP_WORDS[language] + ["<|endoftext|>"]
         if self.mutate_method.startswith("edit"):
-            stop_words.extend([
+            self.stop_words.extend([
                 "<commit_before>",
                 "<commit_msg>",
                 "<commit_after>",
             ])
+        self.requires_execution = True
 
-        stop_words.append("<|endoftext|>")
+    def check_fn(self, code):
+        """
+        Adapted from https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L115
+
+        Checks whether the generated code is finished
+        """
+        if any([w in code for w in self.stop_words]):
+            return True
+
+        # The heuristics below do not hold for diff generation
+        if self.mutate_method.startswith("diff"):
+            return False
+
+        if self.DATASET_NAME == "python":
+            for line in code.split("\n"):
+                if len(line.strip()) > 0 and line[0] != ' ' and line[0] != '\t':
+                    return True
+        elif self.DATASET_NAME == "java":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        elif self.DATASET_NAME == "go":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        elif self.DATASET_NAME == "js":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        elif self.DATASET_NAME == "cpp":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        elif self.DATASET_NAME == "rust":
+            if code.count("{") + 1 == code.count("}"):
+                return True
+        return False
+    
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        return self.dataset["test"]
+        dataset = []
+        for description, sample in zip(self.descriptions, self.dataset):
+            for description_candidate in description:
+                dataset.append({"description": description_candidate} | sample)
+        return dataset
 
+    def get_prompt_base(self, doc):
+        # See 
+        # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
+        # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
+        if self.DATASET_NAME == "rust":
+            main = "\nfn main(){ \n } \n"
+            prompt_base = main + doc["declaration"]
+        else:
+            prompt_base = doc["declaration"]
+        return prompt_base
+    
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        # Use declaration instead of prompt to hide the docstring
-        if self.mutate_method == "edit":
-            prompt = "<commit_before><commit_after>" + doc["declaration"] + doc["canonical_solution"]
-            prompt += "<commit_msg>"
-        elif self.mutate_method == "instruct":
-            prompt = doc["declaration"] + doc["canonical_solution"]
-            prompt += f"\nProvide a detailed natural language description of the above function such that you would be able to reconstruct the function given the description. You are given a budget of {self.token_budget} tokens, everything afterwards will be cut off. Do not include any code."
-        
+        prompt_base = self.get_prompt_base(doc)
+        if self.mutate_method == "instruct":
+            prompt = doc["description"]
+            prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} that follows the description above."
+            prompt += f"\n{prompt_base}"
+
         return prompt.strip()
 
+    def remove_last_block(self, code):
+        """
+        Adapted from https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L151
+        """
+        for w in self.stop_words:
+            if w in code:
+                code = code[:code.rfind(w)]
+
+        if self.mutate_method.startswith("diff"):
+            return code
+
+        if self.DATASET_NAME == "python":
+            for i, line in enumerate(code.split("\n")):
+                if len(line.strip()) > 0 and line[0] != ' ' and line[0] != '\t':
+                    return "\n".join(code.split("\n")[:i])
+        elif self.DATASET_NAME == "java":
+            main_pos = code.find("public static void main")
+            if main_pos != -1:
+                code = code[:main_pos] + '}'
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+            if code.count('{') + 1 == code.count('}'):
+                code += "\n}"
+        elif self.DATASET_NAME == "go":
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+        elif self.DATASET_NAME == "cpp":
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+        elif self.DATASET_NAME == "js":
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+        elif self.DATASET_NAME == "rust":
+            if '}' in code:
+                code = code[:code.rfind('}')] + '}'
+        return code
+    
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
         :param generation: str
@@ -154,8 +248,10 @@ class GeneralHumanEvalXExplainGenerate(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        gen = generation[len(prompt):].strip()[:self.token_budget].rstrip()
-        return gen
+        gen = self.remove_last_block(generation[len(prompt):].rstrip())
+        prompt_base = self.get_prompt_base(doc)
+        # Strip to maintain same behavior as with get_prompt
+        return prompt_base.rstrip() + gen
 
     def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""

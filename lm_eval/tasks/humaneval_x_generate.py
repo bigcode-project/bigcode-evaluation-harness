@@ -1,6 +1,5 @@
 import json
-import os
-import re
+
 from evaluate import load
 from lm_eval.base import Task
 

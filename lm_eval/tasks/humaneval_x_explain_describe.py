@@ -1,5 +1,3 @@
-import re
-from evaluate import load
 from lm_eval.base import Task
 
 
@@ -51,14 +49,26 @@ class GeneralHumanEvalXExplainDescribe(Task):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
         return self.dataset["test"]
 
+    def get_prompt_base(self, doc):
+        # See 
+        # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
+        # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
+        if self.DATASET_NAME == "rust":
+            main = "\nfn main(){ \n } \n"
+            prompt_base = main + doc["declaration"]
+        else:
+            prompt_base = doc["declaration"]
+        return prompt_base
+    
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         # Use declaration instead of prompt to hide the docstring
+        prompt_base = self.get_prompt_base(doc)
         if self.mutate_method == "edit":
-            prompt = "<commit_before><commit_after>" + doc["declaration"] + doc["canonical_solution"]
+            prompt = "<commit_before><commit_after>" + prompt_base + doc["canonical_solution"]
             prompt += "<commit_msg>"
         elif self.mutate_method == "instruct":
-            prompt = doc["declaration"] + doc["canonical_solution"]
+            prompt = prompt_base + doc["canonical_solution"]
             prompt += f"\nProvide a detailed natural language description of the above function such that you would be able to reconstruct the function given the description. You are given a budget of {self.token_budget} tokens, everything afterwards will be cut off. Do not include any code."
         
         return prompt.strip()
