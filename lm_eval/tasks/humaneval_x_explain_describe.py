@@ -32,11 +32,10 @@ class GeneralHumanEvalXExplainDescribe(Task):
     DATASET_PATH = "bigcode/humaneval-x-bugs"
     DATASET_NAME = None
 
-    def __init__(self, mutate_method="prompt", language="python", token_budget=500):
+    def __init__(self, mutate_method="prompt", language="python"):
 
         self.DATASET_NAME = language
         self.mutate_method = mutate_method
-        self.token_budget = token_budget
         
         stop_words = ["<|endoftext|>"]
 
@@ -54,7 +53,8 @@ class GeneralHumanEvalXExplainDescribe(Task):
         assert self.mutate_method == "instruct", "Only instruct mutation is supported for Enc-Dec models"
         prompt_base = self.get_prompt_base(doc)
         prompt = prompt_base + doc["canonical_solution"]
-        prompt += f"\nProvide a detailed natural language description of the above function such that you would be able to reconstruct the function given the description. You are given a budget of {self.token_budget} tokens, everything afterwards will be cut off. Do not include any code."
+        docstring_len = len(doc["docstring"].split())
+        prompt += f"\nProvide a concise natural language description of the above function using at most {docstring_len} characters."
 
         return prompt
     
@@ -78,9 +78,10 @@ class GeneralHumanEvalXExplainDescribe(Task):
             prompt += "<commit_msg>"
         elif self.mutate_method == "instruct":
             prompt = prompt_base + doc["canonical_solution"]
-            prompt += f"\nProvide a detailed natural language description of the above function such that you would be able to reconstruct the function given the description. You are given a budget of {self.token_budget} tokens, everything afterwards will be cut off. Do not include any code."
-        
-        return prompt.strip()
+            docstring_len = len(doc["docstring"].split())
+            #prompt += f"\nProvide a detailed natural language description of the above function such that you would be able to reconstruct the function given the description. You are given a budget of {self.token_budget} tokens, everything afterwards will be cut off. Do not include any code."
+            prompt += f"\nProvide a concise natural language description of the above function using at most {docstring_len} characters."
+
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
@@ -92,7 +93,8 @@ class GeneralHumanEvalXExplainDescribe(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        gen = generation[len(prompt):].strip()[:self.token_budget].rstrip()
+        docstring_len = len(doc["docstring"].split())
+        gen = generation[len(prompt):].strip()[:docstring_len].rstrip()
         return gen
 
     def get_reference(self, doc, get_solution=False):
