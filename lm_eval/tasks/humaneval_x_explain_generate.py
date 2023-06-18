@@ -175,7 +175,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
         dataset = []
-        for description, sample in zip(self.descriptions, self.dataset):
+        for description, sample in zip(self.descriptions, self.dataset["test"]):
             for description_candidate in description:
                 dataset.append({"description": description_candidate} | sample)
         return dataset
