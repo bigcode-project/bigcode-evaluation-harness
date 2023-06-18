@@ -207,10 +207,6 @@ class GeneralHumanEvalXGenerate(Task):
         
         return prompt.rstrip()
 
-    def get_prompt_description(self, doc):
-        self.descriptions
-
-
     def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""
         if get_solution:

@@ -180,6 +180,14 @@ class GeneralHumanEvalXExplainGenerate(Task):
                 dataset.append({"description": description_candidate} | sample)
         return dataset
 
+    def get_prompt_encoder(self, doc):
+        """Encoder input for models with Enc-Dec architecture like CodeT5"""
+        assert self.mutate_method == "instruct", "Only instruct mutation is supported for Enc-Dec models"
+        prompt = doc["description"]
+        prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} that follows the description above."
+
+        return prompt
+    
     def get_prompt_base(self, doc):
         # See 
         # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
