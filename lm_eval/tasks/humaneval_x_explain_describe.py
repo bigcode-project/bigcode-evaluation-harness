@@ -20,14 +20,14 @@ def create_all_tasks():
 
 
 def create_task(language):
-    class HumanEvalXExplain(GeneralHumanEvalXExplain):
+    class HumanEvalXExplainDescribe(GeneralHumanEvalXExplainDescribe):
         def __init__(self, mutate_method="prompt", language=language):
             super().__init__(mutate_method=mutate_method, language=language)
 
-    return HumanEvalXExplain
+    return HumanEvalXExplainDescribe
 
 
-class GeneralHumanEvalXExplain(Task):
+class GeneralHumanEvalXExplainDescribe(Task):
     """A task represents an entire benchmark including its dataset, problems,
     answers, generation settings and evaluation methods.
     """
