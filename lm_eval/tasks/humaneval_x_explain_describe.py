@@ -5,13 +5,18 @@ from lm_eval.base import Task
 
 LANGUAGES = ["python", "cpp", "js", "java", "go", "rust"]
 
+ERROR_MSG = """
+HumanEval-X-Explain should be run with the flag `--generation_only`.
+Once generations are done run HumanEval-X-Generate with `--mutate_method path/to/generations.json`
+It will load the explanations, generate from them and evaluate.
+"""
 
 def create_all_tasks():
     """Creates a dictionary of tasks from a list of levels
     :return: {task_name: task}
         e.g. {apps-interview: Task, apps-competitoon: Task}
     """
-    return {f"humaneval-x-explain-{language}": create_task(language) for language in LANGUAGES}
+    return {f"humaneval-x-explain-describe-{language}": create_task(language) for language in LANGUAGES}
 
 
 def create_task(language):
@@ -73,11 +78,7 @@ class GeneralHumanEvalXExplain(Task):
 
     def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""
-        raise ValueError("""
-        HumanEval-X-Explain should be run with the flag `--generation_only`.
-        Once generations are done run HumanEval-X-Generate with `--mutate_method path/to/generations.json`
-        It will load the explanations, generate from them and evaluate.
-        """)
+        return None
             
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -87,8 +88,4 @@ class GeneralHumanEvalXExplain(Task):
         :param references: list(str)
             list of str containing refrences
         """
-        raise ValueError("""
-        HumanEval-X-Explain should be run with the flag `--generation_only`.
-        Once generations are done run HumanEval-X-Generate with `--mutate_method path/to/generations.json`
-        It will load the explanations, generate from them and evaluate.
-        """)
+        raise ValueError(ERROR_MSG)

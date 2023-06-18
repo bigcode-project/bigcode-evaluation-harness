@@ -110,6 +110,12 @@ def parse_args():
         help="Path of file with previously generated solutions, if provided generation is skipped and only evaluation is done",
     )
     parser.add_argument(
+        "--load_data_path",
+        type=str,
+        default=None,
+        help="Path of additional data to load for the tasks",
+    )    
+    parser.add_argument(
         "--metric_output_path",
         type=str,
         default="evaluation_results.json",

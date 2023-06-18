@@ -39,7 +39,7 @@ class Evaluator:
         self.allow_code_execution = args.allow_code_execution
 
     def generate_text(self, task_name):
-        task = tasks.get_task(task_name, self.args.mutate_method)
+        task = tasks.get_task(task_name, self.args)
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
         n_tasks = self.args.limit if self.args.limit else len(dataset)
@@ -70,7 +70,7 @@ class Evaluator:
         return generations, references
 
     def evaluate(self, task_name):
-        task = tasks.get_task(task_name, self.args.mutate_method)
+        task = tasks.get_task(task_name, self.args)
         if task.requires_execution and not self.allow_code_execution:
             raise ValueError(_WARNING)
 
@@ -102,7 +102,7 @@ class EvaluatorOA(Evaluator):
     """WIP"""
     def generate_text(self, task_name):
         import openai
-        task = tasks.get_task(task_name, self.args.mutate_method)
+        task = tasks.get_task(task_name, self.args)
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
         n_tasks = self.args.limit if self.args.limit else len(dataset)
