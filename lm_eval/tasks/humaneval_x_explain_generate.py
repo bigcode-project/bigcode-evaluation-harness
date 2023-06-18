@@ -106,7 +106,7 @@ def create_all_tasks():
 def create_task(language):
     class HumanEvalXExplainGenerate(GeneralHumanEvalXExplainGenerate):
         def __init__(self, mutate_method="prompt", language=language, load_data_path=None):
-            super().__init__(mutate_method=mutate_method, language=language, load_data_path=None)
+            super().__init__(mutate_method=mutate_method, language=language, load_data_path=load_data_path)
 
     return HumanEvalXExplainGenerate
 
