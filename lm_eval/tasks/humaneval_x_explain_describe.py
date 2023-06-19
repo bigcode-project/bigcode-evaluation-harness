@@ -53,7 +53,7 @@ class GeneralHumanEvalXExplainDescribe(Task):
         assert self.mutate_method == "instruct", "Only instruct mutation is supported for Enc-Dec models"
         prompt_base = self.get_prompt_base(doc)
         prompt = prompt_base + doc["canonical_solution"]
-        docstring_len = len(doc["docstring"].split())
+        docstring_len = len(doc["docstring"])
         prompt += f"\nProvide a concise natural language description of the above function using at most {docstring_len} characters."
 
         return prompt
@@ -78,7 +78,7 @@ class GeneralHumanEvalXExplainDescribe(Task):
             prompt += "<commit_msg>"
         elif self.mutate_method == "instruct":
             prompt = prompt_base + doc["canonical_solution"]
-            docstring_len = len(doc["docstring"].split())
+            docstring_len = len(doc["docstring"])
             #prompt += f"\nProvide a detailed natural language description of the above function such that you would be able to reconstruct the function given the description. You are given a budget of {self.token_budget} tokens, everything afterwards will be cut off. Do not include any code."
             prompt += f"\nProvide a concise natural language description of the above function using at most {docstring_len} characters."
         
@@ -94,7 +94,7 @@ class GeneralHumanEvalXExplainDescribe(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        docstring_len = len(doc["docstring"].split())
+        docstring_len = len(doc["docstring"])
         gen = generation[len(prompt):].strip()[:docstring_len].rstrip()
         return gen
 
