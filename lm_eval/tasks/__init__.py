@@ -1,7 +1,7 @@
 from pprint import pprint
 
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
-               concode, ds1000, gsm, humaneval, mbpp, multiple, instruct_humaneval)
+               concode, ds1000, gsm, humaneval, mbpp, multiple, instruct_humaneval, ShaderEval)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
@@ -16,6 +16,7 @@ TASK_REGISTRY = {
     "mbpp": mbpp.MBPP,
     **gsm.create_all_tasks(),
     **instruct_humaneval.create_all_tasks(),
+    "ShaderEval": ShaderEval.ShaderEval_task1,
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))
