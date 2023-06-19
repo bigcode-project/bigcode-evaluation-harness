@@ -500,6 +500,19 @@ class GeneralHumanEvalXBugs(Task):
                         gen[i] = test_setup + "\n" + import_other_pkgs + "\n" + gen[i]
                     else:
                         gen[i] = test_setup + "\n" + gen[i]
+        elif language == "rust":
+            ds = self.get_dataset().select(range(len(generations)))
+            main = "\nfn main(){ \n } \n"
+            for gen, doc in zip(generations, ds):
+                declaration = doc["declaration"]
+                for i, g in enumerate(gen):
+                    new_gen = ""
+                    if main not in g:
+                        new_gen += main
+                    if declaration not in g:
+                        new_gen += declaration
+                    new_gen += g
+                    gen[i] = new_gen
 
         results, logs = code_metric.compute(
             references=references,
