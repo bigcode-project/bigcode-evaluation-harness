@@ -184,7 +184,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
         assert self.mutate_method == "instruct", "Only instruct mutation is supported for Enc-Dec models"
         prompt = doc["description"]
-        prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} that follows the description above."
+        prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description above."
 
         return prompt
     
@@ -204,7 +204,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
         prompt_base = self.get_prompt_base(doc)
         if self.mutate_method == "instruct":
             prompt = doc["description"]
-            prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} that follows the description above."
+            prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description above."
             prompt += f"\n{prompt_base}"
 
         return prompt.strip()
