@@ -202,6 +202,8 @@ class GeneralHumanEvalXGenerate(Task):
             prompt += "<commit_after>" + prompt_base
         elif self.mutate_method == "instruct":
             prompt = doc["instruction"].strip() + "\n\n" + prompt_base
+        elif self.mutate_method == "instruct-qa":
+            prompt = f'Question: {doc["instruction"].strip()}\n\nAnswer:\n{prompt_base}'
         elif self.mutate_method == "continue":
             prompt = prompt_base
         
