@@ -204,6 +204,8 @@ class GeneralHumanEvalXGenerate(Task):
             prompt = doc["instruction"].strip() + "\n\n" + prompt_base
         elif self.mutate_method == "instruct-qa":
             prompt = f'Question: {doc["instruction"].strip()}\n\nAnswer:\n{prompt_base}'
+        elif self.mutate_method == "instruct-wizard":
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:\n{prompt_base}'
         elif self.mutate_method == "continue":
             prompt = prompt_base
         
