@@ -293,7 +293,6 @@ class GeneralHumanEvalXGenerate(Task):
                 next_line = completion.index('```')
                 completion = completion[:next_line].strip()
             except:
-                a += 1
                 print(completion)
                 print("================\n")
             # print(completion)
