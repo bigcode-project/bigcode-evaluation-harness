@@ -299,6 +299,10 @@ class GeneralHumanEvalXBugs(Task):
             prompt = f"Instructions: Fix bug in {doc['entry_point']}\n"
             prompt += f"Input:\n{prompt_base + doc['buggy_solution']}\n"
             prompt += f"Output:\n" + prompt_base
+        elif self.mutate_method == "edit-test":
+            prompt = "<commit_before>" + doc["declaration"] + "\n" + doc["test"]
+            prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
+            prompt += "<commit_after>" + doc["declaration"]
         else:
             raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
         # Strip off the final \n to make the tokens more natural
