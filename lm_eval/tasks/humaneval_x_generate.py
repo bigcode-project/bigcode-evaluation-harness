@@ -145,7 +145,7 @@ class GeneralHumanEvalXGenerate(Task):
             return True
 
         # The heuristics below do not hold for diff generation
-        if self.mutate_method.startswith("diff"):
+        if (self.mutate_method.startswith("diff")) or (self.mutate_method == ("instruct-wizard-or")):
             return False
 
         if self.DATASET_NAME == "python":
@@ -206,6 +206,11 @@ class GeneralHumanEvalXGenerate(Task):
             prompt = f'Question: {doc["instruction"].strip()}\n\nAnswer:\n{prompt_base}'
         elif self.mutate_method == "instruct-wizard":
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:\n{prompt_base}'
+        elif self.mutate_method == "instruct-wizard-or":
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:'
+        elif self.mutate_method == "assistant":
+            prompt_template = "<|system|>\n<|end|>\n<|user|>\n{query}<|end|>\n<|assistant|>"
+            prompt = prompt_template.format(query=doc["instruction"].strip()) + "\n" + prompt_base
         elif self.mutate_method == "continue":
             prompt = prompt_base
         
@@ -265,12 +270,45 @@ class GeneralHumanEvalXGenerate(Task):
             index of doc in the dataset to which the generation belongs
             (not used for Humaneval-Task)
         """
+
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
+
+        if self.mutate_method == "instruct-wizard-or":
+            return self.postprocess_wizard(generation[len(prompt):], idx)
+    
         gen = self.remove_last_block(generation[len(prompt):].rstrip())
         prompt_base = self.get_prompt_base(doc)
         # Strip to maintain same behavior as with get_prompt
         return prompt_base.rstrip() + gen
+    
+    def postprocess_wizard(self, completion, idx):
+        completion = completion.replace("\r", "")            
+        if '```python' in completion: 
+            def_line = completion.index('```python')
+            completion = completion[def_line:].strip()
+            completion = completion.replace('```python', '')
+            # print(completion)
+            try:
+                next_line = completion.index('```')
+                completion = completion[:next_line].strip()
+            except:
+                a += 1
+                print(completion)
+                print("================\n")
+            # print(completion)
+        if "__name__ == \"__main__\"" in completion:
+            next_line = completion.index('if __name__ == "__main__":')
+            completion = completion[:next_line].strip()
+            # print(completion)
+        
+        if "# Example usage" in completion:
+            # print(completion)
+            next_line = completion.index('# Example usage')
+            completion = completion[:next_line].strip()
+        
+        return completion
+ 
     
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
