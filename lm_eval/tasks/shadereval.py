@@ -17,7 +17,7 @@ _CITATION = """tbd
 
 
 # TODO: Replace `NewTask` with the name of your Task.
-class ShaderEval_task1(Task):
+class ReturnCompletion(Task): #Task1
     # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
     # dataset as denoted in HuggingFace `datasets`.
     DATASET_PATH = "Vipitis/Shadertoys-fine"
@@ -73,7 +73,7 @@ class ShaderEval_task1(Task):
             index of doc in the dataset to which the generation belongs
         :return: str
         """
-        generation = generation.split("return")[1] #this works?
+        generation = generation.split("return")[1]  # this works?
         return generation.split(";")[0].strip()
 
     def process_results(self, generations, references):
@@ -90,5 +90,7 @@ class ShaderEval_task1(Task):
         :return: dict[str: float]
         """
         exact_match = evaluate.load("exact_match")
-        generations = [generation[0] for generation in generations] #unpack one list for some reason? (we zero shot)
+        generations = [
+            generation[0] for generation in generations
+        ]  # unpack one list for some reason? (we zero shot)
         return exact_match.compute(predictions=generations, references=references)
