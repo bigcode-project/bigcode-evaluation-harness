@@ -8,7 +8,7 @@ from pathlib import Path
 
 from . import (eval_cpp, eval_dlang, eval_java, eval_javascript, eval_julia,
                eval_lua, eval_php, eval_python, eval_r, eval_racket, eval_ruby,
-               eval_rust, eval_swift)
+               eval_rust, eval_swift, eval_ts)
 
 EVALUATORS = {
     "rb": (eval_ruby.eval_script, ".rb"),
@@ -33,6 +33,7 @@ EVALUATORS = {
     "r": (eval_r.eval_script, ".r"),
     "humaneval_to_r.py": (eval_r.eval_script, ".r"),
     "jl": (eval_julia.eval_script, ".jl"),
+    "ts": (eval_ts.eval_script, ".ts"),
 }
 
 
