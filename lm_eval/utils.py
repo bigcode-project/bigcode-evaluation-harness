@@ -22,6 +22,7 @@ class TokenizedDataset(IterableDataset):
         tokenizer,
         num_devices,
         max_length,
+        limit_start=0,
         n_tasks=None,
         n_copies=1,
         prefix="",
@@ -32,6 +33,7 @@ class TokenizedDataset(IterableDataset):
         self.tokenizer = tokenizer
         self.num_devices = num_devices
         self.max_length = max_length
+        self.limit_start = limit_start
         self.n_tasks = n_tasks
         self.n_copies = n_copies
         self.prefix = prefix
@@ -41,7 +43,7 @@ class TokenizedDataset(IterableDataset):
         prompts = []
         prompts_encoder = []
         infill = []
-        for sample in range(self.n_tasks):
+        for sample in range(self.limit_start, self.n_tasks):
             prompt_contents = self.task.get_prompt(self.dataset[sample])
             if isinstance(prompt_contents, str):
                 infill.append(False)
