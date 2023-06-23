@@ -204,8 +204,10 @@ class GeneralHumanEvalXExplainGenerate(Task):
         prompt_base = self.get_prompt_base(doc)
         if self.mutate_method == "instruct":
             prompt = doc["description"]
-            prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description above."
+            prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description."
             prompt += f"\n{prompt_base}"
+        elif self.mutate_method == "instruct-wizard":
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description above.\n\n### Response:\n{prompt_base}'
 
         return prompt.strip()
 

@@ -111,17 +111,13 @@ IMPORT_HELPER = {
 }
 
 def create_all_tasks():
-    """Creates a dictionary of tasks from a list of levels
-    :return: {task_name: task}
-        e.g. {apps-interview: Task, apps-competitoon: Task}
-    """
-    return {f"humaneval-x-bugs-{language}": create_task(language) for language in LANGUAGES}
+    return {f"humaneval-x-bugs-{language}-{mode}": create_task(language) for language in LANGUAGES for mode in ["tests", "docs"]}
 
 
-def create_task(language):
+def create_task(language, mode="tests"):
     class HumanEvalXBugs(GeneralHumanEvalXBugs):
-        def __init__(self, mutate_method="prompt", language=language):
-            super().__init__(mutate_method=mutate_method, language=language)
+        def __init__(self, language=language, mutate_method="prompt", mode=mode):
+            super().__init__(language=language, mutate_method=mutate_method, mode=mode)
 
     return HumanEvalXBugs
 
@@ -134,10 +130,11 @@ class GeneralHumanEvalXBugs(Task):
     DATASET_PATH = "bigcode/humaneval-x-bugs"
     DATASET_NAME = None
 
-    def __init__(self, mutate_method="prompt", language="python"):
+    def __init__(self, language="python", mutate_method="prompt", mode="tests"):
         
         self.DATASET_NAME = language
         self.mutate_method = mutate_method
+        self.mode = mode
         
         stop_words = LANGUAGE_TO_STOP_WORDS[language]
         if self.mutate_method.startswith("edit"):
@@ -163,9 +160,8 @@ class GeneralHumanEvalXBugs(Task):
 
     def check_fn(self, code):
         """
+        Checks whether the generated code is finished.
         Adapted from https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L115
-
-        Checks whether the generated code is finished
         """
         if any([w in code for w in self.stop_words]):
             return True
@@ -223,17 +219,27 @@ class GeneralHumanEvalXBugs(Task):
         # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
         # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
         if self.DATASET_NAME == "rust":
-            main = "\nfn main(){ \n } \n"
-            prompt_base = main + doc["declaration"] + doc["prompt"]
+            if self.mode == "tests":
+                return "\nfn main(){ \n } \n" + doc["declaration"]
+            elif self.mode == "docs":
+                return "\nfn main(){ \n } \n" + doc["declaration"] + doc["prompt"]
+            else:
+                raise ValueError
         else:
-            prompt_base = doc["prompt"]
-        return prompt_base
+            if self.mode == "tests":
+                return doc["declaration"]
+            elif self.mode == "docs":
+                return doc["prompt"]
+            else:
+                raise ValueError
 
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
         assert self.mutate_method == "prompt", "Only prompt mutation is supported for Enc-Dec models"
         # This is the simplest, most natural way of prompting regardless of language
         prompt = self.get_prompt_base(doc) + doc["buggy_solution"]
+        if self.mode == "tests":
+            prompt += "\n" + doc["test"]
         # One could add a comment here, but then it becomes language-specific & for some languages it may not
         # compile anyways since repeating the prompt results in double imports, so let's keep it simple
         prompt += "\n" + "Fix bug in " + doc["entry_point"] # This will be cut-off, so it will compile

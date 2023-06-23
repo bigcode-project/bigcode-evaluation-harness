@@ -43,11 +43,11 @@ class Evaluator:
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
         n_tasks = self.args.limit if self.args.limit else len(dataset)
-        references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
+        references = [task.get_reference(dataset[i]) for i in range(self.args.limit_start, self.args.limit_start+n_tasks)]
 
         if self.args.check_references:
             if "get_solution" in inspect.signature(task.get_reference).parameters:
-                solutions = [[task.get_reference(dataset[i], get_solution=True)] for i in range(n_tasks)]
+                solutions = [[task.get_reference(dataset[i], get_solution=True)] for i in range(self.args.limit_start, self.args.limit_start+n_tasks)]
             else:
                 solutions = [[ref] for ref in references]
             return solutions, references
@@ -61,7 +61,7 @@ class Evaluator:
             n_tasks=n_tasks,
             args=self.args,
         )
-        references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
+        references = [task.get_reference(dataset[i]) for i in range(self.args.limit_start, self.args.limit_start+n_tasks)]
         if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
             warnings.warn(

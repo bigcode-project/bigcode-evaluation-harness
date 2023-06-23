@@ -89,6 +89,12 @@ def parse_args():
         help="Number of samples to solve and evaluate from the benchmark",
     )
     parser.add_argument(
+        "--limit_start",
+        type=int,
+        default=0,
+        help="Optional offset to start from when limiting the number of samples",
+    )    
+    parser.add_argument(
         "--postprocess",
         action="store_false",
         help="Postprocess model outputs before execution, always on except during generation tests",
