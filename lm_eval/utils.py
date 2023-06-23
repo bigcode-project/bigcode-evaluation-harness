@@ -43,7 +43,7 @@ class TokenizedDataset(IterableDataset):
         prompts = []
         prompts_encoder = []
         infill = []
-        for sample in range(self.limit_start, self.n_tasks):
+        for sample in range(self.limit_start, self.limit_start+self.n_tasks):
             prompt_contents = self.task.get_prompt(self.dataset[sample])
             if isinstance(prompt_contents, str):
                 infill.append(False)
