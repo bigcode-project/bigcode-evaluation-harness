@@ -218,7 +218,7 @@ class GeneralHumanEvalXGenerate(Task):
         elif self.mutate_method == "starchat":
             # https://huggingface.co/HuggingFaceH4/starchat-beta
             prompt_template = "<|system|>\n<|end|>\n<|user|>\n{query}<|end|>\n<|assistant|>"
-            prompt = prompt_template.format(query=doc["instruction"].strip())
+            prompt = prompt_template.format(query=doc["instruction"].strip()) + "\n" + prompt_base
         elif self.mutate_method == "instructcodet5p":
             # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:{prompt_base}'       
@@ -412,6 +412,6 @@ class GeneralHumanEvalXGenerate(Task):
                 print(log)
                 print(i)
                 print(gen[0])
-                print(ref)        
+                print(ref)
         """
         return results
