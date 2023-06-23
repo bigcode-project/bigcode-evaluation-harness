@@ -126,6 +126,8 @@ class GeneralHumanEvalXGenerate(Task):
                 "<commit_msg>",
                 "<commit_after>",
             ])
+        elif self.mutate_method == "instruct-wizard-or":
+            stop_words = []
 
         stop_words.append("<|endoftext|>")
         
@@ -186,8 +188,12 @@ class GeneralHumanEvalXGenerate(Task):
 
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
-        assert self.mutate_method == "instruct", "Only instruct mutation is supported for Enc-Dec models"
-        return doc["instruction"].strip()
+        if self.mutate_method == "instruct":
+            return doc["instruction"].strip()
+        elif self.mutate_method == "instructcodet5p":
+            return f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:'
+        else:
+            raise NotImplementedError
     
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
@@ -208,9 +214,17 @@ class GeneralHumanEvalXGenerate(Task):
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:\n{prompt_base}'
         elif self.mutate_method == "instruct-wizard-or":
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:'
-        elif self.mutate_method == "assistant":
+
+        elif self.mutate_method == "starchat":
+            # https://huggingface.co/HuggingFaceH4/starchat-beta
             prompt_template = "<|system|>\n<|end|>\n<|user|>\n{query}<|end|>\n<|assistant|>"
-            prompt = prompt_template.format(query=doc["instruction"].strip()) + "\n" + prompt_base
+            prompt = prompt_template.format(query=doc["instruction"].strip())
+        elif self.mutate_method == "instructcodet5p":
+            # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:{prompt_base}'       
+        elif self.mutate_method == "wizardcoder":
+            # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/humaneval_gen.py#L37
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:'
         elif self.mutate_method == "continue":
             prompt = prompt_base
         
