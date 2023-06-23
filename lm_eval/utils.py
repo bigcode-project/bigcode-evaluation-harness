@@ -138,6 +138,7 @@ def complete_code(
     tokenizer,
     dataloader,
     n_tasks,
+    limit_start=0,
     batch_size=20,
     prefix="",
     postprocess=True,
@@ -246,7 +247,7 @@ def complete_code(
                 gen_code = gen_code[len(prefix) :]
             if postprocess:
                 code_gens[sample].append(
-                    task.postprocess_generation(gen_code, int(sample))
+                    task.postprocess_generation(gen_code, int(sample) + limit_start)
                 )
             else:
                 warnings.warn(
