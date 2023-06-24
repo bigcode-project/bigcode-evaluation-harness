@@ -202,12 +202,13 @@ class GeneralHumanEvalXExplainGenerate(Task):
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         prompt_base = self.get_prompt_base(doc)
+        instruction = f"Write functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description."
         if self.mutate_method == "instruct":
-            prompt = doc["description"]
-            prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description."
-            prompt += f"\n{prompt_base}"
-        elif self.mutate_method == "instruct-wizard":
-            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description above.\n\n### Response:\n{prompt_base}'
+            prompt = doc["description"] + "\n" + instruction + "\n" + prompt_base
+        elif self.mutate_method == "instruct-qa":
+            prompt = f'Question: {instruction}\n{doc["description"]}\n\nAnswer:\n{prompt_base}'
+        elif self.mutate_method == "wizardcoder":
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{doc["description"]}\n\n### Response:\n{prompt_base}'
 
         return prompt.strip()
 

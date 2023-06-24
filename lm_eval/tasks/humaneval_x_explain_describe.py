@@ -73,17 +73,19 @@ class GeneralHumanEvalXExplainDescribe(Task):
         """Builds the prompt for the LM to generate from."""
         # Use declaration instead of prompt to hide the docstring
         prompt_base = self.get_prompt_base(doc)
+        docstring_len = len(doc["docstring"])
+        instruction = f"Provide a concise natural language description of the code using at most {docstring_len} characters."
+        func = prompt_base + doc["canonical_solution"]
+
         if self.mutate_method == "edit":
             prompt = "<commit_before><commit_after>" + prompt_base + doc["canonical_solution"]
             prompt += "<commit_msg>"
         elif self.mutate_method == "instruct":
-            prompt = prompt_base + doc["canonical_solution"]
-            docstring_len = len(doc["docstring"])
-            prompt += f"\nProvide a concise natural language description of the function using at most {docstring_len} characters."
+            prompt = func + "\n" + instruction
         elif self.mutate_method == "instruct-qa":
-            pass
-
-
+            prompt = f'Question: {instruction}\n{func}\n\nAnswer:\n{prompt_base}'
+        elif self.mutate_method == "wizardcoder":
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:'
         return prompt
 
     def postprocess_generation(self, generation, idx):
