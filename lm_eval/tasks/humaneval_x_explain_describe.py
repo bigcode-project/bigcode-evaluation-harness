@@ -83,7 +83,7 @@ class GeneralHumanEvalXExplainDescribe(Task):
         elif self.mutate_method == "instruct":
             prompt = func + "\n" + instruction
         elif self.mutate_method == "instruct-qa":
-            prompt = f'Question: {instruction}\n{func}\n\nAnswer:\n{prompt_base}'
+            prompt = f'Question: {instruction}\n{func}\n\nAnswer:'
         elif self.mutate_method == "wizardcoder":
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:'
         return prompt
