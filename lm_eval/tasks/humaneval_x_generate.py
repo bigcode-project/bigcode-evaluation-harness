@@ -1,5 +1,3 @@
-import json
-
 from evaluate import load
 from lm_eval.base import Task
 
@@ -96,8 +94,8 @@ def create_all_tasks():
 
 def create_task(language):
     class HumanEvalXGenerate(GeneralHumanEvalXGenerate):
-        def __init__(self, mutate_method="prompt", load_data_path=None, language=language):
-            super().__init__(mutate_method=mutate_method, load_data_path=load_data_path, language=language)
+        def __init__(self, mutate_method="prompt", language=language):
+            super().__init__(mutate_method=mutate_method, language=language)
 
     return HumanEvalXGenerate
 
@@ -109,15 +107,9 @@ class GeneralHumanEvalXGenerate(Task):
     DATASET_PATH = "bigcode/humaneval-x-bugs"
     DATASET_NAME = None
 
-    def __init__(self, mutate_method="prompt", load_data_path=None, language="python"):
+    def __init__(self, mutate_method="prompt", language="python"):
         
         self.DATASET_NAME = language
-        self.descriptions = None
-        if load_data_path is not None:
-            with open(load_data_path) as fp:
-                self.descriptions = json.load(fp)
-                print(f"{len(self.descriptions)} descriptions with {len(self.descriptions[0])} description candidates loaded.")            
-
         self.mutate_method = mutate_method        
         stop_words = LANGUAGE_TO_STOP_WORDS[language]
         if self.mutate_method.startswith("edit"):
@@ -211,10 +203,8 @@ class GeneralHumanEvalXGenerate(Task):
         elif self.mutate_method == "instruct-qa":
             prompt = f'Question: {doc["instruction"].strip()}\n\nAnswer:\n{prompt_base}'
         elif self.mutate_method == "instruct-wizard":
+            # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/humaneval_gen.py#L37
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:\n{prompt_base}'
-        elif self.mutate_method == "instruct-wizard-or":
-            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:'
-
         elif self.mutate_method == "starchat":
             # https://huggingface.co/HuggingFaceH4/starchat-beta
             prompt_template = "<|system|>\n<|end|>\n<|user|>\n{query}<|end|>\n<|assistant|>"
@@ -245,10 +235,7 @@ class GeneralHumanEvalXGenerate(Task):
         """
         for w in self.stop_words:
             if w in code:
-                code = code[:code.rfind(w)]
-
-        if self.mutate_method.startswith("diff"):
-            return code
+                code = code[:code.find(w)]
 
         if self.DATASET_NAME == "python":
             for i, line in enumerate(code.split("\n")):
@@ -284,7 +271,6 @@ class GeneralHumanEvalXGenerate(Task):
             index of doc in the dataset to which the generation belongs
             (not used for Humaneval-Task)
         """
-
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
 

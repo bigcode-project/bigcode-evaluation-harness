@@ -217,7 +217,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
         """
         for w in self.stop_words:
             if w in code:
-                code = code[:code.rfind(w)]
+                code = code[:code.find(w)]
 
         if self.mutate_method.startswith("diff"):
             return code
