@@ -221,7 +221,7 @@ def main():
             )
         model_class = MODEL_CLASSES[args.model_class]
         if accelerator.is_main_process:
-            print(f"Using model: {model_class.__name__}")
+            print(f"Loading the model using the class: {model_class.__name__}")
         if args.load_in_8bit:
             print("Loading model in 8bit")
             current_device = accelerator.process_index
