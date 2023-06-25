@@ -93,10 +93,12 @@ class Evaluator:
                 )
             else:
                 if self.args.save_generations:
-                    with open(self.args.save_generations_path, "w") as fp:
+                    # Rename the filename, adding the task name
+                    filepath: str = self.args.save_generations_path.replace(".json", f"_{task_name}.json")
+                    with open(filepath, "w") as fp:
                         json.dump(generations, fp)
                         print(
-                            f"generations were saved at {self.args.save_generations_path}"
+                            f"Generations for task {task_name} were saved at {filepath}"
                         )
                 if self.args.save_references:
                     with open(self.args.save_references_path, "w") as fp:
