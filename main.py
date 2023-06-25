@@ -196,8 +196,8 @@ def main():
         default_outputs_dirpath.mkdir(parents=True, exist_ok=False)
         print(f"Created a new directory for saving outputs: {default_outputs_dirpath}")
         print(f"Selected Tasks: {task_names}")
-    accelerator.print("Number of available devices: ", accelerator.num_processes)
     accelerator.print("Type of available devices: ", accelerator.device.type)
+    accelerator.print(f"Number of available GPUs: {accelerator.num_processes * accelerator.num_gpus if accelerator.num_gpus is not None else 0}")
 
     results = {}
     if args.load_generations_path:
