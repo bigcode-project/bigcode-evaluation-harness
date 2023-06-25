@@ -101,9 +101,10 @@ class Evaluator:
                             f"Generations for task {task_name} were saved at {filepath}"
                         )
                 if self.args.save_references:
-                    with open(self.args.save_references_path, "w") as fp:
+                    filepath: str = self.args.save_references_path.replace(".json", f"_{task_name}.json")
+                    with open(filepath, "w") as fp:
                         json.dump(references, fp)
-                        print(f"references were saved at {self.args.save_references_path}")
+                        print(f"References for task {task} were saved at {filepath}")
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
