@@ -7,7 +7,7 @@ import datasets
 import torch
 import transformers
 from accelerate import Accelerator
-from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
+from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, AutoModelForSeq2SeqLM
 
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
@@ -31,9 +31,11 @@ class MultiChoice:
             yield choice
 
 
+MODEL_CLASSES = {"CausalLM": AutoModelForCausalLM, "Seq2SeqLM": AutoModelForSeq2SeqLM}
+
+
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 default_outputs_dirpath = Path(f"outputs/{timestamp}")
-default_outputs_dirpath.mkdir(parents=True, exist_ok=False)
 
 
 def parse_args():
@@ -43,6 +45,12 @@ def parse_args():
         "--model",
         default="codeparrot/codeparrot-small",
         help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
+    )
+    parser.add_argument(
+        "--model_class",
+        default="CausalLM",
+        choices=["CausalLM", "Seq2SeqLM"],
+        help="The model will be loaded using transformer's AutoModelFor<model_class>.",
     )
     parser.add_argument(
         "--revision",
@@ -185,6 +193,8 @@ def main():
 
     accelerator = Accelerator()
     if accelerator.is_main_process:
+        default_outputs_dirpath.mkdir(parents=True, exist_ok=False)
+        print(f"Created a new directory for saving outputs: {default_outputs_dirpath}")
         print(f"Selected Tasks: {task_names}")
     accelerator.print("Number of available devices: ", accelerator.num_processes)
     accelerator.print("Type of available devices: ", accelerator.device.type)
@@ -209,11 +219,14 @@ def main():
             raise ValueError(
                 f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16"
             )
+        model_class = MODEL_CLASSES[args.model_class]
+        if accelerator.is_main_process:
+            print(f"Using model: {model_class.__name__}")
         if args.load_in_8bit:
             print("Loading model in 8bit")
             current_device = accelerator.process_index
             # the model needs to fit in one GPU
-            model = AutoModelForCausalLM.from_pretrained(
+            model = model_class.from_pretrained(
                 args.model,
                 revision=args.revision,
                 load_in_8bit=args.load_in_8bit,
@@ -225,7 +238,7 @@ def main():
             print("Loading model in 4bit")
             current_device = accelerator.process_index
             # the model needs to fit in one GPU
-            model = AutoModelForCausalLM.from_pretrained(
+            model = model_class.from_pretrained(
                 args.model,
                 revision=args.revision,
                 load_in_4bit=args.load_in_4bit,
@@ -235,7 +248,7 @@ def main():
             )
         else:
             print(f"Loading model in {args.precision}")
-            model = AutoModelForCausalLM.from_pretrained(
+            model = model_class.from_pretrained(
                 args.model,
                 revision=args.revision,
                 torch_dtype=dict_precisions[args.precision],
