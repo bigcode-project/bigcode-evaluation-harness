@@ -38,6 +38,7 @@ def update_args(args):
     # postprocessing for HumanEval and MBPP makes generations
     # with dummy model not distinctive
     args.postprocess = False
+    args.instruction_tokens = None
 
     args.limit = 2
     args.batch_size = 1
