@@ -78,7 +78,7 @@ class NewSpecialTokens:
 
 @dataclass(frozen=True)
 class TokenizerConfig:
-    tokenizer_checkpoint = "Salesforce/codet5p-220m"
+    tokenizer_checkpoint = "Salesforce/codegen-350M-mono"
 
 
 EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, Any])
