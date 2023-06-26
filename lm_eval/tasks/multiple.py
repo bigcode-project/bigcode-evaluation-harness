@@ -36,7 +36,7 @@ _CITATION = """
 
 LANGUAGES = [
     "py",
-    "bs",
+    "sh",
     "cpp",
     "cs",
     "d",
