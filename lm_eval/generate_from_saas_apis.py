@@ -147,6 +147,7 @@ def generate_from_openai() -> Tuple[Generations, References]:
             / datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
         )
         dirpath.mkdir(parents=True, exist_ok=False)
+        logging.info(f"Saving generations and references to {dirpath}")
         filepath_a: Path = dirpath / "args.json"
         filepath_g: Path = dirpath / "generations.json"
         filepath_r: Path = dirpath / "references.json"
