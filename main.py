@@ -196,8 +196,9 @@ def main():
         default_outputs_dirpath.mkdir(parents=True, exist_ok=False)
         print(f"Created a new directory for saving outputs: {default_outputs_dirpath}")
         print(f"Selected Tasks: {task_names}")
-    accelerator.print("Number of available devices: ", accelerator.num_processes)
     accelerator.print("Type of available devices: ", accelerator.device.type)
+    num_of_gpus: int = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    accelerator.print(f"Number of available GPUs: {num_of_gpus}")
 
     results = {}
     if args.load_generations_path:

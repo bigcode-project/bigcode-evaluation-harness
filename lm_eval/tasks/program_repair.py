@@ -78,7 +78,7 @@ class NewSpecialTokens:
 
 @dataclass(frozen=True)
 class TokenizerConfig:
-    tokenizer_checkpoint = "CarperAI/diff-codegen-350m-v2"
+    tokenizer_checkpoint = "Salesforce/codegen-350M-mono"
 
 
 EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, Any])
