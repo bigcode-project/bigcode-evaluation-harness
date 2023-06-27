@@ -38,6 +38,8 @@ class GeneralHumanEvalXExplainDescribe(Task):
         self.mutate_method = mutate_method
         
         stop_words = ["<|endoftext|>"]
+        if self.mutate_method == "starchat":
+            stop_words.append("<|end|>")
 
         super().__init__(
             stop_words=stop_words,
@@ -50,12 +52,16 @@ class GeneralHumanEvalXExplainDescribe(Task):
 
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
-        assert self.mutate_method == "instruct", "Only instruct mutation is supported for Enc-Dec models"
         prompt_base = self.get_prompt_base(doc)
-        prompt = prompt_base + doc["canonical_solution"]
         docstring_len = len(doc["docstring"])
-        prompt += f"\nProvide a concise natural language description of the above function using at most {docstring_len} characters."
+        instruction = f"Provide a concise natural language description of the code using at most {docstring_len} characters."
+        func = prompt_base + doc["canonical_solution"]
 
+        if self.mutate_method == "instructcodet5p":
+            # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:' 
+        else:
+            raise NotImplementedError
         return prompt
     
     def get_prompt_base(self, doc):
@@ -84,10 +90,29 @@ class GeneralHumanEvalXExplainDescribe(Task):
             prompt = func + "\n" + instruction
         elif self.mutate_method == "instruct-qa":
             prompt = f'Question: {instruction}\n{func}\n\nAnswer:'
+        elif self.mutate_method == "instructcodet5p":
+            # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:'       
+        elif self.mutate_method == "starchat":
+            # https://huggingface.co/HuggingFaceH4/starchat-beta
+            prompt = f"<|system|>\n<|end|>\n<|user|>\n{instruction}\n{func}<|end|>\n<|assistant|>"
         elif self.mutate_method == "wizardcoder":
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:'
         return prompt
 
+    def remove_last_block(self, text):
+        for w in self.stop_words:
+            if w in text:
+                text = text[:text.find(w)]
+        return text
+
+    def remove_code(self, text, canonical_solution):
+        for line in canonical_solution.split("\n"):
+            line = line.strip()
+            if len(line) > 20 and line in text:
+                text = text.replace(line, "")
+        return text
+    
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
         :param generation: str
@@ -99,7 +124,8 @@ class GeneralHumanEvalXExplainDescribe(Task):
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
         docstring_len = len(doc["docstring"])
-        gen = generation[len(prompt):].strip()[:docstring_len].rstrip()
+        gen = self.remove_last_block(generation[len(prompt):].strip()[:docstring_len]).rstrip()
+        gen = self.remove_code(gen, doc["canonical_solution"])
         return gen
 
     def get_reference(self, doc, get_solution=False):

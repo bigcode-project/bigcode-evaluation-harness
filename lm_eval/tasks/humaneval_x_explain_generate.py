@@ -136,7 +136,10 @@ class GeneralHumanEvalXExplainGenerate(Task):
                 "<commit_msg>",
                 "<commit_after>",
             ])
+        elif self.mutate_method == "starchat":
+            self.stop_words.extend(["<|end|>"])            
         self.requires_execution = True
+        # TODO: Switch back to super
 
     def check_fn(self, code):
         """
@@ -182,10 +185,13 @@ class GeneralHumanEvalXExplainGenerate(Task):
 
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
-        assert self.mutate_method == "instruct", "Only instruct mutation is supported for Enc-Dec models"
-        prompt = doc["description"]
-        prompt += f"\nWrite functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description above."
-
+        prompt_base = self.get_prompt_base(doc)
+        instruction = f"Write functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description."
+        if self.mutate_method == "instructcodet5p":
+            # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{doc["description"]}\n\n### Response:'       
+        else:
+            raise NotImplementedError
         return prompt
     
     def get_prompt_base(self, doc):
@@ -207,6 +213,11 @@ class GeneralHumanEvalXExplainGenerate(Task):
             prompt = doc["description"] + "\n" + instruction + "\n" + prompt_base
         elif self.mutate_method == "instruct-qa":
             prompt = f'Question: {instruction}\n{doc["description"]}\n\nAnswer:\n{prompt_base}'
+        elif self.mutate_method == "instructcodet5p":
+            # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{doc["description"]}\n\n### Response:{prompt_base}'       
+        elif self.mutate_method == "starchat":
+            prompt = f'<|system|>\n<|end|>\n<|user|>\n{instruction}\n{doc["description"]}<|end|>\n<|assistant|>\n{prompt_base}'
         elif self.mutate_method == "wizardcoder":
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{doc["description"]}\n\n### Response:\n{prompt_base}'
 

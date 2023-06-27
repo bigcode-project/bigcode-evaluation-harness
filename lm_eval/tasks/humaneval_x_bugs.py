@@ -147,6 +147,8 @@ class GeneralHumanEvalXBugs(Task):
             stop_words = ["<commit_before>", "<commit_msg>", "<commit_after>"]
         elif self.mutate_method == "diff-carper":
             stop_words = ["<BEF>", "<MSG>", "<DFF>", "\ No newline at end of file"]
+        elif self.mutate_method == "starchat":
+            stop_words.append("<|end|>")
 
         stop_words.append("<|endoftext|>")
 
@@ -235,19 +237,26 @@ class GeneralHumanEvalXBugs(Task):
 
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
-        assert self.mutate_method == "prompt", "Only prompt mutation is supported for Enc-Dec models"
-        # This is the simplest, most natural way of prompting regardless of language
-        prompt = self.get_prompt_base(doc) + doc["buggy_solution"]
+        prompt_base = self.get_prompt_base(doc)
+        instruction = f'Fix bugs in {doc["entry_point"]}.'
+        func = prompt_base + doc["buggy_solution"]
         if self.mode == "tests":
-            prompt += "\n" + doc["test"]
-        # One could add a comment here, but then it becomes language-specific & for some languages it may not
-        # compile anyways since repeating the prompt results in double imports, so let's keep it simple
-        prompt += "\n" + "Fix bug in " + doc["entry_point"] # This will be cut-off, so it will compile
+            func += "\n" + doc["test"]
+        
+        if self.mutate_method == "instructcodet5p":
+            # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:'
+        else:
+            raise NotImplementedError
         return prompt
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         prompt_base = self.get_prompt_base(doc)
+        instruction = f'Fix bugs in {doc["entry_point"]}.'
+        func = prompt_base + doc["buggy_solution"]
+        if self.mode == "tests":
+            func += "\n" + doc["test"]
 
         if self.mutate_method == "file":
             file_name = self.get_filename_with_extension(input_file=doc["entry_point"])
@@ -310,9 +319,15 @@ class GeneralHumanEvalXBugs(Task):
             prompt += f"Input:\n{prompt_base + doc['buggy_solution']}\n"
             prompt += f"Output:\n" + prompt_base
         elif self.mutate_method == "edit-test":
-            prompt = "<commit_before>" + doc["declaration"] + "\n" + doc["test"]
-            prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
-            prompt += "<commit_after>" + doc["declaration"]
+            prompt = "<commit_before>" + func + "<commit_msg>" + instruction + "<commit_after>" + prompt_base
+        elif self.mutate_method == "instruct-qa":
+            prompt = f'Question: {instruction}\n{func}\n\nAnswer:\n{prompt_base}'
+        elif self.mutate_method == "instructcodet5p":
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:{prompt_base}'
+        elif self.mutate_method == "starchat":
+            prompt = f"<|system|>\n<|end|>\n<|user|>\n{instruction}\n{func}<|end|>\n<|assistant|>\n{prompt_base}"
+        elif self.mutate_method == "wizardcoder":
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:\n{prompt_base}'
         else:
             raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
         # Strip off the final \n to make the tokens more natural
