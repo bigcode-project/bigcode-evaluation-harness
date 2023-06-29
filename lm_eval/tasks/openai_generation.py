@@ -160,7 +160,7 @@ if __name__ == '__main__':
         if TASK == "humaneval-x-bugs":
             prompt = get_prompt_bugs(sample, language=LANGUAGE)
         elif TASK == "humaneval-x-generate":
-            prompt = get_prompt_generate(sample, language=LANGUAGE)
+            prompt = get_prompt_generate(sample)
         elif TASK == "humaneval-x-explain-describe":
             prompt = get_prompt_explain_desc(sample, language=LANGUAGE)
         elif TASK == "humaneval-x-explain-generate":
