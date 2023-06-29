@@ -1,3 +1,40 @@
+"""
+from datasets import load_dataset
+
+ds = load_dataset("bigcode/humaneval-x-bugs", "python")["test"]
+idx = 0
+
+def get_prompt_base(doc, language="python"):
+    # See 
+    # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
+    # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
+    if language == "rust":
+        main = "\nfn main(){ \n } \n"
+        prompt_base = main + doc["declaration"] + doc["prompt"]
+    else:
+        prompt_base = doc["prompt"]
+    return prompt_base
+
+prompt_base = get_prompt_base(ds[idx], language="python")
+    
+messages = [
+    {
+        "role": "user",
+        "content": ds[idx]["instruction"],
+    },
+    {
+        "role": "assistant",
+        "content": prompt_base,
+    },
+]
+
+gpt-4-0613
+response = openai.ChatCompletion.create(
+model=gpt-4-0613,
+messages=messages
+)
+"""
+
 import os
 import openai
 import jsonlines
@@ -8,30 +45,44 @@ from camel_converter import to_snake
 from datasets import load_dataset
 from typing import List, Dict
 
+def get_prompt_generate(doc):
+    return doc["instruction"]
 
-messages = [
-    {
-        "role": "system",
-        "content": "You are an AI programming assistant. "
-                   "Follow the user's requirements carefully & to the letter."
-    },
-    {
-        "role": "user",
-        "content": "I'll provide you code snippet with bug in code. Your should fix it. "
-                   "Make sure you leave function signature and it's description unchanged: "
-                   "no additional symbols, rephrasing, changing format pr fixing typos. "
-                   "Output format should contains only code text without any explanations.",
-    },
-    {
-        "role": "assistant",
-        "content": "Yes, my assignment is clear. Please send me a code.",
-    },
-]
 
+def get_prompt_bugs(doc, language="python", mode="tests"):
+    if language == "rust":
+        if mode == "tests":
+            return "\nfn main(){ \n } \n" + doc["declaration"]
+        elif mode == "docs":
+            return "\nfn main(){ \n } \n" + doc["declaration"] + doc["prompt"]
+        else:
+            raise ValueError
+    else:
+        if mode == "tests":
+            return doc["declaration"]
+        elif mode == "docs":
+            return doc["prompt"]
+        else:
+            raise ValueError
+
+def get_prompt_explain_desc(doc, language="python"):
+    if language == "rust":
+        main = "\nfn main(){ \n } \n"
+        prompt_base = main + doc["declaration"]
+    else:
+        prompt_base = doc["declaration"]
+    docstring_len = len(doc["docstring"])
+
+    instruction = f"Provide a concise natural language description of the code using at most {docstring_len} characters."
+    func = prompt_base + doc["canonical_solution"]
+
+    return instruction + "\n" + func
+
+def get_prompt_explain_gen(sample):
+    raise NotImplementedError
 
 class ParseError(Exception):
     pass
-
 
 class ContentParser:
 
@@ -60,30 +111,29 @@ class ContentParser:
             if entry_point in content:
                 content = content.split(entry_point)[-1]
                 return "".join(content.splitlines(keepends=True)[1:])
-        raise ParseError(f"prompt is not in content:\n{content}")
+        raise ParseError(f"Prompt is not in content:\n{content}")
 
 
 class ChatWrapper:
 
-    def __init__(self,
-                 model: str,
-                 messages: List[Dict[str, str]]):
+    def __init__(self, model: str):
         self._model = model
-        self._messages = messages
 
-    def __call__(self, prompt: str, solution: str) -> str:
+    def __call__(self, prompt: str) -> str:
         messages = [
-            *self._messages,
             {
                 "role": "user",
-                "content": prompt + solution,
+                "content": prompt,
             }
         ]
         while True:
             try:
                 response = openai.ChatCompletion.create(
                     model=self._model,
-                    messages=messages)
+                    messages=messages,
+                    temperature=0.2,
+                    top_p=0.95,
+                )
                 message = response["choices"][0]["message"]
                 assert message["role"] == "assistant"
                 return message["content"]
@@ -95,23 +145,33 @@ if __name__ == '__main__':
     TIMES = 1
     VERBOSE = True
     LANGUAGE = "python"
+    MODEL = "gpt-4-0613"
+    TASK = "humaneval-x-generate"
 
     openai.organization = os.getenv("OPENAI_ORGANIZATION")
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
     samples = [s for s in load_dataset("bigcode/humaneval-x-bugs", LANGUAGE)["test"]] * TIMES
 
-    chat_wrapper = ChatWrapper("gpt-3.5-turbo", messages)
+    chat_wrapper = ChatWrapper(MODEL)
     parse_errors = 0
     parser = ContentParser()
     for idx, sample in enumerate(samples):
-        prompt = sample["prompt"] if LANGUAGE not in ["rust"] else sample["prompt"] + sample["declaration"]
+        if TASK == "humaneval-x-bugs":
+            prompt = get_prompt_bugs(sample, language=LANGUAGE)
+        elif TASK == "humaneval-x-generate":
+            prompt = get_prompt_generate(sample, language=LANGUAGE)
+        elif TASK == "humaneval-x-explain-describe":
+            prompt = get_prompt_explain_desc(sample, language=LANGUAGE)
+        elif TASK == "humaneval-x-explain-generate":
+            prompt = get_prompt_explain_gen(sample)
+
         if VERBOSE:
             print(f"Processing {sample['task_id']} ({idx + 1}/{len(samples)}))...")
             print(termcolor.colored(sample["entry_point"], "yellow", attrs=["bold"]))
             print(termcolor.colored(prompt, "yellow"))
             print(termcolor.colored(sample["buggy_solution"], "red"))
-        sample["raw_generation"] = chat_wrapper(prompt, sample["buggy_solution"])
+        sample["raw_generation"] = chat_wrapper(prompt)
         try:
             sample["generation"] = parser(prompt, sample["raw_generation"], sample["entry_point"])
         except ParseError as e:

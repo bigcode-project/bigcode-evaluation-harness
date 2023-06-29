@@ -267,10 +267,8 @@ class GeneralHumanEvalXBugs(Task):
             prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
             prompt += "<commit_after>" + prompt_base
-        elif self.mutate_method == "editnodoc":
-            prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
-            prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
-            prompt += "<commit_after>" + doc["declaration"]            
+        elif self.mutate_method == "starcoder":
+            prompt = "<commit_before>" + func + "<commit_msg>" + instruction + "<commit_after>" + prompt_base
         elif self.mutate_method == "edit-newline":
             prompt = "<commit_before>\n" + prompt_base + doc["buggy_solution"]
             prompt += "\n<commit_msg>\n" + "Fix bug in " + doc["entry_point"]
