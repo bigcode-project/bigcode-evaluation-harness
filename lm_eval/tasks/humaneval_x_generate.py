@@ -203,6 +203,10 @@ class GeneralHumanEvalXGenerate(Task):
             prompt = doc["instruction"].strip() + "\n\n" + prompt_base
         elif self.mutate_method == "instruct-qa":
             prompt = f'Question: {doc["instruction"].strip()}\n\nAnswer:\n{prompt_base}'
+        elif self.mutate_method == "starcodercommit":
+            prompt = f'<commit_before><commit_msg>{doc["instruction"].strip()}<commit_after>{prompt_base}'
+        elif self.mutate_method == "starcodercommit2":
+            prompt = f'<commit_before>{prompt_base}<commit_msg>{doc["instruction"].strip().replace("Write a", "Complete")}<commit_after>{prompt_base}'
         elif self.mutate_method == "instruct-wizard":
             # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/humaneval_gen.py#L37
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:\n{prompt_base}'

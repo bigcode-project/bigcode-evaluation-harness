@@ -77,22 +77,20 @@ class GeneralHumanEvalXExplainDescribe(Task):
     
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        # Use declaration instead of prompt to hide the docstring
         prompt_base = self.get_prompt_base(doc)
         docstring_len = len(doc["docstring"])
         instruction = f"Provide a concise natural language description of the code using at most {docstring_len} characters."
         func = prompt_base + doc["canonical_solution"]
 
-        if self.mutate_method == "edit":
-            prompt = "<commit_before><commit_after>" + prompt_base + doc["canonical_solution"]
-            prompt += "<commit_msg>"
-        elif self.mutate_method == "instruct":
+        if self.mutate_method == "instruct":
             prompt = func + "\n" + instruction
         elif self.mutate_method == "instruct-qa":
             prompt = f'Question: {instruction}\n{func}\n\nAnswer:'
         elif self.mutate_method == "instructcodet5p":
             # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:'       
+        elif self.mutate_method == "starcodercommit":
+            prompt = f'<commit_before><commit_msg>{instruction}\n{func}<commit_after>'
         elif self.mutate_method == "starchat":
             # https://huggingface.co/HuggingFaceH4/starchat-beta
             prompt = f"<|system|>\n<|end|>\n<|user|>\n{instruction}\n{func}<|end|>\n<|assistant|>"
@@ -129,15 +127,7 @@ class GeneralHumanEvalXExplainDescribe(Task):
         return gen
 
     def get_reference(self, doc, get_solution=False):
-        """Builds the reference solution for the doc (sample from the test dataset)."""
         return None
             
     def process_results(self, generations, references):
-        """Takes the list of LM generations and evaluates them against ground truth references,
-        returning the metric for the generations.
-        :param generations: list(list(str))
-            list of lists containing generations
-        :param references: list(str)
-            list of str containing refrences
-        """
         raise ValueError(ERROR_MSG)
