@@ -30,7 +30,7 @@ messages = [
 
 gpt-4-0613
 response = openai.ChatCompletion.create(
-model=gpt-4-0613,
+model="gpt-4-0613",
 messages=messages
 )
 """
@@ -133,10 +133,14 @@ class ChatWrapper:
                     messages=messages,
                     temperature=0.2,
                     top_p=0.95,
+                    n=n
                 )
-                message = response["choices"][0]["message"]
-                assert message["role"] == "assistant"
-                return message["content"]
+                content_list = list()
+                for i in range(n):
+                    message = response["choices"][i]["message"]
+                    assert message["role"] == "assistant"
+                    content_list.append(message["content"])
+                return content_list
             except Exception as e:
                 print("API EXCEPTION:", e)
 
@@ -151,12 +155,12 @@ if __name__ == '__main__':
     openai.organization = os.getenv("OPENAI_ORGANIZATION")
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    samples = [s for s in load_dataset("bigcode/humaneval-x-bugs", LANGUAGE)["test"]] * TIMES
+    samples = [s for s in load_dataset("bigcode/humaneval-x-bugs", LANGUAGE, cache_dir="./tmp_data")["test"]]
 
     chat_wrapper = ChatWrapper(MODEL)
     parse_errors = 0
     parser = ContentParser()
-    for idx, sample in enumerate(samples):
+    for idx, sample in enumerate(tqdm(samples)):
         if TASK == "humaneval-x-bugs":
             prompt = get_prompt_bugs(sample, language=LANGUAGE)
         elif TASK == "humaneval-x-generate":
@@ -168,18 +172,19 @@ if __name__ == '__main__':
 
         if VERBOSE:
             print(f"Processing {sample['task_id']} ({idx + 1}/{len(samples)}))...")
-            print(termcolor.colored(sample["entry_point"], "yellow", attrs=["bold"]))
-            print(termcolor.colored(prompt, "yellow"))
-            print(termcolor.colored(sample["buggy_solution"], "red"))
-        sample["raw_generation"] = chat_wrapper(prompt)
+        sample["raw_generation"] = chat_wrapper(prompt, TIMES)
         try:
-            sample["generation"] = parser(prompt, sample["raw_generation"], sample["entry_point"])
+            sample["generation"] = [parser(prompt, generation_item, sample["entry_point"]) for generation_item in sample["raw_generation"]]
         except ParseError as e:
             parse_errors += 1
             print("PARSE EXCEPTION:", e)
-            sample["generation"] = ""
+            sample["generation"] = [""]
         if VERBOSE:
-            print(termcolor.colored(sample["generation"], "green"))
+            for i in range(TIMES):
+                print(termcolor.colored(sample["entry_point"], "yellow", attrs=["bold"]))
+                print(termcolor.colored(prompt, "yellow"))
+                print(termcolor.colored(sample["buggy_solution"], "red"))
+                print(termcolor.colored(sample["generation"][i], "green")+"\n\n")
     if VERBOSE:
         print("parse error rate:", parse_errors / len(samples))
 
