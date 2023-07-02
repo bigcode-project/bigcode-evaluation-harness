@@ -98,15 +98,27 @@ IMPORT_HELPER = {
         "crypto/md5",
     ],
     "cpp": [
+        "using namespace std;",      
         "#include<stdlib.h>",
         "#include<algorithm>",
+        "#include<cmath>",
         "#include<math.h>",
+        "#include<numeric>",
         "#include<stdio.h>",
         "#include<vector>",
+        "#include<set>",
+        "#include<map>",
+        "#include<queue>",
+        "#include<stack>",
+        "#include<list>",
+        "#include<deque>",
+        "#include<boost/any.hpp>",
         "#include<string>",
         "#include<climits>",
         "#include<cstring>",
         "#include<iostream>",
+        "#include<sstream>",
+        "#include<fstream>",
     ],
 }
 
@@ -494,11 +506,14 @@ class GeneralHumanEvalXBugs(Task):
                 [(python_imports + "\n" + g).strip() for g in gen] for gen in generations
             ]
         elif language == "cpp":
-            for gen in generations:
-                for i, g in enumerate(gen):
-                    for s in IMPORT_HELPER["cpp"]:
-                        if s not in g:
-                            gen[i] = s + "\n" + g
+            cpp_imports = "\n".join(IMPORT_HELPER["cpp"])
+            generations = [
+                [(cpp_imports + "\n" + g).strip() for g in gen] for gen in generations
+            ]
+            # Legacy bug
+            if len(generations) > 77:
+                generations[77] = [g.replace("iscuber", "iscube") for g in generations[77]]                    
+
         elif language == "go":
             ds = self.get_dataset().select(range(len(generations)))
             for gen, doc in zip(generations, ds):
@@ -542,6 +557,9 @@ class GeneralHumanEvalXBugs(Task):
                         new_gen += declaration
                     new_gen += g
                     gen[i] = new_gen
+            # Legacy bug
+            if len(generations) > 77:
+                generations[77] = [g.replace("iscuber", "iscube") for g in generations[77]]                    
 
         results, logs = code_metric.compute(
             references=references,

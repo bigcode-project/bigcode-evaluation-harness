@@ -71,15 +71,27 @@ IMPORT_HELPER = {
         "crypto/md5",
     ],
     "cpp": [
+        "using namespace std;",      
         "#include<stdlib.h>",
         "#include<algorithm>",
+        "#include<cmath>",
         "#include<math.h>",
+        "#include<numeric>",
         "#include<stdio.h>",
         "#include<vector>",
+        "#include<set>",
+        "#include<map>",
+        "#include<queue>",
+        "#include<stack>",
+        "#include<list>",
+        "#include<deque>",
+        "#include<boost/any.hpp>",
         "#include<string>",
         "#include<climits>",
         "#include<cstring>",
         "#include<iostream>",
+        "#include<sstream>",
+        "#include<fstream>",
     ],
 }
 
@@ -333,11 +345,13 @@ class GeneralHumanEvalXGenerate(Task):
                 [(python_imports + "\n" + g).strip() for g in gen] for gen in generations
             ]
         elif language == "cpp":
-            for gen in generations:
-                for i, g in enumerate(gen):
-                    for s in IMPORT_HELPER["cpp"]:
-                        if s not in g:
-                            gen[i] = s + "\n" + g
+            cpp_imports = "\n".join(IMPORT_HELPER["cpp"])
+            generations = [
+                [(cpp_imports + "\n" + g).strip() for g in gen] for gen in generations
+            ]
+            # Legacy bug
+            if len(generations) > 77:
+                generations[77] = [g.replace("iscuber", "iscube") for g in generations[77]]
         elif language == "go":
             ds = self.get_dataset().select(range(len(generations)))
             for gen, doc in zip(generations, ds):
@@ -375,6 +389,9 @@ class GeneralHumanEvalXGenerate(Task):
                 declaration = doc["declaration"]
                 for i, g in enumerate(gen):
                     gen[i] = main + declaration + g
+            # Legacy bug
+            if len(generations) > 77:
+                generations[77] = [g.replace("iscuber", "iscube") for g in generations[77]]                    
 
         results, logs = code_metric.compute(
             references=references,
@@ -396,7 +413,7 @@ class GeneralHumanEvalXGenerate(Task):
             print("TOOK: ", time.time() - starttime)
             with open("errors.txt", "a") as f:
                 f.write(log[0][0][1]["result"] + "\n")
-            if ("compilation error" in log[0][0][1]["result"]) or (results["pass@1"] != 0):
+            if ("compilation error" in log[0][0][1]["result"]) or (results["pass@1"] != 1):
                 print("XXXXX")
                 print(results)
                 print(log)
