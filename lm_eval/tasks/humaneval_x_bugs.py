@@ -516,34 +516,40 @@ class GeneralHumanEvalXBugs(Task):
 
         elif language == "go":
             ds = self.get_dataset().select(range(len(generations)))
-            for gen, doc in zip(generations, ds):
-                import_string = doc["import"]
-                test_setup = doc["test_setup"]
+            for gen, ref, doc in zip(generations, references, ds):
+                for line in doc["import"].split("\n"):
+                    line = line.replace("import", "").replace("(", "").replace(")", "").replace('"', "").strip()
+                    if line: assert line in IMPORT_HELPER["go"], doc["import"] # Will be added later
+                test_setup_str = doc["test_setup"] + "\n"
                 for i, g in enumerate(gen):
-                    other_pkgs = []
+                    for line in test_setup_str.split("\n"):
+                        line = line.replace("import", "").replace("(", "").replace(")", "").strip()
+                        if line.startswith('"') and line in g:
+                            test_setup_str = test_setup_str.replace(line, "")
+                    g = test_setup_str + g + "\n" + ref
+                    other_pkgs = set()
                     for pkg in IMPORT_HELPER["go"]:
-                        if pkg not in test_setup:
+                        if ('"' + pkg + '"' not in g):
                             p = pkg.split("/")[-1]
-                            if p + "." in g:
+                            # Check if the package is used
+                            if (p + "." in g):
                                 # The problem is that it could appear in a comment
-                                # For example in problem 158, the docstring is:
+                                # E.g. in problem 158, the docstring is:
                                 # // ... a list of strings.
-                                # but the "strings" package is never used
-                                # Golang throws an error if the package is not used
-                                # Hence search for the package & make sure it's not in a commented line
-                                #other_pkgs.append(f"\"{pkg}\"")
+                                # but the "strings" pkg is never used
+                                # Golang throws an error if the pkg is not used
+                                # Thus search for the package & make sure it's not in a commented line
                                 lines = g.split("\n")
                                 for line in lines:
-                                    if p + "." in line and not line.startswith("//"):
-                                        other_pkgs.append(f"\"{pkg}\"")
+                                    if (p + "." in line) and not(line.strip().startswith("//")):
+                                        other_pkgs.add('"' + p + '"')
                                         break
-
-                    gen[i] = g.replace(import_string, "")
+                    other_pkgs_str = ""
                     if other_pkgs:
-                        import_other_pkgs = "import (\n" + "    ".join([p + "\n" for p in other_pkgs]) + ")"
-                        gen[i] = test_setup + "\n" + import_other_pkgs + "\n" + gen[i]
-                    else:
-                        gen[i] = test_setup + "\n" + gen[i]
+                        other_pkgs_str = "import (\n" + "\n".join(["    " + p for p in other_pkgs]) + "\n)\n"
+                    if ("package main" in gen[i]) and ("package main" in test_setup_str):
+                        gen[i] = gen[i].replace("package main", "")
+                    gen[i] = test_setup_str + other_pkgs_str + gen[i]
         elif language == "rust":
             ds = self.get_dataset().select(range(len(generations)))
             main = "\nfn main(){ \n } \n"
@@ -551,7 +557,7 @@ class GeneralHumanEvalXBugs(Task):
                 declaration = doc["declaration"]
                 for i, g in enumerate(gen):
                     new_gen = ""
-                    if main not in g:
+                    if "fn main()" not in g:
                         new_gen += main
                     if declaration not in g:
                         new_gen += declaration
