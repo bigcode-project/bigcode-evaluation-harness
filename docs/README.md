@@ -355,6 +355,8 @@ accelerate launch  main.py \
   --allow_code_execution
 ```
 
+The complete prompt with 8 shot examples (as used in [PAL](https://github.com/reasoning-machines/pal)) take up `~1500` tokens, hence the value should be greater than that and the recommended value of `max_length_generation` is `2048`.
+
 ## How to add a new benchmark
 
 We welcome contributions to add new code benchmarks to this evaluation harness. You can find a step-by-step guide in [`guide.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md).
