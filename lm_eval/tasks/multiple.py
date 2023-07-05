@@ -9,6 +9,7 @@ Homepage: https://nuprl.github.io/MultiPL-E/
 
 import re
 from multiprocessing import cpu_count
+from threading import Lock
 
 import numpy as np
 from datasets import load_dataset
@@ -192,6 +193,7 @@ class GeneralMultiPLE(Task):
             test_results = problem.copy()
             del test_results["completions"]
             test_results["results"] = []
+            test_results["lock"] = Lock()
 
             num_problems = len(problem["completions"])
             min_problem = len(test_results["results"])

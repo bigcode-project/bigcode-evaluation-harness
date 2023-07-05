@@ -111,4 +111,6 @@ def evaluate_programs(programs: list[str], test_results_list: list[dict], langua
             lambda program: cached_eval_script_per_program(program, language),
             programs
         ), test_results_list):
+            test_results["lock"].acquire()
             test_results["results"].append(j)
+            test_results["lock"].release()
