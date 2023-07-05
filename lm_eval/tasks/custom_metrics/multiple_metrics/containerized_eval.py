@@ -8,7 +8,7 @@ from pathlib import Path
 
 from . import (eval_cpp, eval_dlang, eval_java, eval_javascript, eval_julia,
                eval_lua, eval_php, eval_python, eval_r, eval_racket, eval_ruby,
-               eval_rust, eval_swift, eval_ts)
+               eval_rust, eval_swift, eval_ts, eval_go, eval_pl, eval_sh, eval_scala, eval_cs)
 
 EVALUATORS = {
     "rb": (eval_ruby.eval_script, ".rb"),
@@ -27,6 +27,7 @@ EVALUATORS = {
     "javascript": (eval_javascript.eval_script, ".js"),
     "js": (eval_javascript.eval_script, ".js"),
     "cpp": (eval_cpp.eval_script, ".cpp"),
+    "cs": (eval_cs.eval_script, ".cs"),
     "php": (eval_php.eval_script, ".php"),
     "humaneval_to_dlang.py": (eval_dlang.eval_script, ".d"),
     "d": (eval_dlang.eval_script, ".d"),
@@ -34,6 +35,10 @@ EVALUATORS = {
     "humaneval_to_r.py": (eval_r.eval_script, ".r"),
     "jl": (eval_julia.eval_script, ".jl"),
     "ts": (eval_ts.eval_script, ".ts"),
+    "go": (eval_go.eval_script, ".go"),
+    "pl": (eval_pl.eval_script, ".pl"),
+    "sh": (eval_sh.eval_script, ".sh"),
+    "scala": (eval_scala.eval_script, ".scala"),
 }
 
 
