@@ -309,25 +309,8 @@ class GeneralHumanEvalXBugs(Task):
             prompt += "<BEF> " + prompt_base + doc["buggy_solution"] + "\n"
             prompt += "<MSG> " + "Fix bug in " + doc["entry_point"] + "\n"
             prompt += "<DFF>"   
-        elif self.mutate_method == "prompt-python":
-            # This is sligthly better than just prompt, but it's kind of prompt engineering which we'd like to avoid
-            # Also the comments # only work for Python
-            prompt = "# Buggy function"
-            prompt += "\n" + prompt_base + doc["buggy_solution"] + "\n"
-            prompt += "# Fixed function\n" + prompt_base
-        elif self.mutate_method == "prompt":
-            # This is the simplest, most natural way of prompting regardless of language
-            prompt = prompt_base + doc["buggy_solution"]
-            # One could add a comment here, but then it becomes language-specific & for some languages it may not
-            # compile anyways since repeating the prompt results in double imports, so let's keep it simple
-            prompt += "\n" + "Fix bug in " + doc["entry_point"] # This will be cut-off, so it will compile
-            prompt += "\n" + prompt_base
         elif self.mutate_method == "instruct":
-            # input_template = "Instructions: {instruction}\nInput: {input} Output: "
-            # https://github.com/SivilTaram/santacoder-finetuning-commit/blob/82a5598d632d299b7350c8b2ffb4af39527befa3/train.py#L115
-            prompt = f"Instructions: Fix bug in {doc['entry_point']}\n"
-            prompt += f"Input:\n{prompt_base + doc['buggy_solution']}\n"
-            prompt += f"Output:\n" + prompt_base
+            prompt = f"{func}\n{instruction}\n{prompt_base}"
         elif self.mutate_method == "edit-test":
             prompt = "<commit_before>" + func + "<commit_msg>" + instruction + "<commit_after>" + prompt_base
         elif self.mutate_method == "instruct-qa":
