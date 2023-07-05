@@ -202,7 +202,9 @@ if __name__ == '__main__':
             prompt = get_prompt_generate(sample)
         elif TASK == "humaneval-x-explain-describe":
             prompt, docstring_len = get_prompt_explain_desc(sample, language=LANGUAGE)
-            sample["raw_generation"] = chat_wrapper(prompt, TIMES)[:docstring_len]
+            gen = chat_wrapper(prompt, TIMES)
+            sample["raw_generation"] = gen
+            sample["generation"][:docstring_len]
             continue
         elif TASK == "humaneval-x-explain-generate":
             desc = descriptions[idx]
