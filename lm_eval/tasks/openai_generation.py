@@ -60,7 +60,7 @@ def get_prompt_base(self, doc, language):
     # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
     # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
     if language == "rust":
-        main = "\nfn main(){ \n } \n"
+        main = "fn main(){}\n"
         prompt_base = main + doc["declaration"]
     else:
         prompt_base = doc["declaration"]
@@ -74,9 +74,9 @@ def get_prompt_generate(doc):
 def get_base_prompt_bugs(doc, language="python", mode="tests"):
     if language == "rust":
         if mode == "tests":
-            return "\nfn main(){ \n } \n" + doc["declaration"]
+            return "fn main(){}\n" + doc["declaration"]
         elif mode == "docs":
-            return "\nfn main(){ \n } \n" + doc["declaration"] + doc["prompt"]
+            return "fn main(){}\n" + doc["declaration"] + doc["prompt"]
         else:
             raise ValueError
     else:
@@ -95,7 +95,7 @@ def get_prompt_bugs(doc, language="python", mode="tests"):
     
 def get_prompt_explain_desc(doc, language="python"):
     if language == "rust":
-        main = "\nfn main(){ \n } \n"
+        main = "fn main(){}\n"
         prompt_base = main + doc["declaration"]
     else:
         prompt_base = doc["declaration"]
@@ -204,12 +204,11 @@ if __name__ == '__main__':
             prompt, docstring_len = get_prompt_explain_desc(sample, language=LANGUAGE)
             gen = chat_wrapper(prompt, TIMES)
             sample["raw_generation"] = gen
-            sample["generation"][:docstring_len]
+            sample["generation"] = gen[:docstring_len]
             continue
         elif TASK == "humaneval-x-explain-generate":
             desc = descriptions[idx]
             prompt = get_prompt_explain_gen(sample, desc)
-
         if VERBOSE:
             print(f"Processing {sample['task_id']} ({idx + 1}/{len(samples)}))...")
         sample["raw_generation"] = chat_wrapper(prompt, TIMES)
