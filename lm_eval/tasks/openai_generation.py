@@ -1,4 +1,4 @@
-"""
+"""Testing
 from datasets import load_dataset
 
 ds = load_dataset("bigcode/humaneval-x-bugs", "python")["test"]
@@ -44,6 +44,28 @@ from cdifflib import CSequenceMatcher
 from camel_converter import to_snake
 from datasets import load_dataset
 from typing import List, Dict
+from tqdm import tqdm
+
+LANGUAGE_TO_NAME = {
+    "python": "Python",
+    "cpp": "C++",
+    "js": "JavaScript",
+    "java": "Java",
+    "go": "Go",
+    "rust": "Rust",
+}
+
+def get_prompt_base(self, doc, language):
+    # See 
+    # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
+    # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
+    if language == "rust":
+        main = "\nfn main(){ \n } \n"
+        prompt_base = main + doc["declaration"]
+    else:
+        prompt_base = doc["declaration"]
+    return prompt_base
+
 
 def get_prompt_generate(doc):
     return doc["instruction"]
@@ -76,10 +98,12 @@ def get_prompt_explain_desc(doc, language="python"):
     instruction = f"Provide a concise natural language description of the code using at most {docstring_len} characters."
     func = prompt_base + doc["canonical_solution"]
 
-    return instruction + "\n" + func
+    return instruction + "\n" + func, docstring_len
 
-def get_prompt_explain_gen(sample):
-    raise NotImplementedError
+def get_prompt_explain_gen(sample, desc, language="python"):
+    instruction = f"Write functional code in {LANGUAGE_TO_NAME[language]} according to the description."
+    addon = f"Start your code with:\n{get_prompt_base(sample, language)}"
+    return desc + "\n" + instruction + "\n" + addon
 
 class ParseError(Exception):
     pass
@@ -151,6 +175,11 @@ if __name__ == '__main__':
     LANGUAGE = "python"
     MODEL = "gpt-4-0613"
     TASK = "humaneval-x-generate"
+    
+    # Load descriptions
+    if TASK == "humaneval-x-explain-generate":
+        with jsonlines.open(f"completions_{LANGUAGE}_humaneval-x-explain-describe.jsonl", "r") as f:
+            descriptions = [line["raw_generation"] for line in f]
 
     openai.organization = os.getenv("OPENAI_ORGANIZATION")
     openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -166,9 +195,12 @@ if __name__ == '__main__':
         elif TASK == "humaneval-x-generate":
             prompt = get_prompt_generate(sample)
         elif TASK == "humaneval-x-explain-describe":
-            prompt = get_prompt_explain_desc(sample, language=LANGUAGE)
+            prompt, docstring_len = get_prompt_explain_desc(sample, language=LANGUAGE)
+            sample["raw_generation"] = chat_wrapper(prompt, TIMES)[:docstring_len]
+            continue
         elif TASK == "humaneval-x-explain-generate":
-            prompt = get_prompt_explain_gen(sample)
+            desc = descriptions[idx]
+            prompt = get_prompt_explain_gen(sample, desc)
 
         if VERBOSE:
             print(f"Processing {sample['task_id']} ({idx + 1}/{len(samples)}))...")
@@ -188,6 +220,6 @@ if __name__ == '__main__':
     if VERBOSE:
         print("parse error rate:", parse_errors / len(samples))
 
-    results_filename = f"completions_{LANGUAGE}.jsonl"
+    results_filename = f"completions_{LANGUAGE}_{TASK}.jsonl"
     with jsonlines.open(results_filename, "w") as writer:
         writer.write_all(samples)
