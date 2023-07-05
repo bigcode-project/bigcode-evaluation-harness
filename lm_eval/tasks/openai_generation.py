@@ -71,7 +71,7 @@ def get_prompt_generate(doc):
     return doc["instruction"]
 
 
-def get_prompt_bugs(doc, language="python", mode="tests"):
+def get_base_prompt_bugs(doc, language="python", mode="tests"):
     if language == "rust":
         if mode == "tests":
             return "\nfn main(){ \n } \n" + doc["declaration"]
@@ -87,6 +87,12 @@ def get_prompt_bugs(doc, language="python", mode="tests"):
         else:
             raise ValueError
 
+def get_prompt_bugs(doc, language="python", mode="tests"):
+    prompt_base = get_base_prompt_bugs(doc, language, mode)
+    func = prompt_base + doc["buggy_solution"]
+    instruction = f'Fix bugs in {doc["entry_point"]}.'
+    return func + "\n" + instruction
+    
 def get_prompt_explain_desc(doc, language="python"):
     if language == "rust":
         main = "\nfn main(){ \n } \n"
