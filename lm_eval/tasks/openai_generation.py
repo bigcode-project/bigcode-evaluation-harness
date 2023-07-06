@@ -55,7 +55,7 @@ LANGUAGE_TO_NAME = {
     "rust": "Rust",
 }
 
-def get_prompt_base(self, doc, language):
+def get_prompt_base(doc, language):
     # See 
     # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
     # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
@@ -149,7 +149,7 @@ class ChatWrapper:
     def __init__(self, model: str):
         self._model = model
 
-    def __call__(self, prompt: str) -> str:
+    def __call__(self, prompt: str, n: int) -> str:
         messages = [
             {
                 "role": "user",
@@ -185,12 +185,12 @@ if __name__ == '__main__':
     # Load descriptions
     if TASK == "humaneval-x-explain-generate":
         with jsonlines.open(f"completions_{LANGUAGE}_humaneval-x-explain-describe.jsonl", "r") as f:
-            descriptions = [line["raw_generation"] for line in f]
+            descriptions = [line["raw_generation"][0] for line in f]
 
     openai.organization = os.getenv("OPENAI_ORGANIZATION")
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    samples = [s for s in load_dataset("bigcode/humaneval-x-bugs", LANGUAGE, cache_dir="./tmp_data")["test"]]
+    samples = [s for s in load_dataset("bigcode/humaneval-x-bugs", LANGUAGE)["test"]]
 
     chat_wrapper = ChatWrapper(MODEL)
     parse_errors = 0
@@ -204,11 +204,11 @@ if __name__ == '__main__':
             prompt, docstring_len = get_prompt_explain_desc(sample, language=LANGUAGE)
             gen = chat_wrapper(prompt, TIMES)
             sample["raw_generation"] = gen
-            sample["generation"] = gen[:docstring_len]
+            sample["generation"] = [gen_item[:docstring_len] for gen_item in gen]
             continue
         elif TASK == "humaneval-x-explain-generate":
             desc = descriptions[idx]
-            prompt = get_prompt_explain_gen(sample, desc)
+            prompt = get_prompt_explain_gen(sample, desc, language=LANGUAGE)
         if VERBOSE:
             print(f"Processing {sample['task_id']} ({idx + 1}/{len(samples)}))...")
         sample["raw_generation"] = chat_wrapper(prompt, TIMES)
@@ -222,7 +222,7 @@ if __name__ == '__main__':
             for i in range(TIMES):
                 print(termcolor.colored(sample["entry_point"], "yellow", attrs=["bold"]))
                 print(termcolor.colored(prompt, "yellow"))
-                print(termcolor.colored(sample["buggy_solution"], "red"))
+                print(termcolor.colored(sample["canonical_solution"], "red"))
                 print(termcolor.colored(sample["generation"][i], "green")+"\n\n")
     if VERBOSE:
         print("parse error rate:", parse_errors / len(samples))
