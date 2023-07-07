@@ -180,17 +180,6 @@ class GeneralHumanEvalXGenerate(Task):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
         return self.dataset["test"]
 
-    def get_prompt_base(self, doc):
-        # See 
-        # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
-        # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
-        if self.DATASET_NAME == "rust":
-            main = "\nfn main(){ \n } \n"
-            prompt_base = main + doc["declaration"] + doc["prompt"]
-        else:
-            prompt_base = doc["prompt"]
-        return prompt_base
-
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
         if self.mutate_method == "instruct":
@@ -202,16 +191,9 @@ class GeneralHumanEvalXGenerate(Task):
     
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        prompt_base = self.get_prompt_base(doc)
+        prompt_base = doc["prompt"]
 
-        if self.mutate_method == "edit":
-            prompt = "<commit_before>" + "<commit_msg>" + "Add " + doc["entry_point"]
-            prompt += "<commit_after>" + prompt_base
-        elif self.mutate_method == "edit-complete":
-            prompt = "<commit_before>" + prompt_base
-            prompt += "<commit_msg>" + "Complete " + doc["entry_point"]
-            prompt += "<commit_after>" + prompt_base
-        elif self.mutate_method == "instruct":
+        if self.mutate_method == "instruct":
             prompt = doc["instruction"].strip() + "\n\n" + prompt_base
         elif self.mutate_method == "instruct-qa":
             prompt = f'Question: {doc["instruction"].strip()}\n\nAnswer:\n{prompt_base}'
@@ -241,9 +223,8 @@ class GeneralHumanEvalXGenerate(Task):
         if get_solution:
             return doc["prompt"] + doc["canonical_solution"]
         else:
-            test_func = doc["test"]
             # check(func_name) is already included
-            return "\n" + test_func
+            return "\n" + doc["test"]
         
     def remove_last_block(self, code):
         """
@@ -289,41 +270,11 @@ class GeneralHumanEvalXGenerate(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-
-        if self.mutate_method == "instruct-wizard-or":
-            return self.postprocess_wizard(generation[len(prompt):], idx)
     
         gen = self.remove_last_block(generation[len(prompt):].rstrip())
         prompt_base = self.get_prompt_base(doc)
         # Strip to maintain same behavior as with get_prompt
         return prompt_base.rstrip() + gen
-    
-    def postprocess_wizard(self, completion, idx):
-        completion = completion.replace("\r", "")            
-        if '```python' in completion: 
-            def_line = completion.index('```python')
-            completion = completion[def_line:].strip()
-            completion = completion.replace('```python', '')
-            # print(completion)
-            try:
-                next_line = completion.index('```')
-                completion = completion[:next_line].strip()
-            except:
-                print(completion)
-                print("================\n")
-            # print(completion)
-        if "__name__ == \"__main__\"" in completion:
-            next_line = completion.index('if __name__ == "__main__":')
-            completion = completion[:next_line].strip()
-            # print(completion)
-        
-        if "# Example usage" in completion:
-            # print(completion)
-            next_line = completion.index('# Example usage')
-            completion = completion[:next_line].strip()
-        
-        return completion
- 
     
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -390,15 +341,16 @@ class GeneralHumanEvalXGenerate(Task):
                     gen[i] = test_setup_str + other_pkgs_str + gen[i]
         elif language == "rust":
             ds = self.get_dataset().select(range(len(generations)))
-            main = "\nfn main(){ \n } \n"
+            main = "fn main(){}"
             for gen, doc in zip(generations, ds):
                 declaration = doc["declaration"]
                 for i, g in enumerate(gen):
                     new_gen = ""
                     if "fn main()" not in g:
                         new_gen += main
-                    if declaration not in g:
-                        new_gen += declaration
+                    for line in declaration.split("\n"):
+                        if line.strip() not in g:
+                            new_gen += line.strip() + "\n"
                     new_gen += g
                     gen[i] = new_gen
             # Legacy bug

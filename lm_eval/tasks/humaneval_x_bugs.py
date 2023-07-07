@@ -234,9 +234,9 @@ class GeneralHumanEvalXBugs(Task):
         # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
         if self.DATASET_NAME == "rust":
             if self.mode == "tests":
-                return "\nfn main(){ \n } \n" + doc["declaration"]
+                return "fn main(){}\n" + doc["declaration"]
             elif self.mode == "docs":
-                return "\nfn main(){ \n } \n" + doc["declaration"] + doc["prompt"]
+                return doc["prompt"]
             else:
                 raise ValueError
         else:
