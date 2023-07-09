@@ -47,7 +47,7 @@ LANGUAGE_TO_STOP_WORDS = {
 
 LANGUAGE_TO_TIMEOUT = {
     "python": 10,
-    "cpp": 10,
+    "cpp": 60,
     "js": 10,
     "java": 10,
     "go": 20,
@@ -491,7 +491,7 @@ class GeneralHumanEvalXBugs(Task):
         elif language == "cpp":
             cpp_imports = "\n".join(IMPORT_HELPER["cpp"])
             generations = [
-                [(cpp_imports + "\n" + g).strip() for g in gen] for gen in generations
+                [(cpp_imports + "\n" + g.split("int main")[0]).strip() for g in gen] for gen in generations
             ]
             # Legacy bug
             if len(generations) > 77:

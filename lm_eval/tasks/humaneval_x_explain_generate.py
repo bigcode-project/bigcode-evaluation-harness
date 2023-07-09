@@ -43,7 +43,7 @@ LANGUAGE_TO_TIMEOUT = {
 # Java sometimes fails with more workers; For JS it's twice as fast with 4 workers
 LANGUAGE_TO_NUM_WORKERS = {
     "python": 4,
-    "cpp": 4,
+    "cpp": 60,
     "js": 4,
     "java": 1,
     "go": 4,
@@ -321,11 +321,13 @@ class GeneralHumanEvalXExplainGenerate(Task):
         elif language == "cpp":
             cpp_imports = "\n".join(IMPORT_HELPER["cpp"])
             generations = [
-                [(cpp_imports + "\n" + g).strip() for g in gen] for gen in generations
+                [(cpp_imports + "\n" + g.split("int main")[0]).strip() for g in gen] for gen in generations
             ]
             # Legacy bug
             if len(generations) > 77:
-                generations[77] = [g.replace("iscuber", "iscube") for g in generations[77]]                    
+                generations[77] = [g.replace("iscuber", "iscube") for g in generations[77]]    
+            # Remove int main if present
+            generations = [[g.split("int main")[0] for g in gens] for gens in generations]
         elif language == "go":
             ds = self.get_dataset().select(range(len(generations)))
             for gen, ref, doc in zip(generations, references, ds):

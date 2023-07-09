@@ -21,7 +21,7 @@ LANGUAGE_TO_STOP_WORDS = {
 
 LANGUAGE_TO_TIMEOUT = {
     "python": 10,
-    "cpp": 10,
+    "cpp": 60,
     "js": 10,
     "java": 10,
     "go": 20,
@@ -297,12 +297,17 @@ class GeneralHumanEvalXGenerate(Task):
             ]
         elif language == "cpp":
             cpp_imports = "\n".join(IMPORT_HELPER["cpp"])
+            # Remove main in case present
             generations = [
-                [(cpp_imports + "\n" + g).strip() for g in gen] for gen in generations
+                [(cpp_imports + "\n" + g.split("int main")[0]).strip() for g in gen] for gen in generations
             ]
             # Legacy bug
             if len(generations) > 77:
                 generations[77] = [g.replace("iscuber", "iscube") for g in generations[77]]
+        elif language == "java":
+            generations = [
+                [g.replace("public class Main {\n    }", "").strip() for g in gen] for gen in generations
+            ]
         elif language == "go":
             ds = self.get_dataset().select(range(len(generations)))
             for gen, ref, doc in zip(generations, references, ds):
@@ -351,6 +356,8 @@ class GeneralHumanEvalXGenerate(Task):
                     for line in declaration.split("\n"):
                         if line.strip() not in g:
                             new_gen += line.strip() + "\n"
+                    # If fn main() is present twice, cut off before the second one
+                    g = "fn main()".join(g.split("fn main()")[0:2])
                     new_gen += g
                     gen[i] = new_gen
             # Legacy bug
