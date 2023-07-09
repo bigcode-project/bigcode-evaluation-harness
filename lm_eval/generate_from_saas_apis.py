@@ -78,7 +78,7 @@ class OpenAIGenerator:
         num_of_inputs = (
             task_args.num_of_inputs if task_args.num_of_inputs > 0 else len(dataset)
         )
-        stop: Optional[List[str]] = task.stop_words if task.stop_words else None
+        stop: Optional[List[str]] = task.stop_words or None
         generations = []
         for i in trange(num_of_inputs):
             prompt: str = task.get_prompt(dataset[i])
