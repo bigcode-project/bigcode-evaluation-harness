@@ -1,16 +1,18 @@
 from collections import Counter
-from dataclasses import dataclass, asdict
-from typing import List, Dict, NewType, Any, Set, Iterable
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, NewType, Set
 
-from datasets import Dataset, load_dataset
 import datasets
-
-from lm_eval.base import Task
-from evaluate import load, EvaluationModule
+import numpy as np
+from accelerate.logging import get_logger
+from datasets import Dataset, load_dataset
+from evaluate import EvaluationModule, load
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
-from pathlib import Path
+logger = get_logger(__name__)
 
+from lm_eval.base import Task
 from lm_eval.utils import init_dataclass_from_kwargs
 
 _CITATION = """
@@ -112,6 +114,10 @@ class ProgramRepair(Task):
         self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
             self.tokenizer_config.tokenizer_checkpoint
         )
+        logger.info("===============", main_process_only=True)
+        logger.info("Tokenizer:", main_process_only=True)
+        logger.info(self.tokenizer, main_process_only=True)
+        logger.info("===============", main_process_only=True)
         self.stop_words: List[str] = []
         self.requires_execution: bool = False
         # Extract few-shot examples from the dataset
@@ -191,16 +197,21 @@ class ProgramRepair(Task):
         https://carper.ai/diff-models-a-new-way-to-edit-code.
         """
 
-        n: int = len(generations)
+        num_of_references: int = len(generations)
+        num_of_generations: int = len(generations[0])
 
         if to_strip_surrounding_whitespaces:
             references: List[str] = [reference.strip() for reference in references]
 
         if to_strip_surrounding_lines_and_leading_substrings_from_generation:
             new_special_tokens: Set[str] = set(asdict(self.new_special_tokens).values())
-            for i in range(n):
+            for i in range(num_of_references):
                 reference: str = references[i]
-                for j in range(len(generations[i])):
+                curr_num_of_generations: int = len(generations[i])
+                assert (
+                    curr_num_of_generations == num_of_generations
+                ), "Every reference must have the same number of corresponding generations."
+                for j in range(curr_num_of_generations):
                     generations[i][j]: str = extract_patch(
                         patch=reference,
                         multiple_patches=generations[i][j],
@@ -210,18 +221,19 @@ class ProgramRepair(Task):
                         generations[i][j]: str = generations[i][j].strip()
 
         exact_match: str = "exact_match"
+        exact_match_count: str = "num_of_exact_matches"
         exact_match_avg_max: str = (
             f"ratio_of_references_with_at_least_one_{exact_match}"
         )
         exact_match_hist: str = (
             f"histogram_of_the_ratio_of_references_that_have_{exact_match}_equal_to_key"
         )
-        num_of_references: str = "num_of_references"
         ret: EvaluatedMetric = EvaluatedMetric(
             {
+                exact_match_count: 0,
                 exact_match_avg_max: 0.0,
                 exact_match_hist: Counter(),
-                num_of_references: n,
+                "num_of_references": num_of_references,
             }
         )
         metric: EvaluationModule = load(exact_match)
@@ -231,19 +243,35 @@ class ProgramRepair(Task):
             reference: str = references[i]
             if to_strip_surrounding_whitespaces:
                 reference = reference.strip()
-                generations[i] = [
-                    gen.strip() for gen in generations[i]
-                ]
+                generations[i] = [gen.strip() for gen in generations[i]]
             curr: EvaluatedMetric = metric.compute(
                 predictions=generations[i],
                 references=[reference] * len(generations[i]),
             )
             ret[exact_match_avg_max] += curr[exact_match] > 0
             ret[exact_match_hist][curr[exact_match]] += 1
-        ret[exact_match_avg_max] /= n
+        ret[exact_match_count] = int(ret[exact_match_avg_max])
+        ret[exact_match_avg_max] /= num_of_references
         ret[exact_match_hist] = {
-            key: value / n for key, value in ret[exact_match_hist].items()
+            key: value / num_of_references
+            for key, value in ret[exact_match_hist].items()
         }
+
+        # Calculate pass@k
+        def _get_pass_at_k(k: int) -> float:
+            nonlocal num_of_generations, ret
+            c = ret[exact_match_count]
+            if num_of_generations - c < k:
+                return 1.0
+            return 1.0 - np.prod(
+                1 - k / np.arange(num_of_generations - c + 1, num_of_generations + 1)
+            )
+
+        ks: List[int] = [
+            k for k in [1, 10, 100, num_of_generations] if k <= num_of_generations
+        ]
+        for k in ks:
+            ret[f"pass@{k}"] = _get_pass_at_k(k=k)
         return ret
 
 
