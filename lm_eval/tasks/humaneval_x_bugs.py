@@ -232,20 +232,13 @@ class GeneralHumanEvalXBugs(Task):
         # See 
         # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
         # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
-        if self.DATASET_NAME == "rust":
-            if self.mode == "tests":
+        if self.mode == "tests":
+            if self.DATASET_NAME == "rust":
                 return "fn main(){}\n" + doc["declaration"]
-            elif self.mode == "docs":
-                return doc["prompt"]
-            else:
-                raise ValueError
+        elif self.mode == "docs":
+            return doc["prompt"]
         else:
-            if self.mode == "tests":
-                return doc["declaration"]
-            elif self.mode == "docs":
-                return doc["prompt"]
-            else:
-                raise ValueError
+            raise ValueError("Invalid mode")
 
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""

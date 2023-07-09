@@ -197,7 +197,6 @@ class GeneralHumanEvalXExplainGenerate(Task):
 
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
-        prompt_base = self.get_prompt_base(doc)
         instruction = f"Write functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description."
         if self.mutate_method == "instructcodet5p":
             # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
@@ -286,9 +285,8 @@ class GeneralHumanEvalXExplainGenerate(Task):
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
         gen = self.remove_last_block(generation[len(prompt):].rstrip())
-        prompt_base = self.get_prompt_base(doc)
         # Strip to maintain same behavior as with get_prompt
-        return prompt_base.rstrip() + gen
+        return self.get_prompt_base(doc).rstrip() + gen
 
     def get_reference(self, doc, get_solution=False):
         """Builds the reference solution for the doc (sample from the test dataset)."""
