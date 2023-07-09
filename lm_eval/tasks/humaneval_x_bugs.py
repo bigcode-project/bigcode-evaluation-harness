@@ -235,6 +235,8 @@ class GeneralHumanEvalXBugs(Task):
         if self.mode == "tests":
             if self.DATASET_NAME == "rust":
                 return "fn main(){}\n" + doc["declaration"]
+            else:
+                return doc["declaration"]
         elif self.mode == "docs":
             return doc["prompt"]
         else:
