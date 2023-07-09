@@ -150,7 +150,7 @@ TF_CPP_MIN_LOG_LEVEL=3 accelerate launch main.py \
 ```
 
 ### MultiPL-E
-[MultiPL-E](https://huggingface.co/datasets/nuprl/MultiPL-E): is a benchamrk for evaluating large language models for code generation that supports 18 programming languages. It takes the OpenAI "HumanEval" Python benchmark and uses little compilers to translate them to other languages. We use similar implementation as [the original repository](https://github.com/nuprl/MultiPL-E/tree/main) and evaluation parameters are similar to HumanEval. Although for this benchmark, we strongly recommend using the provided Dockerfile to build the MultiPL-E container with all required dependencies, and for more safety especially when evaluating on languages like `bash`.
+[MultiPL-E](https://huggingface.co/datasets/nuprl/MultiPL-E): is a benchmark for evaluating large language models for code generation that supports 18 programming languages. It takes the OpenAI "HumanEval" Python benchmark and uses little compilers to translate them to other languages. We use similar implementation as [the original repository](https://github.com/nuprl/MultiPL-E/tree/main) and evaluation parameters are similar to HumanEval. Although for this benchmark, we strongly recommend using the provided Dockerfile to build the MultiPL-E container with all required dependencies, and for more safety especially when evaluating on languages like `bash`.
 Tasks are named `multiple-<LANG>` where `<LANG>` is the language name, e.g. `multiple-py` for python.
 
 ```bash
@@ -210,7 +210,7 @@ we a similar prompt format to the original paper of Hendrycks et al. There are t
         prompt += call_format
     prompt += "\nANSWER:\n"
 ```
-Sometimes the prompts can be long and exceed model's context length, so they get truncated. In this case we truncate the prompt before the context length to be able to include the entry "\nUse Call-Based format\nANSWER:\n" for example. The problem description if always at the beginning of the prompt followed by examples that aren't always relevant while the entry is important for the model to know it has to generate Python code that can be executed and not natural text.
+Sometimes the prompts can be long and exceed model's context length, so they get truncated. In this case we truncate the prompt before the context length to be able to include the entry "\nUse Call-Based format\nANSWER:\n" for example. The problem description is always at the beginning of the prompt followed by examples that aren't always relevant while the entry is important for the model to know it has to generate Python code that can be executed and not natural text.
 
 To use this setting (it's the case by default) set the argument `setup_apps` to `finetuning`. To select a difficulty level use `level_apps`argument, by default it is `all`.
 
@@ -354,6 +354,8 @@ accelerate launch  main.py \
   --top_p 0.95 \
   --allow_code_execution
 ```
+
+The complete prompt with 8 shot examples (as used in [PAL](https://github.com/reasoning-machines/pal)) take up `~1500` tokens, hence the value should be greater than that and the recommended value of `max_length_generation` is `2048`.
 
 ## How to add a new benchmark
 
