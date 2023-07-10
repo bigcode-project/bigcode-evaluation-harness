@@ -118,6 +118,11 @@ class ProgramRepair(Task):
         logger.info("Tokenizer:", main_process_only=True)
         logger.info(self.tokenizer, main_process_only=True)
         logger.info("===============", main_process_only=True)
+        # Print
+        print("===============")
+        print("Tokenizer:")
+        print(self.tokenizer)
+        print("===============")
         self.stop_words: List[str] = []
         self.requires_execution: bool = False
         # Extract few-shot examples from the dataset
@@ -231,9 +236,10 @@ class ProgramRepair(Task):
         ret: EvaluatedMetric = EvaluatedMetric(
             {
                 exact_match_count: 0,
-                exact_match_avg_max: 0.0,
-                exact_match_hist: Counter(),
+                exact_match_avg_max: 0.0, # Consider removing
+                exact_match_hist: Counter(), # Consider removing
                 "num_of_references": num_of_references,
+                "num_of_generations": num_of_generations,
             }
         )
         metric: EvaluationModule = load(exact_match)
