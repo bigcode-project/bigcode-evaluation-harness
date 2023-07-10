@@ -220,6 +220,9 @@ def main():
         if args.peft_model:
             from peft import PeftModel  # dynamic import to avoid dependency on peft
             model = PeftModel.from_pretrained(model, args.peft_model)
+            print("Loaded PEFT model. Merging...")
+            model.merge_and_unload()
+            print("Merge complete.")
 
         tokenizer = AutoTokenizer.from_pretrained(
             args.model,
