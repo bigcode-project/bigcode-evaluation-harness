@@ -78,9 +78,9 @@ class NewSpecialTokens:
     COMMIT_AFTER: str = "<DFF> "
 
 
-@dataclass(frozen=True)
-class TokenizerConfig:
-    tokenizer_checkpoint = "Salesforce/codegen-350M-mono"
+# @dataclass(frozen=True)
+# class TokenizerConfig:
+#     tokenizer_checkpoint = "Salesforce/codegen-350M-mono"
 
 
 EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, Any])
@@ -97,7 +97,7 @@ class ProgramRepair(Task):
     """
 
     def __init__(self, **kwargs: Dict[str, Any]) -> None:
-        self.args: Dict[str, Any] = kwargs
+        self.kwargs: Dict[str, Any] = kwargs
         # Dataset
         self.dataset_config: DatasetConfig = init_dataclass_from_kwargs(
             cls=DatasetConfig, kwargs=kwargs
@@ -105,24 +105,14 @@ class ProgramRepair(Task):
         self.dataset_features_names: PyPiBugsDatasetFeaturesNames = (
             PyPiBugsDatasetFeaturesNames()
         )
-        self.seed: int = self.args.get("seed", 0)
+        self.seed: int = self.kwargs.get("seed", 0)
         # Tokenization
-        self.tokenizer_config: TokenizerConfig = init_dataclass_from_kwargs(
-            cls=TokenizerConfig, kwargs=kwargs
-        )
+        # self.tokenizer_config: TokenizerConfig = init_dataclass_from_kwargs(
+        #     cls=TokenizerConfig, kwargs=kwargs
+        # )
         self.new_special_tokens: NewSpecialTokens = NewSpecialTokens()
-        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
-            self.tokenizer_config.tokenizer_checkpoint
-        )
-        logger.info("===============", main_process_only=True)
-        logger.info("Tokenizer:", main_process_only=True)
-        logger.info(self.tokenizer, main_process_only=True)
-        logger.info("===============", main_process_only=True)
-        # Print
-        print("===============")
-        print("Tokenizer:")
-        print(self.tokenizer)
-        print("===============")
+        model_ckpt: str = self.kwargs["model"]
+        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(model_ckpt)
         self.stop_words: List[str] = []
         self.requires_execution: bool = False
         # Extract few-shot examples from the dataset
