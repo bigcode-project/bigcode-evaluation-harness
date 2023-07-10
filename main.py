@@ -38,6 +38,12 @@ def parse_args():
         help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
     )
     parser.add_argument(
+        "--peft_model",
+        type=str,
+        default=None,
+        help="Adapter to the PEFT base model. Can be utilized for loading PEFT adapters such as a LoRA trained model. The --model parameter needs to be the base model.",
+    )
+    parser.add_argument(
         "--revision",
         default=None,
         help="Model revision to use",
@@ -187,39 +193,33 @@ def main():
             raise ValueError(
                 f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16"
             )
+
+        # simplifies the if statements below
+        model_kwargs = {
+            "revision": args.revision,
+            "use_auth_token": args.use_auth_token,
+            "trust_remote_code": args.trust_remote_code,
+        }
+
         if args.load_in_8bit:
             print("Loading model in 8bit")
-            current_device = accelerator.process_index
-            # the model needs to fit in one GPU
-            model = AutoModelForCausalLM.from_pretrained(
-                args.model,
-                revision=args.revision,
-                load_in_8bit=args.load_in_8bit,
-                trust_remote_code=args.trust_remote_code,
-                use_auth_token=args.use_auth_token,
-                device_map={"": current_device},
-            )
+            model_kwargs["load_in_8bit"] = args.load_in_8bit
+            model_kwargs["device_map"] = {"": accelerator.process_index}
         elif args.load_in_4bit:
             print("Loading model in 4bit")
-            current_device = accelerator.process_index
-            # the model needs to fit in one GPU
-            model = AutoModelForCausalLM.from_pretrained(
-                args.model,
-                revision=args.revision,
-                load_in_4bit=args.load_in_4bit,
-                trust_remote_code=args.trust_remote_code,
-                use_auth_token=args.use_auth_token,
-                device_map={"": current_device},
-            )
+            model_kwargs["load_in_4bit"] = args.load_in_4bit
+            model_kwargs["device_map"] = {"": accelerator.process_index}
         else:
-            print(f"Loading model in {args.precision}")
-            model = AutoModelForCausalLM.from_pretrained(
-                args.model,
-                revision=args.revision,
-                torch_dtype=dict_precisions[args.precision],
-                trust_remote_code=args.trust_remote_code,
-                use_auth_token=args.use_auth_token,
-            )
+            model_kwargs["torch_dtype"] = dict_precisions[args.precision]
+
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            **model_kwargs,
+        )
+
+        if args.peft_model:
+            from peft import PeftModel  # dynamic import to avoid dependency on peft
+            model = PeftModel.from_pretrained(model, args.peft_model)
 
         tokenizer = AutoTokenizer.from_pretrained(
             args.model,
@@ -247,7 +247,8 @@ def main():
                 if accelerator.is_main_process:
                     with open(args.save_generations_path, "w") as fp:
                         json.dump(generations, fp)
-                        print(f"generations were saved at {args.save_generations_path}")
+                        print(
+                            f"generations were saved at {args.save_generations_path}")
                     if args.save_references:
                         with open("references.json", "w") as fp:
                             json.dump(references, fp)
