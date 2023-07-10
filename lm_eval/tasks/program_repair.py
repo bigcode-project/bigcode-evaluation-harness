@@ -78,11 +78,6 @@ class NewSpecialTokens:
     COMMIT_AFTER: str = "<DFF> "
 
 
-# @dataclass(frozen=True)
-# class TokenizerConfig:
-#     tokenizer_checkpoint = "Salesforce/codegen-350M-mono"
-
-
 EvaluatedMetric = NewType("EvaluatedMetric", Dict[str, Any])
 
 
@@ -106,10 +101,6 @@ class ProgramRepair(Task):
             PyPiBugsDatasetFeaturesNames()
         )
         self.seed: int = self.kwargs.get("seed", 0)
-        # Tokenization
-        # self.tokenizer_config: TokenizerConfig = init_dataclass_from_kwargs(
-        #     cls=TokenizerConfig, kwargs=kwargs
-        # )
         self.new_special_tokens: NewSpecialTokens = NewSpecialTokens()
         model_ckpt: str = self.kwargs["model"]
         self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(model_ckpt)
