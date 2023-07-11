@@ -7,7 +7,8 @@ import datasets
 import torch
 import transformers
 from accelerate import Accelerator
-from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, AutoModelForSeq2SeqLM
+from transformers import (AutoModelForCausalLM, AutoModelForSeq2SeqLM,
+                          AutoTokenizer, HfArgumentParser)
 
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
@@ -222,7 +223,9 @@ def main():
             )
         model_class = MODEL_CLASSES[args.model_class]
         if accelerator.is_main_process:
-            print(f"Loading the model using the class: {model_class.__name__}")
+            print(
+                f"The model will be loaded using the class: AutoModelFor{model_class.__name__}"
+            )
         if args.load_in_8bit:
             print("Loading model in 8bit")
             current_device = accelerator.process_index
@@ -287,7 +290,9 @@ def main():
                     if args.save_references:
                         with open(args.save_references_path, "w") as fp:
                             json.dump(references, fp)
-                            print(f"references were saved in {args.save_references_path}")
+                            print(
+                                f"references were saved in {args.save_references_path}"
+                            )
             else:
                 results[task] = evaluator.evaluate(task, **vars(args))
 
