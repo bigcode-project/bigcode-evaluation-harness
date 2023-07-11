@@ -200,6 +200,7 @@ def complete_code(
     instruction_tokens=None,
     postprocess=True,
     is_wrapped=False,
+    clean_up_tokenization_spaces=True,
     **gen_kwargs,
 ):
     """Generate multiple codes for each task in the dataset using multiple GPUs with accelerate.
@@ -257,7 +258,7 @@ def complete_code(
                 if s[0] == tokenizer.bos_token_id:
                     s = s[1:]
                 gen_code = tokenizer.decode(
-                    s, skip_special_tokens=False, clean_up_tokenization_spaces=False
+                    s, skip_special_tokens=False, clean_up_tokenization_spaces=clean_up_tokenization_spaces
                 )
                 if INFILL_MODE:
                     gen_code = _parse_infill(gen_code, tokenizer)
@@ -265,7 +266,7 @@ def complete_code(
                     gen_code = _parse_instruction(gen_code, instruction_tokens)
             else:
                 gen_code = tokenizer.decode(
-                    s, skip_special_tokens=True, clean_up_tokenization_spaces=True
+                    s, skip_special_tokens=True, clean_up_tokenization_spaces=clean_up_tokenization_spaces
                 )
             if not INFILL_MODE:
                 gen_code = gen_code[len(prefix) :]
