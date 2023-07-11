@@ -1,7 +1,8 @@
 import time
 from pathlib import Path
 
-from safe_subprocess import run
+# from safe_subprocess import run
+from . import run
 
 ROOT = Path(__file__).resolve().parent / "evil_programs"
 

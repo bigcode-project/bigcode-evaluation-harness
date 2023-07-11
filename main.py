@@ -1,11 +1,14 @@
 import fnmatch
 import json
+from datetime import datetime
+from pathlib import Path
 
 import datasets
 import torch
 import transformers
 from accelerate import Accelerator
-from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
+from transformers import (AutoModelForCausalLM, AutoModelForSeq2SeqLM,
+                          AutoTokenizer, HfArgumentParser)
 
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
@@ -29,6 +32,13 @@ class MultiChoice:
             yield choice
 
 
+MODEL_CLASSES = {"CausalLM": AutoModelForCausalLM, "Seq2SeqLM": AutoModelForSeq2SeqLM}
+
+
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+default_outputs_dirpath = Path(f"outputs/{timestamp}")
+
+
 def parse_args():
     parser = HfArgumentParser(EvalArguments)
 
@@ -36,6 +46,12 @@ def parse_args():
         "--model",
         default="codeparrot/codeparrot-small",
         help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
+    )
+    parser.add_argument(
+        "--model_class",
+        default="CausalLM",
+        choices=["CausalLM", "Seq2SeqLM"],
+        help="The model will be loaded using transformer's AutoModelFor<model_class>.",
     )
     parser.add_argument(
         "--revision",
@@ -119,9 +135,16 @@ def parse_args():
         help="Path of file with previously generated solutions, if provided generation is skipped and only evaluation is done",
     )
     parser.add_argument(
+        "--load_references_path",
+        type=str,
+        default=None,
+        help="Path of file with pre-processed corresponding references. If provided, the evaluation is done on the "
+        "provided targets.",
+    )
+    parser.add_argument(
         "--metric_output_path",
         type=str,
-        default="evaluation_results.json",
+        default=str(default_outputs_dirpath / "evaluation_results.json"),
         help="Path to save the results",
     )
     parser.add_argument(
@@ -132,13 +155,19 @@ def parse_args():
     parser.add_argument(
         "--save_generations_path",
         type=str,
-        default="generations.json",
+        default=str(default_outputs_dirpath / "generations.json"),
         help="Path for saving the code generations",
     )
     parser.add_argument(
         "--save_references",
         action="store_true",
         help="Whether to save reference solutions/tests",
+    )
+    parser.add_argument(
+        "--save_references_path",
+        type=str,
+        default=str(default_outputs_dirpath / "references.json"),
+        help="Path to save the results",
     )
     return parser.parse_args()
 
@@ -165,7 +194,12 @@ def main():
 
     accelerator = Accelerator()
     if accelerator.is_main_process:
+        default_outputs_dirpath.mkdir(parents=True, exist_ok=False)
+        print(f"Created a new directory for saving outputs: {default_outputs_dirpath}")
         print(f"Selected Tasks: {task_names}")
+    accelerator.print("Type of available devices: ", accelerator.device.type)
+    num_of_gpus: int = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    accelerator.print(f"Number of available GPUs: {num_of_gpus}")
 
     results = {}
     if args.load_generations_path:
@@ -174,7 +208,7 @@ def main():
             print("evaluation only mode")
         evaluator = Evaluator(accelerator, None, None, args)
         for task in task_names:
-            results[task] = evaluator.evaluate(task)
+            results[task] = evaluator.evaluate(task, **vars(args))
 
     else:
         # here we generate code and save it (evaluation is optional but True by default)
@@ -187,11 +221,16 @@ def main():
             raise ValueError(
                 f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16"
             )
+        model_class = MODEL_CLASSES[args.model_class]
+        if accelerator.is_main_process:
+            print(
+                f"The model will be loaded using the class: AutoModelFor{model_class.__name__}"
+            )
         if args.load_in_8bit:
             print("Loading model in 8bit")
             current_device = accelerator.process_index
             # the model needs to fit in one GPU
-            model = AutoModelForCausalLM.from_pretrained(
+            model = model_class.from_pretrained(
                 args.model,
                 revision=args.revision,
                 load_in_8bit=args.load_in_8bit,
@@ -203,7 +242,7 @@ def main():
             print("Loading model in 4bit")
             current_device = accelerator.process_index
             # the model needs to fit in one GPU
-            model = AutoModelForCausalLM.from_pretrained(
+            model = model_class.from_pretrained(
                 args.model,
                 revision=args.revision,
                 load_in_4bit=args.load_in_4bit,
@@ -213,7 +252,7 @@ def main():
             )
         else:
             print(f"Loading model in {args.precision}")
-            model = AutoModelForCausalLM.from_pretrained(
+            model = model_class.from_pretrained(
                 args.model,
                 revision=args.revision,
                 torch_dtype=dict_precisions[args.precision],
@@ -249,11 +288,13 @@ def main():
                         json.dump(generations, fp)
                         print(f"generations were saved at {args.save_generations_path}")
                     if args.save_references:
-                        with open("references.json", "w") as fp:
+                        with open(args.save_references_path, "w") as fp:
                             json.dump(references, fp)
-                            print("references were saved")
+                            print(
+                                f"references were saved in {args.save_references_path}"
+                            )
             else:
-                results[task] = evaluator.evaluate(task)
+                results[task] = evaluator.evaluate(task, **vars(args))
 
     results["config"] = {
         "model": args.model,

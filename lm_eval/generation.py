@@ -1,5 +1,8 @@
 import json
+import logging
 from math import ceil
+import re
+from typing import Any
 
 from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
@@ -37,7 +40,7 @@ class EndOfFunctionCriteria(StoppingCriteria):
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
     if args.load_generations_path:
-        # load generated code
+        logging.info(f"Loading generations from {args.load_generations_path}")
         with open(args.load_generations_path) as fp:
             generations = json.load(fp)
             if accelerator.is_main_process:
@@ -47,7 +50,6 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         return generations[:n_tasks]
 
     set_seed(args.seed, device_specific=True)
-
     # Setup generation settings
     gen_kwargs = {
         "do_sample": args.do_sample,
@@ -56,6 +58,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         "top_k": args.top_k,
         "max_length": args.max_length_generation,
     }
+
     if task.stop_words:
         if tokenizer.eos_token:
             task.stop_words.append(tokenizer.eos_token)

@@ -127,7 +127,7 @@ Now's a good time to register your task to expose it for usage. All you'll need 
 To run the entire test suite, use:
 
 ```sh
-pytest
+python -m pytest
 ```
 
 ## Fine-tuning

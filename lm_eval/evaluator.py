@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import warnings
 
@@ -37,8 +38,8 @@ class Evaluator:
         # code evaluation permission
         self.allow_code_execution = args.allow_code_execution
 
-    def generate_text(self, task_name):
-        task = tasks.get_task(task_name)
+    def generate_text(self, task_name, **task_kwargs):
+        task = tasks.get_task(task_name, **task_kwargs)
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
         n_tasks = self.args.limit if self.args.limit else len(dataset)
@@ -51,7 +52,12 @@ class Evaluator:
             n_tasks=n_tasks,
             args=self.args,
         )
-        references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
+        if self.args.load_references_path:
+            logging.info(f"Loading references from {self.args.load_references_path}")
+            with open(self.args.load_references_path) as f:
+                references = json.load(f)
+        else:
+            references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
         if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
             warnings.warn(
@@ -59,25 +65,46 @@ class Evaluator:
             )
         return generations, references
 
-    def evaluate(self, task_name):
-        task = tasks.get_task(task_name)
+    def evaluate(self, task_name, **task_kwargs):
+        task = tasks.get_task(task_name, **task_kwargs)
         if task.requires_execution and not self.allow_code_execution:
             raise ValueError(_WARNING)
 
-        generations, references = self.generate_text(task_name)
+        # If both generations and references are provided, skip generation
+        if not bool(self.args.load_generations_path and self.args.load_references_path):
+            generations, references = self.generate_text(task_name, **task_kwargs)
+        else:
+            with open(self.args.load_generations_path) as f:
+                logging.info(
+                    f"Loading generations from {self.args.load_generations_path}"
+                )
+                generations = json.load(f)
+            with open(self.args.load_references_path) as f:
+                logging.info(
+                    f"Loading references from {self.args.load_references_path}"
+                )
+                references = json.load(f)
 
         if self.accelerator.is_main_process:
-            if not self.args.load_generations_path:
+            if self.args.load_generations_path:
+                logging.debug(
+                    f"Will not save generations nor references, because pre-calculated generations were given"
+                    f" (loaded from {self.args.load_generations_path})."
+                )
+            else:
                 if self.args.save_generations:
-                    with open(self.args.save_generations_path, "w") as fp:
+                    # Rename the filename, adding the task name
+                    filepath: str = self.args.save_generations_path.replace(".json", f"_{task_name}.json")
+                    with open(filepath, "w") as fp:
                         json.dump(generations, fp)
                         print(
-                            f"generations were saved at {self.args.save_generations_path}"
+                            f"Generations for task {task_name} were saved at {filepath}"
                         )
                 if self.args.save_references:
-                    with open("references.json", "w") as fp:
+                    filepath: str = self.args.save_references_path.replace(".json", f"_{task_name}.json")
+                    with open(filepath, "w") as fp:
                         json.dump(references, fp)
-                        print("references were saved at references.json")
+                        print(f"References for task {task} were saved at {filepath}")
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"

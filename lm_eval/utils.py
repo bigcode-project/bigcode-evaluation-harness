@@ -1,6 +1,8 @@
 import math
 import warnings
+import re
 from collections import defaultdict
+from dataclasses import asdict
 
 import torch
 from torch.utils.data import IterableDataset
@@ -207,13 +209,13 @@ def complete_code(
     [p_0_0, p_0_1, ..., p_0_nc-1, p_1_0, ..., p_nt-1_nc-1] where nc is the number of copies of the prompt,
     and nt is the number of tasks. nc is such that num_samples(for each task)= nc * batch_size
     """
-
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
+    total: int = math.ceil(
+        n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
+    )
     for step, batch in tqdm(
         enumerate(dataloader),
-        total=math.ceil(
-            n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
-        ),
+        total=total,
     ):
         with torch.no_grad():
             if task.stop_words:
@@ -222,6 +224,14 @@ def complete_code(
                     batch["input_len"].max().item()
                 )
             inputs = batch["ids"][:, : batch["input_len"]]
+            # To support CodeT5+ models (see https://github.com/salesforce/CodeT5/blob/a1215960ef8696addad1a08b984e87ad8eab88cf/CodeT5%2B/README.md?plain=1#L39)
+            def is_codet5p() -> bool:
+                nonlocal tokenizer
+                tokenizer_ckpt: str = tokenizer.name_or_path
+                pattern = r"^Salesforce/[a-zA-Z]*codet5p-"
+                return bool(re.match(pattern, tokenizer_ckpt))
+            if is_codet5p():
+                gen_kwargs["decoder_input_ids"] = inputs.clone()
             if is_wrapped:
                 # 8bit and 4bit models are wrapped in accelerator
                 generated_tokens = accelerator.unwrap_model(model).generate(
@@ -282,7 +292,17 @@ def complete_code(
     return code_gens
 
 
-import re
+def init_dataclass_from_kwargs(cls, kwargs):
+    """
+    Initialize a dataclass from a dictionary of keyword arguments. Use the default values of the dataclass for arguments
+    not in the dictionary.
+    :param cls: The dataclass to initialize.
+    :param kwargs: A dictionary of keyword arguments.
+    :return: An instance of the dataclass.
+    """
+    return cls(
+        **{key: value for key, value in kwargs.items() if key in asdict(cls()).keys()}
+    )
 
 
 def remove_after_return(code):
@@ -292,7 +312,7 @@ def remove_after_return(code):
     """
     pattern = r"[^\n]+(\n|$)"
     end_last_match = None
-    # Go trough the regex to match any sequence of characters ending with a \n
+    # Go through the regex to match any sequence of characters ending with a \n
     for match in re.finditer(pattern, code):
         start_match, end_match = match.span()
         # Search for the first line which does not start by a space character

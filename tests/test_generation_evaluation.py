@@ -33,6 +33,7 @@ def update_args(args):
     args.save_references = False
     args.metric_output_path = TMPDIR
     args.load_generations_path = None
+    args.load_references_path = None
     args.generation_only = False
     # postprocessing for HumanEval and MBPP makes generations
     # with dummy model not distinctive
