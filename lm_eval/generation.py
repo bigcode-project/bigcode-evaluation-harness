@@ -1,13 +1,15 @@
 import json
 import logging
 from math import ceil
+import re
+from typing import Any
 
 from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 from transformers import StoppingCriteria, StoppingCriteriaList
 
-from lm_eval.utils import TokenizedDataset, complete_code
+from lm_eval.utils import GenerationKwargs, TokenizedDataset, complete_code
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
@@ -50,13 +52,21 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
     set_seed(args.seed, device_specific=True)
 
     # Setup generation settings
-    gen_kwargs = {
-        "do_sample": args.do_sample,
-        "temperature": args.temperature,
-        "top_p": args.top_p,
-        "top_k": args.top_k,
-        "max_length": args.max_length_generation,
-    }
+    # gen_kwargs = {
+    #     "do_sample": args.do_sample,
+    #     "temperature": args.temperature,
+    #     "top_p": args.top_p,
+    #     "top_k": args.top_k,
+    #     "max_length": args.max_length_generation,
+    # }
+    gen_kwargs: dict[str, Any] = GenerationKwargs(
+        do_sample=args.do_sample,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        top_k=args.top_k,
+        max_length=args.max_length_generation,
+    )
+    
     if task.stop_words:
         if tokenizer.eos_token:
             task.stop_words.append(tokenizer.eos_token)
