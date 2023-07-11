@@ -224,14 +224,14 @@ def complete_code(
                     batch["input_len"].max().item()
                 )
             inputs = batch["ids"][:, : batch["input_len"]]
-            # # To support CodeT5+ models (see https://github.com/salesforce/CodeT5/blob/a1215960ef8696addad1a08b984e87ad8eab88cf/CodeT5%2B/README.md?plain=1#L39)
-            # def is_codet5p() -> bool:
-            #     nonlocal tokenizer
-            #     tokenizer_ckpt: str = tokenizer.name_or_path
-            #     pattern = r"^Salesforce/[a-zA-Z]*codet5p-"
-            #     return bool(re.match(pattern, tokenizer_ckpt))
-            # if is_codet5p():
-            #     gen_kwargs["decoder_input_ids"] = inputs
+            # To support CodeT5+ models (see https://github.com/salesforce/CodeT5/blob/a1215960ef8696addad1a08b984e87ad8eab88cf/CodeT5%2B/README.md?plain=1#L39)
+            def is_codet5p() -> bool:
+                nonlocal tokenizer
+                tokenizer_ckpt: str = tokenizer.name_or_path
+                pattern = r"^Salesforce/[a-zA-Z]*codet5p-"
+                return bool(re.match(pattern, tokenizer_ckpt))
+            if is_codet5p():
+                gen_kwargs["decoder_input_ids"] = inputs.clone()
             if is_wrapped:
                 # 8bit and 4bit models are wrapped in accelerator
                 generated_tokens = accelerator.unwrap_model(model).generate(
@@ -324,14 +324,3 @@ def remove_after_return(code):
             return code[0:start_match]
         end_last_match = end_match
     return code
-
-
-class GenerationKwargs(dict):
-    """
-    To support CodeT5+ models (see https://github.com/salesforce/CodeT5/blob/a1215960ef8696addad1a08b984e87ad8eab88cf/CodeT5%2B/README.md?plain=1#L39)
-    """
-    def __getitem__(self, key):
-        if key == "decoder_input_ids":
-            return self.get("input_ids")
-        else:
-            return super().__getitem__(key)
