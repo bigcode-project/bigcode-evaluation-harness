@@ -148,7 +148,7 @@ def parse_args():
     parser.add_argument(
         "--automodel_kwargs",
         type=json.loads,
-        default=None,
+        default='{}',
         help="Keyword arguments to pass to AutoModelForCausalLM",
     )
 
