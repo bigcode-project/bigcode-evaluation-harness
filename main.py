@@ -103,6 +103,11 @@ def parse_args():
         help="Postprocess model outputs before execution, always on except during generation tests",
     )
     parser.add_argument(
+        "--clean_up_tokenization_spaces",
+        action="store_false",
+        help="Set the clean_up_tokenization_spaces in tokenizer.decode() to False for specific models, defaults to True",
+    )
+    parser.add_argument(
         "--allow_code_execution",
         action="store_true",
         help="Allow code evaluation to execute external/untrusted Python code on your machine",
@@ -140,6 +145,13 @@ def parse_args():
         action="store_true",
         help="Whether to save reference solutions/tests",
     )
+    parser.add_argument(
+        "--automodel_kwargs",
+        type=json.loads,
+        default="{}",
+        help="Keyword arguments to pass to AutoModelForCausalLM",
+    )
+
     return parser.parse_args()
 
 
@@ -198,6 +210,7 @@ def main():
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,
                 device_map={"": current_device},
+                **args.automodel_kwargs,
             )
         elif args.load_in_4bit:
             print("Loading model in 4bit")
@@ -210,6 +223,7 @@ def main():
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,
                 device_map={"": current_device},
+                **args.automodel_kwargs,
             )
         else:
             print(f"Loading model in {args.precision}")
@@ -219,6 +233,7 @@ def main():
                 torch_dtype=dict_precisions[args.precision],
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,
+                **args.automodel_kwargs,
             )
 
         tokenizer = AutoTokenizer.from_pretrained(

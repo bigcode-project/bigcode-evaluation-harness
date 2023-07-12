@@ -113,6 +113,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         instruction_tokens=instruction_tokens,
         postprocess=args.postprocess,
         is_wrapped=is_loaded_in_8bit or is_loaded_in_4bit,
+        clean_up_tokenization_spaces=args.clean_up_tokenization_spaces,
         **gen_kwargs,
     )
     return generations
