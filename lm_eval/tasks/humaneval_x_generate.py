@@ -146,7 +146,10 @@ class GeneralHumanEvalXGenerate(Task):
         """
         Adapted from https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L115
 
-        Checks whether the generated code is finished
+        Checks whether the generated code is finished.
+
+        This is suboptimal as models may (rarely) split their answer in multiple functions.
+        This will force the generation to end after the first function.
         """
         if any([w in code for w in self.stop_words]):
             return True
@@ -234,30 +237,34 @@ class GeneralHumanEvalXGenerate(Task):
             if w in code:
                 code = code[:code.find(w)]
 
+        ### Find the first occassion where a chain of { } is closed
         if self.DATASET_NAME == "python":
             for i, line in enumerate(code.split("\n")):
                 if len(line.strip()) > 0 and line[0] != ' ' and line[0] != '\t':
                     return "\n".join(code.split("\n")[:i])
-        elif self.DATASET_NAME == "java":
-            main_pos = code.find("public static void main")
-            if main_pos != -1:
-                code = code[:main_pos] + '}'
-            if '}' in code:
-                code = code[:code.rfind('}')] + '}'
-            if code.count('{') + 1 == code.count('}'):
-                code += "\n}"
-        elif self.DATASET_NAME == "go":
-            if '}' in code:
-                code = code[:code.rfind('}')] + '}'
-        elif self.DATASET_NAME == "cpp":
-            if '}' in code:
-                code = code[:code.rfind('}')] + '}'
-        elif self.DATASET_NAME == "js":
-            if '}' in code:
-                code = code[:code.rfind('}')] + '}'
-        elif self.DATASET_NAME == "rust":
-            if '}' in code:
-                code = code[:code.rfind('}')] + '}'
+        elif self.DATASET_NAME in ["java", "js", "go", "cpp", "rust"]:
+            open_brackets = 1
+            cut = False
+            for i, c in enumerate(code):
+                if c == '{':
+                    open_brackets += 1
+                elif c == '}':
+                    open_brackets -= 1
+                if open_brackets == 0:
+                    code = code[:i+1]
+                    cut = True
+                    break
+            if not cut:
+                if self.DATASET_NAME == "java":
+                    main_pos = code.find("public static void main")
+                    if main_pos != -1:
+                        code = code[:main_pos] + '}'
+                    if '}' in code:
+                        code = code[:code.rfind('}')] + '}'
+                    if code.count('{') + 1 == code.count('}'):
+                        code += "\n}"
+                elif '}' in code:
+                    code = code[:code.rfind('}')] + '}'
         return code
 
     def postprocess_generation(self, generation, idx):
