@@ -228,12 +228,14 @@ class GeneralHumanEvalXExplainGenerate(Task):
         elif self.mutate_method == "instructcodet5p":
             # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{doc["description"]}\n\n### Response:{prompt_base}'       
-        elif self.mutate_method == "starcodercommit":
-            prompt = f'<commit_before><commit_msg>{instruction}\n{doc["description"]}<commit_after>{prompt_base}'
         elif self.mutate_method == "starchat":
             prompt = f'<|system|>\n<|end|>\n<|user|>\n{instruction}\n{doc["description"]}<|end|>\n<|assistant|>\n{prompt_base}'
+        elif self.mutate_method == "starcodercommit":
+            prompt = f'<commit_before><commit_msg>{instruction}\n{doc["description"]}<commit_after>{prompt_base}'
         elif self.mutate_method == "wizardcoder":
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{doc["description"]}\n\n### Response:\n{prompt_base}'
+        else:
+            raise NotImplementedError
 
         return prompt.strip()
 

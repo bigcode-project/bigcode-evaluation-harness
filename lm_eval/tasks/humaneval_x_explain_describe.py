@@ -89,11 +89,11 @@ class GeneralHumanEvalXExplainDescribe(Task):
         elif self.mutate_method == "instructcodet5p":
             # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:'       
-        elif self.mutate_method == "starcodercommit":
-            prompt = f'<commit_before><commit_msg>{instruction}\n{func}<commit_after>'
         elif self.mutate_method == "starchat":
             # https://huggingface.co/HuggingFaceH4/starchat-beta
             prompt = f"<|system|>\n<|end|>\n<|user|>\n{instruction}\n{func}<|end|>\n<|assistant|>"
+        elif self.mutate_method == "starcodercommit":
+            prompt = f'<commit_before><commit_msg>{instruction}\n{func}<commit_after>'
         elif self.mutate_method == "wizardcoder":
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:'
         return prompt

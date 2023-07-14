@@ -196,28 +196,27 @@ class GeneralHumanEvalXGenerate(Task):
         """Builds the prompt for the LM to generate from."""
         prompt_base = doc["prompt"]
 
-        if self.mutate_method == "instruct":
+        if self.mutate_method == "continue":
+            prompt = prompt_base
+        elif self.mutate_method == "instruct":
             prompt = doc["instruction"].strip() + "\n\n" + prompt_base
         elif self.mutate_method == "instruct-qa":
             prompt = f'Question: {doc["instruction"].strip()}\n\nAnswer:\n{prompt_base}'
+        elif self.mutate_method == "starchat":
+            # https://huggingface.co/HuggingFaceH4/starchat-beta
+            prompt = f'<|system|>\n<|end|>\n<|user|>\n{doc["instruction"].strip()}<|end|>\n<|assistant|>\n{prompt_base}'
         elif self.mutate_method == "starcodercommit":
             prompt = f'<commit_before><commit_msg>{doc["instruction"].strip()}<commit_after>{prompt_base}'
         elif self.mutate_method == "starcodercommit2":
             prompt = f'<commit_before>{prompt_base}<commit_msg>{doc["instruction"].strip().replace("Write a", "Complete")}<commit_after>{prompt_base}'
-        elif self.mutate_method == "instruct-wizard":
-            # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/humaneval_gen.py#L37
-            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:\n{prompt_base}'
-        elif self.mutate_method == "starchat":
-            # https://huggingface.co/HuggingFaceH4/starchat-beta
-            prompt = f'<|system|>\n<|end|>\n<|user|>\n{doc["instruction"].strip()}<|end|>\n<|assistant|>\n{prompt_base}'
         elif self.mutate_method == "instructcodet5p":
             # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:{prompt_base}'       
         elif self.mutate_method == "wizardcoder":
             # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/humaneval_gen.py#L37
-            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:'
-        elif self.mutate_method == "continue":
-            prompt = prompt_base
+            prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{doc["instruction"].strip()}\n\n### Response:\n{prompt_base}'
+        else:
+            raise NotImplementedError            
         
         return prompt.rstrip()
 

@@ -274,8 +274,6 @@ class GeneralHumanEvalXBugs(Task):
             prompt = "<commit_before>" + prompt_base + doc["buggy_solution"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["entry_point"]
             prompt += "<commit_after>" + prompt_base
-        elif self.mutate_method == "starcoder":
-            prompt = "<commit_before>" + func + "<commit_msg>" + instruction + "<commit_after>" + prompt_base
         elif self.mutate_method == "edit-newline":
             prompt = "<commit_before>\n" + prompt_base + doc["buggy_solution"]
             prompt += "\n<commit_msg>\n" + "Fix bug in " + doc["entry_point"]
@@ -316,10 +314,12 @@ class GeneralHumanEvalXBugs(Task):
             prompt = f'<commit_before>{func}<commit_msg>{instruction}<commit_after>{prompt_base}'
         elif self.mutate_method == "starchat":
             prompt = f"<|system|>\n<|end|>\n<|user|>\n{instruction}\n{func}<|end|>\n<|assistant|>\n{prompt_base}"
+        elif self.mutate_method == "starcodercommit":
+            prompt = "<commit_before>" + func + "<commit_msg>" + instruction + "<commit_after>" + prompt_base
         elif self.mutate_method == "wizardcoder":
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:\n{prompt_base}'
         else:
-            raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
+            raise NotImplementedError
         # Strip off the final \n to make the tokens more natural
         # Essentially, we want to make sure that if there was no distinction between
         # input & output, the tokens would be the same
