@@ -210,7 +210,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
         # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
         # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
         if self.DATASET_NAME == "rust":
-            main = "\nfn main(){ \n } \n"
+            main = "fn main(){}\n"
             prompt_base = main + doc["declaration"]
         else:
             prompt_base = doc["declaration"]
@@ -308,6 +308,18 @@ class GeneralHumanEvalXExplainGenerate(Task):
         :param references: list(str)
             list of str containing refrences
         """
+        # Reformat from [[sample1], [sample2] ...] -> [[samples until n_samples], [samples until 2*n_samples] ...]
+        n_samples = 1
+        while n_samples < len(references) and references[n_samples] == references[0]:
+            n_samples += 1 
+        generations = [
+            [g[0] for g in generations[i:i+n_samples]] for i in range(0, len(generations), n_samples)
+        ]
+        references = [
+            references[i] for i in range(0, len(references), n_samples)
+        ]
+
+
         code_metric = load("Muennighoff/code_eval")
         timeout = LANGUAGE_TO_TIMEOUT[self.DATASET_NAME]
         num_workers = LANGUAGE_TO_NUM_WORKERS[self.DATASET_NAME]
@@ -367,20 +379,23 @@ class GeneralHumanEvalXExplainGenerate(Task):
                     gen[i] = test_setup_str + other_pkgs_str + gen[i]
         elif language == "rust":
             ds = self.get_dataset().select(range(len(generations)))
-            main = "\nfn main(){ \n } \n"
+            main = "fn main(){}"
             for gen, doc in zip(generations, ds):
                 declaration = doc["declaration"]
                 for i, g in enumerate(gen):
                     new_gen = ""
                     if "fn main()" not in g:
                         new_gen += main
-                    if declaration not in g:
-                        new_gen += declaration
+                    for line in declaration.split("\n"):
+                        if line.strip() not in g:
+                            new_gen += line.strip() + "\n"
+                    # If fn main() is present twice, cut off before the second one
+                    g = "fn main()".join(g.split("fn main()")[0:2])
                     new_gen += g
                     gen[i] = new_gen
             # Legacy bug
             if len(generations) > 77:
-                generations[77] = [g.replace("iscuber", "iscube") for g in generations[77]]                       
+                generations[77] = [g.replace("iscuber", "iscube") for g in generations[77]]                        
 
         results, logs = code_metric.compute(
             references=references,
