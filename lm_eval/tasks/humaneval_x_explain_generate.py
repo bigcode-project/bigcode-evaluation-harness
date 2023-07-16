@@ -315,6 +315,11 @@ class GeneralHumanEvalXExplainGenerate(Task):
         generations = [
             [g[0] for g in generations[i:i+n_samples]] for i in range(0, len(generations), n_samples)
         ]
+        if language in ["go", "rust"]:
+            ds = self.get_dataset()
+            ds = [
+                ds[i] for i in range(0, len(references), n_samples)
+            ]
         references = [
             references[i] for i in range(0, len(references), n_samples)
         ]
@@ -342,7 +347,6 @@ class GeneralHumanEvalXExplainGenerate(Task):
             # Remove int main if present
             generations = [[g.split("int main")[0] for g in gens] for gens in generations]
         elif language == "go":
-            ds = self.get_dataset().select(range(len(generations)))
             for gen, ref, doc in zip(generations, references, ds):
                 for line in doc["import"].split("\n"):
                     line = line.replace("import", "").replace("(", "").replace(")", "").replace('"', "").strip()
@@ -378,7 +382,6 @@ class GeneralHumanEvalXExplainGenerate(Task):
                         gen[i] = gen[i].replace("package main", "")
                     gen[i] = test_setup_str + other_pkgs_str + gen[i]
         elif language == "rust":
-            ds = self.get_dataset().select(range(len(generations)))
             main = "fn main(){}"
             for gen, doc in zip(generations, ds):
                 declaration = doc["declaration"]
