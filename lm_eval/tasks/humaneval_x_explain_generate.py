@@ -315,7 +315,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
         generations = [
             [g[0] for g in generations[i:i+n_samples]] for i in range(0, len(generations), n_samples)
         ]
-        if language in ["go", "rust"]:
+        if self.DATASET_NAME in ["go", "rust"]:
             ds = self.get_dataset()
             ds = [
                 ds[i] for i in range(0, len(references), n_samples)
