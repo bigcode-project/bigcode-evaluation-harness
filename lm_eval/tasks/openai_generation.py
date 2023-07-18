@@ -1,4 +1,4 @@
-"""
+"""Testing
 from datasets import load_dataset
 
 ds = load_dataset("bigcode/humaneval-x-bugs", "python")["test"]
@@ -30,7 +30,7 @@ messages = [
 
 gpt-4-0613
 response = openai.ChatCompletion.create(
-model=gpt-4-0613,
+model="gpt-4-0613",
 messages=messages
 )
 """
@@ -44,17 +44,39 @@ from cdifflib import CSequenceMatcher
 from camel_converter import to_snake
 from datasets import load_dataset
 from typing import List, Dict
+from tqdm import tqdm
+
+LANGUAGE_TO_NAME = {
+    "python": "Python",
+    "cpp": "C++",
+    "js": "JavaScript",
+    "java": "Java",
+    "go": "Go",
+    "rust": "Rust",
+}
+
+def get_prompt_base(doc, language):
+    # See 
+    # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
+    # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
+    if language == "rust":
+        main = "fn main(){}\n"
+        prompt_base = main + doc["declaration"]
+    else:
+        prompt_base = doc["declaration"]
+    return prompt_base
+
 
 def get_prompt_generate(doc):
     return doc["instruction"]
 
 
-def get_prompt_bugs(doc, language="python", mode="tests"):
+def get_base_prompt_bugs(doc, language="python", mode="tests"):
     if language == "rust":
         if mode == "tests":
-            return "\nfn main(){ \n } \n" + doc["declaration"]
+            return "fn main(){}\n" + doc["declaration"]
         elif mode == "docs":
-            return "\nfn main(){ \n } \n" + doc["declaration"] + doc["prompt"]
+            return "fn main(){}\n" + doc["declaration"] + doc["prompt"]
         else:
             raise ValueError
     else:
@@ -65,9 +87,15 @@ def get_prompt_bugs(doc, language="python", mode="tests"):
         else:
             raise ValueError
 
+def get_prompt_bugs(doc, language="python", mode="tests"):
+    prompt_base = get_base_prompt_bugs(doc, language, mode)
+    func = prompt_base + doc["buggy_solution"]
+    instruction = f'Fix bugs in {doc["entry_point"]}.'
+    return func + "\n" + instruction
+    
 def get_prompt_explain_desc(doc, language="python"):
     if language == "rust":
-        main = "\nfn main(){ \n } \n"
+        main = "fn main(){}\n"
         prompt_base = main + doc["declaration"]
     else:
         prompt_base = doc["declaration"]
@@ -76,10 +104,12 @@ def get_prompt_explain_desc(doc, language="python"):
     instruction = f"Provide a concise natural language description of the code using at most {docstring_len} characters."
     func = prompt_base + doc["canonical_solution"]
 
-    return instruction + "\n" + func
+    return instruction + "\n" + func, docstring_len
 
-def get_prompt_explain_gen(sample):
-    raise NotImplementedError
+def get_prompt_explain_gen(sample, desc, language="python"):
+    instruction = f"Write functional code in {LANGUAGE_TO_NAME[language]} according to the description."
+    addon = f"Start your code with:\n{get_prompt_base(sample, language)}"
+    return desc + "\n" + instruction + "\n" + addon
 
 class ParseError(Exception):
     pass
@@ -119,7 +149,7 @@ class ChatWrapper:
     def __init__(self, model: str):
         self._model = model
 
-    def __call__(self, prompt: str) -> str:
+    def __call__(self, prompt: str, n: int) -> str:
         messages = [
             {
                 "role": "user",
@@ -133,10 +163,14 @@ class ChatWrapper:
                     messages=messages,
                     temperature=0.2,
                     top_p=0.95,
+                    n=n
                 )
-                message = response["choices"][0]["message"]
-                assert message["role"] == "assistant"
-                return message["content"]
+                content_list = list()
+                for i in range(n):
+                    message = response["choices"][i]["message"]
+                    assert message["role"] == "assistant"
+                    content_list.append(message["content"])
+                return content_list
             except Exception as e:
                 print("API EXCEPTION:", e)
 
@@ -147,42 +181,52 @@ if __name__ == '__main__':
     LANGUAGE = "python"
     MODEL = "gpt-4-0613"
     TASK = "humaneval-x-generate"
+    
+    # Load descriptions
+    if TASK == "humaneval-x-explain-generate":
+        with jsonlines.open(f"completions_{LANGUAGE}_humaneval-x-explain-describe.jsonl", "r") as f:
+            descriptions = [line["raw_generation"][0] for line in f]
 
     openai.organization = os.getenv("OPENAI_ORGANIZATION")
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    samples = [s for s in load_dataset("bigcode/humaneval-x-bugs", LANGUAGE)["test"]] * TIMES
+    samples = [s for s in load_dataset("bigcode/humaneval-x-bugs", LANGUAGE)["test"]]
 
     chat_wrapper = ChatWrapper(MODEL)
     parse_errors = 0
     parser = ContentParser()
-    for idx, sample in enumerate(samples):
+    for idx, sample in enumerate(tqdm(samples)):
         if TASK == "humaneval-x-bugs":
             prompt = get_prompt_bugs(sample, language=LANGUAGE)
         elif TASK == "humaneval-x-generate":
-            prompt = get_prompt_generate(sample, language=LANGUAGE)
+            prompt = get_prompt_generate(sample)
         elif TASK == "humaneval-x-explain-describe":
-            prompt = get_prompt_explain_desc(sample, language=LANGUAGE)
+            prompt, docstring_len = get_prompt_explain_desc(sample, language=LANGUAGE)
+            gen = chat_wrapper(prompt, TIMES)
+            sample["raw_generation"] = gen
+            sample["generation"] = [gen_item[:docstring_len] for gen_item in gen]
+            continue
         elif TASK == "humaneval-x-explain-generate":
-            prompt = get_prompt_explain_gen(sample)
-
+            desc = descriptions[idx]
+            prompt = get_prompt_explain_gen(sample, desc, language=LANGUAGE)
         if VERBOSE:
             print(f"Processing {sample['task_id']} ({idx + 1}/{len(samples)}))...")
-            print(termcolor.colored(sample["entry_point"], "yellow", attrs=["bold"]))
-            print(termcolor.colored(prompt, "yellow"))
-            print(termcolor.colored(sample["buggy_solution"], "red"))
-        sample["raw_generation"] = chat_wrapper(prompt)
+        sample["raw_generation"] = chat_wrapper(prompt, TIMES)
         try:
-            sample["generation"] = parser(prompt, sample["raw_generation"], sample["entry_point"])
+            sample["generation"] = [parser(prompt, generation_item, sample["entry_point"]) for generation_item in sample["raw_generation"]]
         except ParseError as e:
             parse_errors += 1
             print("PARSE EXCEPTION:", e)
-            sample["generation"] = ""
+            sample["generation"] = [""]
         if VERBOSE:
-            print(termcolor.colored(sample["generation"], "green"))
+            for i in range(TIMES):
+                print(termcolor.colored(sample["entry_point"], "yellow", attrs=["bold"]))
+                print(termcolor.colored(prompt, "yellow"))
+                print(termcolor.colored(sample["canonical_solution"], "red"))
+                print(termcolor.colored(sample["generation"][i], "green")+"\n\n")
     if VERBOSE:
         print("parse error rate:", parse_errors / len(samples))
 
-    results_filename = f"completions_{LANGUAGE}.jsonl"
+    results_filename = f"completions_{LANGUAGE}_{TASK}.jsonl"
     with jsonlines.open(results_filename, "w") as writer:
         writer.write_all(samples)
