@@ -119,7 +119,7 @@ IMPORT_HELPER = {
 
 def create_all_tasks():
     fix = {f"humanevalfix{mode}-{language}": create_task(language, "fix" + mode) for language in LANGUAGES for mode in ["tests", "docs"]}
-    explain = {f"humanevalexplain{mode}-{language}": create_task(language, "explain" + mode) for language in LANGUAGES for mode in ["describe", "generate"]}
+    explain = {f"humanevalexplain{mode}-{language}": create_task(language, "explain" + mode) for language in LANGUAGES for mode in ["describe", "synthesize"]}
     synthesize = {f"humanevalsynthesize-{language}": create_task(language, "synthesize") for language in LANGUAGES}
     return {**fix, **explain, **synthesize}
 
@@ -134,8 +134,8 @@ def create_task(language, name):
         def __init__(self, language=language, mutate_method="instruct"):
             super().__init__(language=language, mutate_method=mutate_method, with_docs=False)   
     class HumanEvalExplainSynthesize(HumanEvalExplainSynthesizeBase):
-        def __init__(self, language=language, mutate_method="instruct"):
-            super().__init__(language=language, mutate_method=mutate_method, with_docs=False)
+        def __init__(self, language=language, mutate_method="instruct", load_data_path=None):
+            super().__init__(language=language, mutate_method=mutate_method, with_docs=False, load_data_path=load_data_path)
     class HumanEvalSynthesize(HumanEvalSynthesizeBase):
         def __init__(self, language=language, mutate_method="instruct"):
             super().__init__(language=language, mutate_method=mutate_method, with_docs=True)
@@ -143,7 +143,7 @@ def create_task(language, name):
     if name == "fixtests": return HumanEvalFixTests
     elif name == "fixdocs": return HumanEvalFixDocs
     elif name == "explaindescribe": return HumanEvalExplainDescribe
-    elif name == "explaindescribe": return HumanEvalExplainSynthesize
+    elif name == "explainsynthesize": return HumanEvalExplainSynthesize
     elif name == "synthesize": return HumanEvalSynthesize
 
 

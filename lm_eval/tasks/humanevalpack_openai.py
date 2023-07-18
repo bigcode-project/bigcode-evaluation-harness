@@ -9,7 +9,7 @@ def get_prompt_base(doc, language="python"):
     # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
     # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
     if language == "rust":
-        main = "\nfn main(){ \n } \n"
+        main = "fn main(){}\n"
         prompt_base = main + doc["declaration"] + doc["prompt"]
     else:
         prompt_base = doc["prompt"]
