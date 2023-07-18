@@ -1,16 +1,24 @@
 import fnmatch
 import json
+import os
 
 import datasets
 import torch
+import wandb
 import transformers
 from accelerate import Accelerator
-from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
+from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, AutoConfig
+import pandas as pd
 
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
 from lm_eval.tasks import ALL_TASKS
 
+import sys
+from os.path import join, dirname
+
+sys.path.insert(0, join(dirname(__file__), "..",))
+from modeling_gpt_bigcode_sd import GPTBigCodeForCausalLMSkipDecode
 
 class MultiChoice:
     def __init__(self, choices):
@@ -140,6 +148,14 @@ def parse_args():
         action="store_true",
         help="Whether to save reference solutions/tests",
     )
+
+    parser.add_argument('-sd', "--do_skip_decode", action="store_true")
+    parser.add_argument("--max_exit_layer", type=int)
+    parser.add_argument("--min_exit_layer", type=int)
+    parser.add_argument('-wl', "--num_skip_decode_warmup_layers", type=int)
+    
+    parser.add_argument('-v', "--verbose", action="store_true")
+
     return parser.parse_args()
 
 
@@ -157,7 +173,10 @@ def main():
     args = parse_args()
     transformers.logging.set_verbosity_error()
     datasets.logging.set_verbosity_error()
-
+    
+    if args.verbose:
+        os.environ["verbose"] = "1"
+        
     if args.tasks is None:
         task_names = ALL_TASKS
     else:
@@ -167,6 +186,17 @@ def main():
     if accelerator.is_main_process:
         print(f"Selected Tasks: {task_names}")
 
+    ### WANDB SET UP
+    wandb.init(
+    project=f"{args.tasks}_evaluation",
+    name=args.model
+    )
+    wandb.config.update(args)
+    wandb.config.num_layers = []
+    wandb.define_metric("generation_time_ms", summary="mean")
+    wandb.define_metric("num_new_tokens", summary="mean")
+    ###################
+    
     results = {}
     if args.load_generations_path:
         # here we don't generate code but only evaluate previously computed generations
@@ -187,38 +217,55 @@ def main():
             raise ValueError(
                 f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16"
             )
+        
+        config = AutoConfig.from_pretrained(args.model)
+        
+        if args.do_skip_decode:
+            os.environ["do_skip_decode"] = "1"
+            model_cls = GPTBigCodeForCausalLMSkipDecode
+            config.do_skip_decode = True
+            config.max_exit_layer = args.max_exit_layer
+            config.min_exit_layer = args.min_exit_layer
+            config.num_skip_decode_warmup_layers = args.num_skip_decode_warmup_layers
+            config.max_length = args.max_length_generation
+        else:
+            model_cls = AutoModelForCausalLM
+
         if args.load_in_8bit:
             print("Loading model in 8bit")
             current_device = accelerator.process_index
-            # the model needs to fit in one GPU
-            model = AutoModelForCausalLM.from_pretrained(
+            # the model needs to fit in one GPU``
+            model = model_cls.from_pretrained(
                 args.model,
                 revision=args.revision,
                 load_in_8bit=args.load_in_8bit,
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,
                 device_map={"": current_device},
+                config=config,
             )
         elif args.load_in_4bit:
             print("Loading model in 4bit")
             current_device = accelerator.process_index
             # the model needs to fit in one GPU
-            model = AutoModelForCausalLM.from_pretrained(
+            model = model_cls.from_pretrained(
                 args.model,
                 revision=args.revision,
                 load_in_4bit=args.load_in_4bit,
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,
                 device_map={"": current_device},
+                config=config,
             )
         else:
             print(f"Loading model in {args.precision}")
-            model = AutoModelForCausalLM.from_pretrained(
+            model = model_cls.from_pretrained(
                 args.model,
                 revision=args.revision,
                 torch_dtype=dict_precisions[args.precision],
                 trust_remote_code=args.trust_remote_code,
                 use_auth_token=args.use_auth_token,
+                config=config
             )
 
         tokenizer = AutoTokenizer.from_pretrained(
@@ -269,6 +316,22 @@ def main():
         with open(args.metric_output_path, "w") as f:
             f.write(dumped)
 
+    # Extra logging for early exit
+    if len(wandb.config.num_layers) > 0:
+        df = pd.DataFrame(wandb.config.num_layers).reset_index()
+        avg_exit_layer = df.mean().to_dict()["layer"]
+        df_agg = df.groupby("cur_token_index").agg({"layer": "mean", "index": "count"})
+        example_count = df_agg["index"].max()
+        df_agg_to_log = df_agg[df_agg["index"] == example_count]
+        token_exit_metrics = df_agg_to_log.reset_index().to_dict(orient="records")
 
+        for token_metric in token_exit_metrics:
+            wandb.log(token_metric)
+        
+        wandb.log({'avg_exit_layer': avg_exit_layer})
+    
+    wandb_summary = wandb.run.summary._as_dict()
+    wandb.log({"mean_latency": wandb_summary["generation_time_ms"]['mean'] / wandb_summary["num_new_tokens"]['mean']})
+    
 if __name__ == "__main__":
     main()

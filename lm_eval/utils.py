@@ -1,8 +1,11 @@
 import math
+import os
+from time import perf_counter_ns
 import warnings
 from collections import defaultdict
 
 import torch
+import wandb
 from torch.utils.data import IterableDataset
 from tqdm import tqdm
 
@@ -222,6 +225,13 @@ def complete_code(
                     batch["input_len"].max().item()
                 )
             inputs = batch["ids"][:, : batch["input_len"]]
+            
+            if os.environ.get("do_skip_decode") == "1":
+                gen_kwargs["prompt_size"] = inputs.shape[1]
+            
+            torch.cuda.synchronize()
+            start = perf_counter_ns()
+            
             if is_wrapped:
                 # 8bit and 4bit models are wrapped in accelerator
                 generated_tokens = accelerator.unwrap_model(model).generate(
@@ -235,6 +245,13 @@ def complete_code(
                     num_return_sequences=batch_size,
                     **gen_kwargs,
                 )
+            
+            torch.cuda.synchronize()
+            nano_secs = perf_counter_ns() - start    
+            gen_time_ms = nano_secs / 1e6
+            num_new_tokens = len(generated_tokens[0]) - len(inputs[0]) # This works only for batch_size=1
+            wandb.log({"num_new_tokens": num_new_tokens, "generation_time_ms": gen_time_ms})
+        
             # each task is generated batch_size times
             generated_tasks = batch["task_id"].repeat(batch_size)
             generated_tokens = accelerator.pad_across_processes(
