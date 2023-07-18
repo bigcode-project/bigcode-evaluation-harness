@@ -140,16 +140,11 @@ def create_task(language, name):
         def __init__(self, language=language, mutate_method="instruct"):
             super().__init__(language=language, mutate_method=mutate_method, with_docs=True)
     
-    if name == "fixtests":
-        return HumanEvalFixTests
-    if name == "fixdocs":
-        return HumanEvalFixDocs    
-    elif name == "explaindescribe":
-        return HumanEvalExplainDescribe
-    elif name == "explaindescribe":
-        return HumanEvalExplainSynthesize    
-    elif name == "synthesize":
-        return HumanEvalSynthesize
+    if name == "fixtests": return HumanEvalFixTests
+    elif name == "fixdocs": return HumanEvalFixDocs
+    elif name == "explaindescribe": return HumanEvalExplainDescribe
+    elif name == "explaindescribe": return HumanEvalExplainSynthesize
+    elif name == "synthesize": return HumanEvalSynthesize
 
 
 class HumanEvalPack(Task):
@@ -157,7 +152,7 @@ class HumanEvalPack(Task):
     DATASET_PATH = "bigcode/humanevalpack"
     DATASET_NAME = None
 
-    def __init__(self, task, mutate_method="prompt", language="python", with_docs=True):
+    def __init__(self, mutate_method="prompt", language="python", with_docs=True):
         
         self.DATASET_NAME = language
         self.mutate_method = mutate_method        
@@ -175,7 +170,6 @@ class HumanEvalPack(Task):
         elif self.mutate_method == "diff-carper":
             stop_words = ["<BEF>", "<MSG>", "<DFF>", "\ No newline at end of file"]            
         stop_words.append("<|endoftext|>")
-        self.task = task
         self.with_docs = with_docs
         super().__init__(stop_words=stop_words, requires_execution=True)
 
