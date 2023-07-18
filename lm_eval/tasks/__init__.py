@@ -12,7 +12,7 @@ TASK_REGISTRY = {
     "conala": conala.Conala,
     "concode": concode.Concode,
     **ds1000.create_all_tasks(),
-    "humaneval": humaneval.HumanEval,
+    **humaneval.create_all_tasks(),
     "mbpp": mbpp.MBPP,
     **gsm.create_all_tasks(),
     **instruct_humaneval.create_all_tasks(),
