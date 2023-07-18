@@ -69,7 +69,7 @@ class GeneralHumanEvalXExplainDescribe(Task):
         # https://github.com/roG0d/CodeGeeX/blob/f66205b5f615a4eead9c26d7ec297e14738ea18d/codegeex/benchmark/evaluate_humaneval_x.py#L78
         # https://github.com/THUDM/CodeGeeX/pull/76#issuecomment-1500653190
         if self.DATASET_NAME == "rust":
-            main = "\nfn main(){ \n } \n"
+            main = "fn main(){}\n"
             prompt_base = main + doc["declaration"]
         else:
             prompt_base = doc["declaration"]
@@ -94,6 +94,8 @@ class GeneralHumanEvalXExplainDescribe(Task):
             prompt = f"<|system|>\n<|end|>\n<|user|>\n{instruction}\n{func}<|end|>\n<|assistant|>"
         elif self.mutate_method == "starcodercommit":
             prompt = f'<commit_before><commit_msg>{instruction}\n{func}<commit_after>'
+        elif self.mutate_method == "starcodercommit2":
+            prompt = f'<commit_before>{func}<commit_msg>{instruction}<commit_after>'            
         elif self.mutate_method == "wizardcoder":
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n{func}\n\n### Response:'
         return prompt

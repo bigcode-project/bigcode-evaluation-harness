@@ -260,7 +260,7 @@ class GeneralHumanEvalXGenerate(Task):
                         code = code[:main_pos] + '}'
                     if '}' in code:
                         code = code[:code.rfind('}')] + '}'
-                    if code.count('{') + 1 == code.count('}'):
+                    if code.count('{') - 1 == code.count('}'):
                         code += "\n}"
                 elif '}' in code:
                     code = code[:code.rfind('}')] + '}'

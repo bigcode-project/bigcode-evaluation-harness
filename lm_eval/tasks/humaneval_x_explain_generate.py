@@ -271,7 +271,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
                         code = code[:main_pos] + '}'
                     if '}' in code:
                         code = code[:code.rfind('}')] + '}'
-                    if code.count('{') + 1 == code.count('}'):
+                    if code.count('{') - 1 == code.count('}'):
                         code += "\n}"
                 elif '}' in code:
                     code = code[:code.rfind('}')] + '}'
@@ -308,6 +308,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
         :param references: list(str)
             list of str containing refrences
         """
+        """Not necessary as scores are the same if grouped or not grouped
         # Reformat from [[sample1], [sample2] ...] -> [[samples until n_samples], [samples until 2*n_samples] ...]
         n_samples = 1
         while n_samples < len(references) and references[n_samples] == references[0]:
@@ -323,6 +324,7 @@ class GeneralHumanEvalXExplainGenerate(Task):
         references = [
             references[i] for i in range(0, len(references), n_samples)
         ]
+        """
 
 
         code_metric = load("Muennighoff/code_eval")

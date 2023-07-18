@@ -123,7 +123,7 @@ IMPORT_HELPER = {
 }
 
 def create_all_tasks():
-    return {f"humaneval-x-bugs-{language}-{mode}": create_task(language) for language in LANGUAGES for mode in ["tests", "docs"]}
+    return {f"humaneval-x-bugs-{language}-{mode}": create_task(language, mode) for language in LANGUAGES for mode in ["tests", "docs"]}
 
 
 def create_task(language, mode="tests"):
@@ -389,7 +389,7 @@ class GeneralHumanEvalXBugs(Task):
                         code = code[:main_pos] + '}'
                     if '}' in code:
                         code = code[:code.rfind('}')] + '}'
-                    if code.count('{') + 1 == code.count('}'):
+                    if code.count('{') - 1 == code.count('}'):
                         code += "\n}"
                 elif '}' in code:
                     code = code[:code.rfind('}')] + '}'
