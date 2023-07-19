@@ -16,7 +16,7 @@ TASK_REGISTRY = {
     "mbpp": mbpp.MBPP,
     **gsm.create_all_tasks(),
     **instruct_humaneval.create_all_tasks(),
-    "shadereval": shadereval.ReturnCompletion,
+    "shadereval": create_all_tasks(),
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))
