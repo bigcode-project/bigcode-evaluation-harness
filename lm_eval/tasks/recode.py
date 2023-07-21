@@ -9,6 +9,8 @@ Homepage: TODO: Add the URL to the task's Homepage here.
 """
 from lm_eval.base import Task
 
+from evaluate import load
+
 from datasets import load_dataset
 
 # TODO: Add the BibTeX citation for the task.
@@ -87,7 +89,7 @@ class GeneralPerturbedHumanEval(Task):
             "task_id": doc["task_id"],
             "seed": doc["seed"],
             "perturbation_name": doc["perturbation_name"],
-            "test_cide": test_code
+            "test_code": test_code
         }
 
     @staticmethod
@@ -131,4 +133,29 @@ class GeneralPerturbedHumanEval(Task):
             list of dict containing refrences
         :return: dict[str: float]
         """
-        return {}
+        code_metric = load("code_eval")
+        results, detailed_results = code_metric.compute(
+            references=[ref["test_code"] for ref in references],
+            predictions=generations,
+        )
+        # Compute robust pass-at-k. For each transformation and each prompt, we have s=5 randomly perturbed prompts.
+        # We assume that we have a single greedy sample per prompt.
+        # With a single sample per prompt, RP@1 on a given transformation is the fraction of examples where completions
+        # for all the perturbed prompts are correct.
+
+        # We compute RP@1 for each transformation
+        # transformation -> problem -> [result for each seed]
+        transformation_problem_results = {}
+        for i, (ref, result) in enumerate(zip(references, detailed_results.values())):
+            result = result[0][1]
+            if ref["perturbation_name"] not in transformation_problem_results:
+                transformation_problem_results[ref["perturbation_name"]] = {}
+            if ref["task_id"] not in transformation_problem_results[ref["perturbation_name"]]:
+                transformation_problem_results[ref["perturbation_name"]][ref["task_id"]] = []
+            transformation_problem_results[ref["perturbation_name"]][ref["task_id"]].append(result["passed"])
+
+        rp1 = {}
+        for transformation, problem_results in transformation_problem_results.items():
+            rp1[transformation] = sum(all(results) for results in problem_results.values()) / len(problem_results)
+
+        return rp1
