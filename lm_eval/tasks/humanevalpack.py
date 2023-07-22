@@ -309,7 +309,21 @@ class HumanEvalPackGenerative(HumanEvalPack):
                 elif '}' in code:
                     code = code[:code.rfind('}')] + '}'
         return code
-    
+
+    def postprocess_generation(self, generation, idx):
+        """Defines the postprocessing for a LM generation.
+        :param generation: str
+            code generation from LM
+        :param idx: int
+            index of doc in the dataset to which the generation belongs
+            (not used for Humaneval-Task)
+        """
+        doc = self.get_dataset()[idx]
+        prompt = self.get_prompt(doc)
+        gen = self.remove_last_block(generation[len(prompt):].rstrip())
+        # Strip to maintain same behavior as with get_prompt
+        return doc["prompt"].rstrip() + gen
+        
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references.
 
