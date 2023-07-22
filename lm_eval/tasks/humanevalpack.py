@@ -599,13 +599,13 @@ class HumanEvalExplainDescribeBase(HumanEvalPack):
 
 
 class HumanEvalExplainSynthesizeBase(HumanEvalPackGenerative):
-    def __init__(self, mutate_method="prompt", language="python", load_data_path=None):
+    def __init__(self, load_data_path=None, **kwargs):
         assert load_data_path is not None, "load_data_path must be specified"
         with open(load_data_path) as fp:
             self.descriptions = json.load(fp)
             print(f"{len(self.descriptions)} descriptions with {len(self.descriptions[0])} description candidates loaded.")    
 
-        super().__init__(mutate_method=mutate_method, language=language)
+        super().__init__(**kwargs)
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
