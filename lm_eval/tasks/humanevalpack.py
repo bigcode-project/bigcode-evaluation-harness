@@ -286,7 +286,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
                 if len(line.strip()) > 0 and line[0] != ' ' and line[0] != '\t':
                     return "\n".join(code.split("\n")[:i])
         elif self.DATASET_NAME in ["java", "js", "go", "cpp", "rust"]:
-            open_brackets = 1
+            open_brackets = 2 if self.DATASET_NAME == "java" else 1
             cut = False
             for i, c in enumerate(code):
                 if c == '{':
@@ -600,7 +600,7 @@ class HumanEvalExplainDescribeBase(HumanEvalPack):
 
 class HumanEvalExplainSynthesizeBase(HumanEvalPackGenerative):
     def __init__(self, load_data_path=None, **kwargs):
-        assert load_data_path is not None, "load_data_path must be specified"
+        assert load_data_path is not None, "load_data_path must be specified to load the descriptions."
         with open(load_data_path) as fp:
             self.descriptions = json.load(fp)
             print(f"{len(self.descriptions)} descriptions with {len(self.descriptions[0])} description candidates loaded.")    
