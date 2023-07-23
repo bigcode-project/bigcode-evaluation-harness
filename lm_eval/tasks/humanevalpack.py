@@ -199,7 +199,7 @@ class HumanEvalPack(Task):
             prompt = prompt_base
         elif self.mutate_method == "instruct":
             prompt = inp + "\n\n" + prompt_base
-        elif self.mutate_method == "instruct-qa":
+        elif self.mutate_method == "octocoder":
             prompt = f'Question: {inp}\n\nAnswer:\n{prompt_base}'
         elif self.mutate_method == "starchat":
             # https://huggingface.co/HuggingFaceH4/starchat-beta
@@ -332,7 +332,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
         :param references: list(str)
             list of str containing refrences
         """
-        code_metric = load("Muennighoff/code_eval")
+        code_metric = load("Muennighoff/code_eval_octopack")
         timeout = LANGUAGE_TO_TIMEOUT[self.DATASET_NAME]
         num_workers = LANGUAGE_TO_NUM_WORKERS[self.DATASET_NAME]
         language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
