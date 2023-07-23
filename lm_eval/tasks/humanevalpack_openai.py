@@ -67,11 +67,14 @@ def get_prompt_base(doc, language):
     return prompt_base
 
 
-def get_prompt_generate(doc):
-    return doc["instruction"]
+def get_prompt_synthesize(doc, language="python"):
+    # Problems which have a helper function
+    addon = f"Start your code with:\n{get_prompt_base(sample, language)}"
+    return doc["instruction"] + "\n" + addon
+    #return doc["instruction"]
 
 
-def get_base_prompt_bugs(doc, language="python", mode="tests"):
+def get_base_prompt_fix(doc, language="python", mode="tests"):
     if language == "rust":
         if mode == "tests":
             return "fn main(){}\n" + doc["declaration"]
@@ -87,8 +90,8 @@ def get_base_prompt_bugs(doc, language="python", mode="tests"):
         else:
             raise ValueError
 
-def get_prompt_bugs(doc, language="python", mode="tests"):
-    prompt_base = get_base_prompt_bugs(doc, language, mode)
+def get_prompt_fix(doc, language="python", mode="tests"):
+    prompt_base = get_base_prompt_fix(doc, language, mode)
     func = prompt_base + doc["buggy_solution"]
     instruction = f'Fix bugs in {doc["entry_point"]}.'
     return func + "\n" + instruction
@@ -106,7 +109,7 @@ def get_prompt_explain_desc(doc, language="python"):
 
     return instruction + "\n" + func, docstring_len
 
-def get_prompt_explain_gen(sample, desc, language="python"):
+def get_prompt_explain_syn(sample, desc, language="python"):
     instruction = f"Write functional code in {LANGUAGE_TO_NAME[language]} according to the description."
     addon = f"Start your code with:\n{get_prompt_base(sample, language)}"
     return desc + "\n" + instruction + "\n" + addon
@@ -180,35 +183,35 @@ if __name__ == '__main__':
     VERBOSE = True
     LANGUAGE = "python"
     MODEL = "gpt-4-0613"
-    TASK = "humaneval-x-generate"
+    TASK = "humanevalsynthesize"
     
     # Load descriptions
-    if TASK == "humaneval-x-explain-generate":
-        with jsonlines.open(f"completions_{LANGUAGE}_humaneval-x-explain-describe.jsonl", "r") as f:
+    if TASK == "humanevalsynthesize":
+        with jsonlines.open(f"completions_{LANGUAGE}_humanevalexplaindescribe.jsonl", "r") as f:
             descriptions = [line["raw_generation"][0] for line in f]
 
     openai.organization = os.getenv("OPENAI_ORGANIZATION")
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    samples = [s for s in load_dataset("bigcode/humaneval-x-bugs", LANGUAGE)["test"]]
+    samples = [s for s in load_dataset("bigcode/humanevalpack", LANGUAGE)["test"]]
 
     chat_wrapper = ChatWrapper(MODEL)
     parse_errors = 0
     parser = ContentParser()
     for idx, sample in enumerate(tqdm(samples)):
-        if TASK == "humaneval-x-bugs":
-            prompt = get_prompt_bugs(sample, language=LANGUAGE)
-        elif TASK == "humaneval-x-generate":
-            prompt = get_prompt_generate(sample)
-        elif TASK == "humaneval-x-explain-describe":
+        if TASK == "humanevalfix":
+            prompt = get_prompt_fix(sample, language=LANGUAGE)
+        elif TASK == "humanevalsynthesize":
+            prompt = get_prompt_synthesize(sample, language=LANGUAGE)
+        elif TASK == "humanevalexplaindescribe":
             prompt, docstring_len = get_prompt_explain_desc(sample, language=LANGUAGE)
             gen = chat_wrapper(prompt, TIMES)
             sample["raw_generation"] = gen
             sample["generation"] = [gen_item[:docstring_len] for gen_item in gen]
             continue
-        elif TASK == "humaneval-x-explain-generate":
+        elif TASK == "humanevalexplainsynthesize":
             desc = descriptions[idx]
-            prompt = get_prompt_explain_gen(sample, desc, language=LANGUAGE)
+            prompt = get_prompt_explain_syn(sample, desc, language=LANGUAGE)
         if VERBOSE:
             print(f"Processing {sample['task_id']} ({idx + 1}/{len(samples)}))...")
         sample["raw_generation"] = chat_wrapper(prompt, TIMES)
