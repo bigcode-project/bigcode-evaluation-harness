@@ -186,7 +186,7 @@ if __name__ == '__main__':
     TASK = "humanevalsynthesize"
     
     # Load descriptions
-    if TASK == "humanevalsynthesize":
+    if TASK == "humanevalexplainsynthesize":
         with jsonlines.open(f"completions_{LANGUAGE}_humanevalexplaindescribe.jsonl", "r") as f:
             descriptions = [line["raw_generation"][0] for line in f]
 
