@@ -95,7 +95,7 @@ def get_prompt_fix(doc, language="python", mode="tests"):
     func = prompt_base + doc["buggy_solution"]
     instruction = f'Fix bugs in {doc["entry_point"]}.'
     return func + "\n" + instruction
-    
+
 def get_prompt_explain_desc(doc, language="python"):
     if language == "rust":
         main = "fn main(){}\n"
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     parser = ContentParser()
     for idx, sample in enumerate(tqdm(samples)):
         if TASK == "humanevalfix":
-            prompt = get_prompt_fix(sample, language=LANGUAGE)
+            prompt = get_prompt_fix(sample, language=LANGUAGE, mode="tests")
         elif TASK == "humanevalsynthesize":
             prompt = get_prompt_synthesize(sample, language=LANGUAGE)
         elif TASK == "humanevalexplaindescribe":
