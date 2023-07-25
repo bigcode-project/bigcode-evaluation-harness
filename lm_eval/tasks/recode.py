@@ -12,6 +12,7 @@ from lm_eval.base import Task
 from evaluate import load
 
 from datasets import load_dataset
+import numpy as np
 
 # TODO: Add the BibTeX citation for the task.
 _CITATION = """
@@ -133,29 +134,61 @@ class GeneralPerturbedHumanEval(Task):
             list of dict containing refrences
         :return: dict[str: float]
         """
+        # # Load from json TODO: remove this
+        # with open("code_eval_results.json", "r") as f:
+        #     import json
+        #     detailed_results = json.load(f)
         code_metric = load("code_eval")
         results, detailed_results = code_metric.compute(
             references=[ref["test_code"] for ref in references],
             predictions=generations,
         )
-        # Compute robust pass-at-k. For each transformation and each prompt, we have s=5 randomly perturbed prompts.
-        # We assume that we have a single greedy sample per prompt.
+        # Dump as json TODO: remove this
+        # with open("code_eval_results.json", "w") as f:
+        #     import json
+        #     json.dump(detailed_results, f)
+
+        # Compute robust-pass-at-1. For each transformation and each prompt, we have s=5 randomly perturbed prompts.
         # With a single sample per prompt, RP@1 on a given transformation is the fraction of examples where completions
         # for all the perturbed prompts are correct.
+        # With n samples per prompt, https://arxiv.org/abs/2212.10264 defines RP@1 as the average of the 
+        # 1/n * sum_{i=1}^n I(all s correct for generation-seed i) over all prompts.
+        # An alternate could be the average of the
+        # prod_{j=1}^s 1/n * sum_{i=1}^n I(j-th prompt correct for generation-seed i) over all prompts.
 
         # We compute RP@1 for each transformation
-        # transformation -> problem -> [result for each seed]
+        # transformation -> problem -> seed -> [n results]
         transformation_problem_results = {}
         for i, (ref, result) in enumerate(zip(references, detailed_results.values())):
-            result = result[0][1]
+            result = [x[1]["passed"] for x in result]
             if ref["perturbation_name"] not in transformation_problem_results:
                 transformation_problem_results[ref["perturbation_name"]] = {}
             if ref["task_id"] not in transformation_problem_results[ref["perturbation_name"]]:
-                transformation_problem_results[ref["perturbation_name"]][ref["task_id"]] = []
-            transformation_problem_results[ref["perturbation_name"]][ref["task_id"]].append(result["passed"])
+                transformation_problem_results[ref["perturbation_name"]][ref["task_id"]] = {}
+            assert ref["seed"] not in transformation_problem_results[ref["perturbation_name"]][ref["task_id"]]
+                # transformation_problem_results[ref["perturbation_name"]][ref["task_id"]][ref["seed"]] = []
+            transformation_problem_results[ref["perturbation_name"]][ref["task_id"]][ref["seed"]] = result
 
         rp1 = {}
         for transformation, problem_results in transformation_problem_results.items():
-            rp1[transformation] = sum(all(results) for results in problem_results.values()) / len(problem_results)
+            res = {}
+            res["robust-pass-at-1"] = sum(
+                # results = {seed -> [n results]}
+                # 1/n * sum_{i=1}^n I(all s correct for generation-seed i)
+                float(all(results_)) / len(list(results.values())[0])
+                for results in problem_results.values()
+                for results_ in zip(*results.values())
+            ) / len(problem_results)
+
+            res["alt-robust-pass-at-1"] = sum(
+                # results = {seed -> [n results]}
+                # prod_{j=1}^s 1/n * sum_{i=1}^n I(j-th prompt correct for generation-seed i)
+                np.prod([
+                    np.mean(results[j])
+                    for j in results
+                ])
+                for results in problem_results.values()
+            ) / len(problem_results)
+            rp1[transformation] = res
 
         return rp1
