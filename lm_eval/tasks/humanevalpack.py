@@ -255,22 +255,11 @@ class HumanEvalPackGenerative(HumanEvalPack):
             for line in code.split("\n"):
                 if len(line.strip()) > 0 and line[0] != ' ' and line[0] != '\t':
                     return True
-        elif self.DATASET_NAME == "java":
-            if code.count("{") + 1 == code.count("}"):
+        else:
+            open_brackets = 2 if self.DATASET_NAME == "java" else 1
+            if code.count("{") + open_brackets == code.count("}"):
                 return True
-        elif self.DATASET_NAME == "go":
-            if code.count("{") + 1 == code.count("}"):
-                return True
-        elif self.DATASET_NAME == "js":
-            if code.count("{") + 1 == code.count("}"):
-                return True
-        elif self.DATASET_NAME == "cpp":
-            if code.count("{") + 1 == code.count("}"):
-                return True
-        elif self.DATASET_NAME == "rust":
-            if code.count("{") + 1 == code.count("}"):
-                return True
-        return False    
+        return False 
 
     def remove_last_block(self, code):
         """
