@@ -33,20 +33,10 @@ class HumanEval(Task):
 
     DATASET_PATH = "openai_humaneval"
 
-    def __init__(self, mutate_method="prompt"):
+    def __init__(self):
         
-        stop_words = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
-        self.mutate_method = mutate_method
-        if self.mutate_method == "edit":
-            stop_words = [
-                "<commit_before>", 
-                "<commit_msg>", 
-                "<commit_after>", 
-                "<|endoftext|>",
-            ]
-
         super().__init__(
-            stop_words=stop_words,
+            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
             requires_execution=True,
         )
 
@@ -56,15 +46,7 @@ class HumanEval(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-
-        if self.mutate_method == "edit":
-            prompt = "<commit_before>" + doc["prompt"]
-            prompt += "<commit_msg>" + "Complete the function"
-            prompt += "<commit_after>"
-        else:
-            prompt = doc["prompt"]
-        
-        return prompt.strip()
+        return doc["prompt"].strip()
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -95,16 +77,9 @@ class HumanEval(Task):
             index of doc in the dataset to which the generation belongs
             (not used for Humaneval-Task)
         """
-        # If editing, need to remove all prior to the new commit
-        if self.mutate_method == "edit":
-            doc = self.get_dataset()[idx]
-            full_prompt = self.get_prompt(doc)
-            generation = generation[len(full_prompt):]
-            return self._stop_at_stop_token(generation, self.stop_words)
-        else:
-            prompt = self.get_prompt(self.dataset["test"][idx])
-            generation = generation[len(prompt) :]
-            return prompt + self._stop_at_stop_token(generation, self.stop_words)
+        prompt = self.get_prompt(self.dataset["test"][idx])
+        generation = generation[len(prompt) :]
+        return prompt + self._stop_at_stop_token(generation, self.stop_words)
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,

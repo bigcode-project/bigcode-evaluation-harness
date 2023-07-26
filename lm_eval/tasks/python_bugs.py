@@ -44,32 +44,32 @@ MUTATE_TO_TASK_TO_PROMPT = {
     },
 }
 
-def mutate_code(input_code, task, mutate_method="prompt"):
+def mutate_code(input_code, task, prompt="prompt"):
     """
     Create template for code mutation.
     Args:
         input_code: code to be mutated
         task: task to be performed
-        mutate_method: (Optional) 'edit' or 'prompt'
+        prompt: (Optional) 'edit' or 'prompt'
     Returns:
         template for code mutation
     """
-    instruction = MUTATE_TO_TASK_TO_PROMPT[mutate_method][task]
-    if mutate_method == "prompt_carper":
+    instruction = MUTATE_TO_TASK_TO_PROMPT[prompt][task]
+    if prompt == "prompt_carper":
         return f"# A buggy implementation\n#!/usr/bin/python3\n{input_code}\n{instruction}\ndef"
-    if mutate_method == "prompt":
+    if prompt == "prompt":
         return f"#!/usr/bin/python3\n# A buggy implementation\n{input_code}\n{instruction}\ndef"        
-    if mutate_method == "edit":
+    if prompt == "edit":
         return f"<commit_before>{input_code}<commit_msg>{instruction}<commit_after>"
     else:
-        raise ValueError(f"Unknown mutate_method: {mutate_method}")
+        raise ValueError(f"Unknown prompt: {prompt}")
 
 
 class PythonBugs(Task):
 
     DATASET_PATH = "Muennighoff/python-bugs"
 
-    def __init__(self, mutate_method="prompt"):
+    def __init__(self, prompt="prompt"):
         super().__init__(
             # Correct code always starts with `def ...` and is a single function, so stop everything else
             # Since a function always has a tab, stop when the first line does not have a tab
@@ -81,7 +81,7 @@ class PythonBugs(Task):
             requires_execution=True,
         )
         self.max_length_multiplier = 2.25 # Allow 2.25 times the length of the prompt
-        self.mutate_method = mutate_method
+        self.prompt = prompt
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -90,7 +90,7 @@ class PythonBugs(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        return mutate_code(doc["prompt_code"], doc["task"], self.mutate_method)
+        return mutate_code(doc["prompt_code"], doc["task"], self.prompt)
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -107,7 +107,7 @@ class PythonBugs(Task):
         prompt = self.get_prompt(doc)
         correct_code = self.get_reference(doc)
         output = generation[len(prompt):]
-        if self.mutate_method.startswith("prompt"):
+        if self.prompt.startswith("prompt"):
             output = "def" + output # Add def which is in the prompt back to the output
         return output[:len(correct_code)]
 

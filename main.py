@@ -159,10 +159,10 @@ def parse_args():
         help="Whether to save reference solutions/tests",
     )
     parser.add_argument(
-        "--mutate_method",
+        "--prompt",
         type=str,
         default="prompt",
-        help="Method used to mutate the code, could be edit for commit models",
+        help="Prompt to use for generation",
     )
     parser.add_argument("--max_memory_per_gpu", type=str, default=None)
     parser.add_argument(

@@ -28,13 +28,9 @@ ALL_TASKS = sorted(list(TASK_REGISTRY))
 
 def get_task(task_name, args=None):
     try:
-        ## Only if the task takes a mutate_method argument, should we pass it
-        #if "mutate_method" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
-        #    return TASK_REGISTRY[task_name](mutate_method=mutate_method)
-        #else:
         kwargs = {}
-        if "mutate_method" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
-            kwargs["mutate_method"] = args.mutate_method
+        if "prompt" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
+            kwargs["prompt"] = args.prompt
         if "load_data_path" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
             kwargs["load_data_path"] = args.load_data_path
         return TASK_REGISTRY[task_name](**kwargs)

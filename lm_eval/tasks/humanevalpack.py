@@ -125,20 +125,20 @@ def create_all_tasks():
 
 def create_task(language, name):
     class HumanEvalFixTests(HumanEvalFixBase):
-        def __init__(self, language=language, mutate_method="instruct"):
-            super().__init__(language=language, mutate_method=mutate_method, with_docs=False)
+        def __init__(self, language=language, prompt="instruct"):
+            super().__init__(language=language, prompt=prompt, with_docs=False)
     class HumanEvalFixDocs(HumanEvalFixBase):
-        def __init__(self, language=language, mutate_method="instruct"):            
-            super().__init__(language=language, mutate_method=mutate_method, with_docs=True)
+        def __init__(self, language=language, prompt="instruct"):            
+            super().__init__(language=language, prompt=prompt, with_docs=True)
     class HumanEvalExplainDescribe(HumanEvalExplainDescribeBase):
-        def __init__(self, language=language, mutate_method="instruct"):
-            super().__init__(language=language, mutate_method=mutate_method, with_docs=False)   
+        def __init__(self, language=language, prompt="instruct"):
+            super().__init__(language=language, prompt=prompt, with_docs=False)   
     class HumanEvalExplainSynthesize(HumanEvalExplainSynthesizeBase):
-        def __init__(self, language=language, mutate_method="instruct", load_data_path=None):
-            super().__init__(language=language, mutate_method=mutate_method, with_docs=False, load_data_path=load_data_path)
+        def __init__(self, language=language, prompt="instruct", load_data_path=None):
+            super().__init__(language=language, prompt=prompt, with_docs=False, load_data_path=load_data_path)
     class HumanEvalSynthesize(HumanEvalSynthesizeBase):
-        def __init__(self, language=language, mutate_method="instruct"):
-            super().__init__(language=language, mutate_method=mutate_method, with_docs=True)
+        def __init__(self, language=language, prompt="instruct"):
+            super().__init__(language=language, prompt=prompt, with_docs=True)
     
     if name == "fixtests": return HumanEvalFixTests
     elif name == "fixdocs": return HumanEvalFixDocs
@@ -152,22 +152,22 @@ class HumanEvalPack(Task):
     DATASET_PATH = "bigcode/humanevalpack"
     DATASET_NAME = None
 
-    def __init__(self, mutate_method="prompt", language="python", with_docs=True):
+    def __init__(self, prompt="instruct", language="python", with_docs=True):
         
         self.DATASET_NAME = language
-        self.mutate_method = mutate_method        
+        self.prompt = prompt        
         stop_words = LANGUAGE_TO_STOP_WORDS[language]
-        if self.mutate_method.startswith("edit"):
+        if self.prompt.startswith("edit"):
             stop_words.extend([
                 "<commit_before>",
                 "<commit_msg>",
                 "<commit_after>",
             ])
-        elif self.mutate_method == "starchat":
+        elif self.prompt == "starchat":
             stop_words.append("<|end|>")
-        elif self.mutate_method == "diff":
+        elif self.prompt == "diff":
             stop_words = ["<commit_before>", "<commit_msg>", "<commit_after>"]
-        elif self.mutate_method == "diff-carper":
+        elif self.prompt == "diff-carper":
             stop_words = ["<BEF>", "<MSG>", "<DFF>", "\ No newline at end of file"]            
         stop_words.append("<|endoftext|>")
         self.with_docs = with_docs
@@ -190,26 +190,26 @@ class HumanEvalPack(Task):
         if context is None:
             inp = instruction
         # `Context first then instruction` methods
-        elif self.mutate_method in ["continue", "instruct"]:
+        elif self.prompt in ["continue", "instruct"]:
             inp = context + "\n" + instruction
         else:
             inp = instruction + "\n" + context
         
-        if self.mutate_method == "continue":
+        if self.prompt == "continue":
             prompt = prompt_base
-        elif self.mutate_method == "instruct":
+        elif self.prompt == "instruct":
             prompt = inp + "\n\n" + prompt_base
-        elif self.mutate_method == "octocoder":
+        elif self.prompt == "octocoder":
             prompt = f'Question: {inp}\n\nAnswer:\n{prompt_base}'
-        elif self.mutate_method == "starchat":
+        elif self.prompt == "starchat":
             # https://huggingface.co/HuggingFaceH4/starchat-beta
             prompt = f'<|system|>\n<|end|>\n<|user|>\n{inp}<|end|>\n<|assistant|>\n{prompt_base}'
-        elif self.mutate_method == "starcodercommit":
+        elif self.prompt == "starcodercommit":
             prompt = f'<commit_before><commit_msg>{inp}<commit_after>{prompt_base}'
-        elif self.mutate_method == "instructcodet5p":
+        elif self.prompt == "instructcodet5p":
             # https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/humaneval/generate_codet5p.py#L89
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{inp}\n\n### Response:{prompt_base}'       
-        elif self.mutate_method == "wizardcoder":
+        elif self.prompt == "wizardcoder":
             # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/humaneval_gen.py#L37
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{inp}\n\n### Response:\n{prompt_base}'
         else:
@@ -248,7 +248,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
         if any([w in code for w in self.stop_words]): return True
 
         # The heuristics below do not hold for diff generation
-        if (self.mutate_method.startswith("diff")):
+        if (self.prompt.startswith("diff")):
             return False
 
         if self.DATASET_NAME == "python":
@@ -327,7 +327,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
         language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
 
         ### CUSTOM MUTATE METHOD CHANGES ###
-        if self.mutate_method == "diff":
+        if self.prompt == "diff":
             # Requires:
             # !wget https://raw.githubusercontent.com/google/diff-match-patch/master/python3/diff_match_patch.py
             from diff_match_patch import diff_match_patch
@@ -345,7 +345,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
                         print(f"Failed with {e} when applying patch to buggy code: {diff}")
                         fixed_code = ""
                     gen[i] = fixed_code
-        elif self.mutate_method == "diff-carper":
+        elif self.prompt == "diff-carper":
             from lm_eval.tasks.custom_metrics.diff_eval import apply_diff
             ds = self.get_dataset().select(range(len(generations)))
             for gen, doc in zip(generations, ds):
@@ -476,14 +476,14 @@ class HumanEvalFixBase(HumanEvalPackGenerative):
         if self.with_docs is False: # Add tests as source of ground truth
             context += "\n" + doc["test"]
 
-        if self.mutate_method == "file":
+        if self.prompt == "file":
             file_name = self.get_filename_with_extension(input_file=doc["entry_point"])
             prompt = f"<file_name>\n{file_name}\n<commit_before>\n{context}\n<commit_msg>\n{instruction}<commit_after>\n{prompt_base}"
-        elif self.mutate_method == "starcodercommit":
+        elif self.prompt == "starcodercommit":
             prompt = f"<commit_before>{context}<commit_msg>{instruction}<commit_after>{prompt_base}"
-        elif self.mutate_method == "diff":
+        elif self.prompt == "diff":
             prompt = f"<commit_before>{context}<commit_msg>{instruction}<commit_after>"
-        if self.mutate_method == "diff-carper":
+        if self.prompt == "diff-carper":
             prompt = f"<NME> {self.get_filename_with_extension(input_file=doc['entry_point'])}\n"
             prompt += f"<BEF> {context}\n<MSG> {instruction}\n<DFF>"
         else:
@@ -500,7 +500,7 @@ class HumanEvalFixBase(HumanEvalPackGenerative):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)        
-        if self.mutate_method == "diff-carper":
+        if self.prompt == "diff-carper":
             # Only remove final stopwords like <MSG>
             generation = self.remove_last_block(generation[len(prompt):].rstrip())
             generation = prompt + generation
@@ -524,7 +524,7 @@ class HumanEvalFixBase(HumanEvalPackGenerative):
                 return diff_hunk
         else:
             gen = self.remove_last_block(generation[len(prompt):].rstrip())
-            if self.mutate_method.startswith("diff"):
+            if self.prompt.startswith("diff"):
                 return gen
             else:
                 # Strip on the right to maintain same behavior as with get_prompt
@@ -535,7 +535,7 @@ class HumanEvalFixBase(HumanEvalPackGenerative):
 class HumanEvalExplainDescribeBase(HumanEvalPack):
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
-        assert self.mutate_method == "instructcodet5p", "Enc-Dec is only tested for CodeT5"
+        assert self.prompt == "instructcodet5p", "Enc-Dec is only tested for InstructCodeT5+"
         prompt_base = self.get_prompt_base(doc)
         instruction = f"Provide a concise natural language description of the code using at most {len(doc['docstring'])} characters."
         context = prompt_base + doc["canonical_solution"]
@@ -606,7 +606,7 @@ class HumanEvalExplainSynthesizeBase(HumanEvalPackGenerative):
 
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
-        assert self.mutate_method == "instructcodet5p", "Enc-Dec is only tested for CodeT5"
+        assert self.prompt == "instructcodet5p", "Enc-Dec is only tested for InstructCodeT5+"
         prompt_base = "" # No prompt base as not generating
         instruction = f"Write functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description."
         context = doc["description"]
@@ -625,7 +625,7 @@ class HumanEvalExplainSynthesizeBase(HumanEvalPackGenerative):
 class HumanEvalSynthesizeBase(HumanEvalPackGenerative):
     def get_prompt_encoder(self, doc):
         """Encoder input for models with Enc-Dec architecture like CodeT5"""
-        assert self.mutate_method == "instructcodet5p", "Enc-Dec is only tested for CodeT5"
+        assert self.prompt == "instructcodet5p", "Enc-Dec is only tested for InstructCodeT5+"
         prompt_base = "" # No prompt base as not generating
         instruction = doc["instruction"].strip()
 

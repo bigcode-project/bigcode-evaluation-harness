@@ -8,7 +8,7 @@ from lm_eval.base import Task
 import tqdm
 
 def mutate_code(
-    n_bugs: int = 5, task: str = "parity", mutate_method="prompt"
+    n_bugs: int = 5, task: str = "parity", prompt="prompt"
 ):
     """
     Modified from https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/utils/code_eval.py
@@ -17,7 +17,7 @@ def mutate_code(
     Args:
         n_bugs: number of bugs to introduce (from 1 to 5).
         task: (Optional) the task to be performed.
-        mutate_method: (Optional) 'diff', 'prompt' or 'edit'.
+        prompt: (Optional) 'diff', 'prompt' or 'edit'.
     Returns:
         template for code mutation
     """
@@ -43,7 +43,7 @@ def mutate_code(
             "<commit_msg>Fix bugs<commit_after>",
         ],
     }
-    mutation_template = mutation_templates[mutate_method]
+    mutation_template = mutation_templates[prompt]
     if task == "parity":
         variables = ["b", "b", "b", "b", 2]
         for i in range(n_bugs):
@@ -69,7 +69,7 @@ def parity_reference(b1, b2, b3, b4):
 
 
 class Parity(Task):
-    def __init__(self, mutate_method="prompt"):
+    def __init__(self, prompt="prompt"):
 
         super().__init__(
             stop_words=[
@@ -79,7 +79,7 @@ class Parity(Task):
             ],
             requires_execution=True,
         )
-        self.mutate_method = mutate_method
+        self.prompt = prompt
         self.parity_tests = "assert " + " and ".join([
             f"({parity_reference(*i)} == parity{i})" for i in itertools.product(range(2), repeat=4)
         ])
@@ -94,7 +94,7 @@ class Parity(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        return mutate_code(n_bugs=doc, task="parity", mutate_method=self.mutate_method)
+        return mutate_code(n_bugs=doc, task="parity", prompt=self.prompt)
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -116,7 +116,7 @@ class Parity(Task):
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
         output = generation[len(prompt):]
-        if self.mutate_method.startswith("prompt"):
+        if self.prompt.startswith("prompt"):
             output = "def" + output # Add def which is in the prompt back to the output
         return self.first_block(output, self.stop_words)
 

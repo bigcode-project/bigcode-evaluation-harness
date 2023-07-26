@@ -20,16 +20,16 @@ class QuixBugs(Task):
 
     DATASET_PATH = "Muennighoff/quixbugs"
 
-    def __init__(self, mutate_method="prompt"):
-        self.mutate_method = mutate_method
-        if self.mutate_method == "edit":
+    def __init__(self, prompt="prompt"):
+        self.prompt = prompt
+        if self.prompt == "edit":
             self.stop_words = [
                 "<commit_before>",
                 "<commit_msg>", 
                 "<commit_after>", 
                 "<|endoftext|>",
             ]
-        elif self.mutate_method.startswith("prompt"):
+        elif self.prompt.startswith("prompt"):
             self.stop_words = [
                 "\ndef",
                 "\nclass",
@@ -41,13 +41,13 @@ class QuixBugs(Task):
                 "///",
                 "<|endoftext|>",
             ]
-        elif self.mutate_method.startswith("prompt_codex"):
+        elif self.prompt.startswith("prompt_codex"):
             # https://arxiv.org/pdf/2111.03922.pdf
             self.stop_words = [
                 "\nclass", "###", "///", "<|endoftext|>",
             ]
         else:
-            raise ValueError(f"Unknown mutate_method: {self.mutate_method}")
+            raise ValueError(f"Unknown prompt: {self.prompt}")
 
         super().__init__(
             stop_words=self.stop_words,
@@ -61,23 +61,23 @@ class QuixBugs(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        if self.mutate_method == "edit":
+        if self.prompt == "edit":
             prompt = "<commit_before>" + doc["buggy_program"]
             prompt += "<commit_msg>" + "Fix bug in " + doc["name"]
             prompt += "<commit_after>"
-        elif self.mutate_method == "edit-openai":
+        elif self.prompt == "edit-openai":
             return doc["buggy_program"], "Fix bug in " + doc["name"]
-        elif self.mutate_method == "prompt":
+        elif self.prompt == "prompt":
             prompt = "# Buggy function"
             prompt += "\n" + doc["buggy_program"] + "\n"
             prompt += "# Fixed function\ndef"            
-        elif self.mutate_method == "prompt_codex":
+        elif self.prompt == "prompt_codex":
             # https://arxiv.org/pdf/2111.03922.pdf, Prenner et al.
             prompt = "### fix the bug in the following function"
             prompt += "\n" + doc["buggy_program"] + "\n"
             prompt += "### fixed function"
         else:
-            raise ValueError(f"Unknown mutate_method: {mutate_method}")
+            raise ValueError(f"Unknown prompt: {prompt}")
 
         return prompt.strip()
 
@@ -104,7 +104,7 @@ class QuixBugs(Task):
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
         generation = generation[len(prompt):]
-        if self.mutate_method == "prompt":
+        if self.prompt == "prompt":
             generation = "def" + generation # Add def which is in the prompt back to the output        
         return self.remove_last_block(generation, self.stop_words)
 
