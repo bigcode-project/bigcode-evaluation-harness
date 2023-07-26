@@ -36,7 +36,7 @@ _CITATION = """
 
 LANGUAGES = [
     "py",
-    "bs",
+    "sh",
     "cpp",
     "cs",
     "d",
@@ -80,7 +80,7 @@ class GeneralMultiPLE(Task):
 
     DATASET_PATH = "nuprl/MultiPL-E"
     DATASET_NAME = None
-    DATASET_REVISION = "5d2abbb8ced9a0e37db985c47d24c24f45a16655"
+    DATASET_REVISION = "d23b094346c5dbda1080a74bb2a24c18adbf7409"
 
     def __init__(self, language):
         self.language = language

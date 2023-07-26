@@ -82,6 +82,17 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
     if stopping_criteria:
         gen_kwargs["stopping_criteria"] = StoppingCriteriaList(stopping_criteria)
 
+    if args.instruction_tokens:
+        instruction_tokens = args.instruction_tokens.split(",")
+        if len(instruction_tokens) != 3:
+            raise ValueError(
+                "Instruction tokens should contain exactly 3 tokens separated by a comma. If a token is empty, represent it as ''"
+            )
+        for token in instruction_tokens:
+            if token.strip() != "":
+                task.stop_words.append(token)
+    else:
+        instruction_tokens = None
     if accelerator.is_main_process:
         print(f"number of problems for this task is {n_tasks}")
     n_copies = ceil(args.n_samples / args.batch_size)
@@ -97,13 +108,24 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         n_copies=n_copies,
         prefix=args.prefix,
         has_encoder=args.modeltype == "seq2seq",
+        instruction_tokens=instruction_tokens,
     )
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
+    # Do not use accelerate if the model is already sharded across multiple GPUs
     if args.max_memory_per_gpu is None:
         model = model.to(accelerator.device)
     ds_loader = accelerator.prepare(ds_loader)
+    is_loaded_in_8bit = getattr(model, "is_loaded_in_8bit", False)
+    is_loaded_in_4bit = getattr(model, "is_loaded_in_4bit", False)
+    if not is_loaded_in_8bit and not is_loaded_in_4bit:
+        # we only wrap data loader to avoid extra memory occupation
+        model = model.to(accelerator.device)
+        ds_loader = accelerator.prepare(ds_loader)
+    else:
+        # model.to() is not supported for 8bit and 4bit models
+        model, ds_loader = accelerator.prepare(model, ds_loader)
 
     generations = complete_code(
         task,
@@ -115,7 +137,9 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         limit_start=args.limit_start,
         batch_size=args.batch_size,
         prefix=args.prefix,
+        instruction_tokens=instruction_tokens,
         postprocess=args.postprocess,
+        is_wrapped=is_loaded_in_8bit or is_loaded_in_4bit,
         **gen_kwargs,
     )
     return generations
