@@ -41,6 +41,7 @@ def update_args(args):
     args.instruction_tokens = None
 
     args.limit = 2
+    args.limit_start = 0
     args.batch_size = 1
     args.max_length_generation = 300
     args.do_sample = False
