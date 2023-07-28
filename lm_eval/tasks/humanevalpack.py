@@ -483,7 +483,7 @@ class HumanEvalFixBase(HumanEvalPackGenerative):
             prompt = f"<commit_before>{context}<commit_msg>{instruction}<commit_after>{prompt_base}"
         elif self.prompt == "diff":
             prompt = f"<commit_before>{context}<commit_msg>{instruction}<commit_after>"
-        if self.prompt == "diff-carper":
+        elif self.prompt == "diff-carper":
             prompt = f"<NME> {self.get_filename_with_extension(input_file=doc['entry_point'])}\n"
             prompt += f"<BEF> {context}\n<MSG> {instruction}\n<DFF>"
         else:
