@@ -250,8 +250,7 @@ def main():
                 if accelerator.is_main_process:
                     with open(args.save_generations_path, "w") as fp:
                         json.dump(generations, fp)
-                        print(
-                            f"generations were saved at {args.save_generations_path}")
+                        print(f"generations were saved at {args.save_generations_path}")
                     if args.save_references:
                         with open("references.json", "w") as fp:
                             json.dump(references, fp)
