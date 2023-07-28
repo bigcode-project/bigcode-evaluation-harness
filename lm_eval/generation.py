@@ -63,17 +63,16 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
     stopping_criteria = []
     # The input_length / start_length set to 0 for now will be adjusted later
     # Check if the task has a custom check_fn method for the stopping criteria
+    if task.stop_words and tokenizer.eos_token:
+        task.stop_words.append(tokenizer.eos_token)    
     if hasattr(task, "check_fn"):
         stopping_criteria.append(
             EndOfFunctionCriteria(0, task.stop_words, tokenizer, task.check_fn)
         )
     elif task.stop_words:
-        if tokenizer.eos_token:
-            task.stop_words.append(tokenizer.eos_token)
         stopping_criteria.append(
             EndOfFunctionCriteria(0, task.stop_words, tokenizer)
         )
-    
     if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
         stopping_criteria.append(
             TooLongFunctionCriteria(0, task.max_length_multiplier)
