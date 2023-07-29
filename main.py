@@ -272,8 +272,12 @@ def main():
                 print("bos_token used as eos_token")
             else:
                 raise ValueError("No eos_token or bos_token found")
-        if not tokenizer.pad_token:
+        try:
             tokenizer.pad_token = tokenizer.eos_token
+        # Some models like CodeGeeX2 have pad_token as a read-only property
+        except AttributeError:
+            print("Not setting pad_token to eos_token")
+            pass
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
         for task in task_names:
