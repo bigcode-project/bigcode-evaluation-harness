@@ -196,6 +196,7 @@ class HumanEvalPack(Task):
             inp = instruction + "\n" + context
         
         if self.prompt == "continue":
+            assert context is None, "The `continue` prompt should only be used for HumanEvalSynthesize. Use `instruct` for HumanEvalFix and HumanEvalExplain."
             prompt = prompt_base
         elif self.prompt == "instruct":
             prompt = inp + "\n\n" + prompt_base
@@ -242,14 +243,13 @@ class HumanEvalPackGenerative(HumanEvalPack):
     def check_fn(self, code):
         """
         Checks whether the generated code is finished.
-        Problem: Models (rarely) split their code into multiple functions, but this stops the model after the 1st function.
+        Problem: Models rarely split their code into multiple functions, but this stops the model after the 1st function.
         Inspiration: https://github.com/THUDM/CodeGeeX/blob/23ee51505a2bcd34d59d2e271b22e5bd91475462/codegeex/benchmark/utils.py#L115
         """
         if any([w in code for w in self.stop_words]): return True
 
         # The heuristics below do not hold for diff generation
-        if (self.prompt.startswith("diff")):
-            return False
+        if (self.prompt.startswith("diff")): return False
 
         if self.DATASET_NAME == "python":
             for line in code.split("\n"):
