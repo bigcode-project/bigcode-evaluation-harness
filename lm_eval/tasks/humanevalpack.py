@@ -413,7 +413,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
                     gen[i] = test_setup_str + other_pkgs_str + gen[i]
         elif language == "rust":
             ds = self.get_dataset().select(range(len(generations)))
-            main = "fn main(){}"
+            main = "fn main(){}\n"
             for gen, doc in zip(generations, ds):
                 declaration = doc["declaration"]
                 for i, g in enumerate(gen):
@@ -422,6 +422,9 @@ class HumanEvalPackGenerative(HumanEvalPack):
                         new_gen += main
                     for line in declaration.split("\n"):
                         if line.strip() not in g:
+                            # Skip if the function is already present
+                            if line.strip().startswith("fn") and (line.strip().split("(")[0]) in g:
+                                continue
                             new_gen += line.strip() + "\n"
                     # If fn main() is present twice, cut off before the second one
                     g = "fn main()".join(g.split("fn main()")[0:2])
