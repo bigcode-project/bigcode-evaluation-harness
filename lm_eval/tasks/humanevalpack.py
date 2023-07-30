@@ -551,7 +551,7 @@ class HumanEvalExplainDescribeBase(HumanEvalPack):
         instruction = f"Provide a concise natural language description of the code using at most {len(doc['docstring'])} characters."
         context = prompt_base + doc["canonical_solution"]
         
-        return super().get_prompt(prompt_base, instruction, context)
+        return super().get_prompt("", instruction, context)
 
     def remove_last_block(self, text):
         for w in self.stop_words:
