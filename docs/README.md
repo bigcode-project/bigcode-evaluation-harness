@@ -52,12 +52,13 @@ If you want to evaluate only on the first $n$ samples instead of all the test da
 
 ### HumanEvalPack
 
-[HumanEvalPack](https://huggingface.co/datasets/bigcode/humanevalpack) which extends HumanEval to **3** scenarios across **6** languages via human translations from the paper [OctoPack](https://github.com/bigcode-project/octopack). There are several different prompting options depending on the model that can be specified with the `--prompt` flag:
+[HumanEvalPack](https://huggingface.co/datasets/bigcode/humanevalpack) extends HumanEval to **3** scenarios across **6** languages via human annotations. There are different prompting options depending on the model that can be specified with the `--prompt` flag:
 - `continue`: This prompt is the same as HumanEval and only works for HumanEvalSynthesize
 - `instruct`: For this prompt an intuitive instruction is given to the model to tell it what to do.
 - `octocoder`, `wizardcoder`, `instructcodet5p` etc.: These are custom prompt formats for individual models to align with how they were finetuned.
 
-- HumanEvalFix: In this task models are provided with a HumanEval solution with a subtle bug and several unit tests. The task is to fix the function. There is a variant of this task where the function docstring instead of the unit tests are provided, which can be selected via `humanevalfixdocs`.
+The three scenarios are listed below. The selectable languages are: `python`, `js`, `java`, `go`, `cpp` & `rust`.
+- HumanEvalFix: In this task models are provided with a solution with a subtle bug and several unit tests. The task is to fix the function. There is a variant of this task where the function docstring instead of the unit tests are provided, which can be selected via `humanevalfixdocs`.
 ```
 accelerate launch main.py \
   --model <MODEL_NAME> \
@@ -69,7 +70,7 @@ accelerate launch main.py \
   --batch_size 10 \
   --allow_code_execution
 ```
-- HumanEvalExplain: In this task models need to explain a HumanEval solution (without docstring) and subsequently regenerate the solution given only their explanation. Thus, it requires two runs. The first one generates the descriptions, the second generates the solution and is scored.
+- HumanEvalExplain: In this task models need to explain a HumanEval solution (without docstring) and subsequently regenerate the solution given only the model's own explanation. Thus, it requires two runs. The first one generates the descriptions, the second loads the descriptions, generates the solution & is scored.
 ```
 accelerate launch main.py \
   --model <MODEL_NAME> \
