@@ -439,6 +439,10 @@ class HumanEvalPackGenerative(HumanEvalPack):
             timeout=timeout,
             num_workers=num_workers,
         )
+        # Write logs to json
+        with open("logs.json", "w") as f:
+            json.dump(logs, f, indent=4, ensure_ascii=False)
+
         """Debugging help
         for i, (gen, ref) in enumerate(zip(generations, references)):
             import time
