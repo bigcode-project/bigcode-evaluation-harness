@@ -40,5 +40,3 @@ with open(f"{args.org}_{args.model}_{args.username}.json", 'w') as f:
     json.dump(final_results, f)
 
 print(f"Saved {args.org}_{args.model}_{args.username}.json")
-
-#python3 /fsx/loubna/code/dev/leader/bigcode-evaluation-harness/leaderboard/group_jsons.py --metrics_path /fsx/loubna/code/dev/bigcode-evaluation-harness/generations_newhope --model NewHope --org SLAM-group_ --username loubnabnl
