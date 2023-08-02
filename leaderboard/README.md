@@ -32,7 +32,7 @@ To run the evaluation, we first generate the code solutions for the target tasks
 Below are the instruction for generating the code solutions sequentially or in parallel with slurm. You might need to reduce the batch size for some models or change the precision based on your device.
 ```bash
 # after activating env and setting up accelerate...
-langs=(py js java cpp swift php d jl lua r rkt rb rs)
+langs=(py js java cpp swift php d jl lua r rkt rs)
 
 model=YOUR_MODEL
 org=HF_ORGANISATION
@@ -66,7 +66,7 @@ This will generate and save the code solutions for all tasks in the `generations
 
 If you want to submit jobs in parallel with `slurm`, run multiple-eval.slurm with:
 ```bash
-langs=(py js java cpp swift php d jl lua r rkt rb rs)
+langs=(py js java cpp swift php d jl lua r rkt rs)
 
 model=YOUR_MODEL
 org=HF_ORGANISATION
@@ -96,7 +96,7 @@ sudo docker tag ghcr.io/bigcode-project/evaluation-harness-multiple evaluation-h
 
 Then, you can run the evaluation on the generated code:
 ```bash
-langs=(py js java cpp swift php d jl lua r rkt rb rs)
+langs=(py js java cpp swift php d jl lua r rkt rs)
 
 model=YOUR_MODEL
 org=HF_ORGANISATION
@@ -142,7 +142,7 @@ Some models might require some extra arguments, like [CodeGeeX2-6b](https://hugg
 ```bash
 # define prefixes base on codegeex-2 repo
 declare -A langs
-langs=( [py]="# Python" [js]="// JavaScript" [java]="// Java" [cpp]="// C++" [swift]="// Swift" [php]="// PHP" [jl]="# Julia" [lua]="// Lua" [r]="# R" [rkt]="; Racket" [rb]="# Ruby" [rs]="// Rust" [d]="" )
+langs=( [py]="# Python" [js]="// JavaScript" [java]="// Java" [cpp]="// C++" [swift]="// Swift" [php]="// PHP" [jl]="# Julia" [lua]="// Lua" [r]="# R" [rkt]="; Racket" [rs]="// Rust" [d]="" )
 
 model="codegeex2-6b"
 org="THUDM"
