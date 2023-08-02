@@ -9,7 +9,7 @@
 set -x -e
 source /admin/home/loubna/.bashrc
 
-conda activate eval-harness
+conda activate brr4
 
 # File Path setup
 echo "START TIME: $(date)"
@@ -41,7 +41,7 @@ CMD="\
     --save_generations \
     --use_auth_token \
     --generation_only \
-    --save_generations_path $out_path/$model-$task.json \
+    --save_generations_path $out_path/generations_$task\_$model.json \
 "
 
 export LAUNCHER="accelerate launch \

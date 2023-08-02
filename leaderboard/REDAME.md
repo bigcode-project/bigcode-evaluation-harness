@@ -129,20 +129,13 @@ done
 ```
 
 ## Submission of results to the LeaderBoard
-If you followed the steps above you now have a folder `metrics_$model` with `json` files, each containing the result of one task. To submit the results to the LeaderBoard, you need to create a csv summarizing these metrics using `jsons_to_csv.py` and submit it [here](https://huggingface.co/spaces/bigcode/multilingual-code-evals). The csv_name should be `$model_$username.csv`
+If you followed the steps above you now have a folder `metrics_$model` with `json` files, each containing the result of one task. To submit the results to the LeaderBoard, you need to create a json summarizing these metrics using `group_jsons.py` and submit it [here](https://huggingface.co/spaces/bigcode/multilingual-code-evals). Follow the instruction on `Submit here` section.
 ```bash
-python jsons_to_csv.py --metrics_path metrics_$model --csv_name `$model_$username.csv
+python group_jsons.py --metrics_path metrics_$model --model $model --org $org --username $your_hf_username
 ```
-For credibility, we invite you to upload the generations and json metrics to a HF dataset then adding the link to the dataset to your submission.
+For credibility, we invite you to add the generations and json metrics to your submission.
 
-To do so, create you can create an empty dataset on the hub, clone it, move the `generations_$model` and `metrics_$model` inside and push 🥳
-```bash
-# create YOUR_DATASET on the hub & clone it
-git clone https://huggingface.co/datasets/$YOUR_DATASET
-cp -r generations_$model $YOUR_DATASET
-cp -r metrics_$model $YOUR_DATASET
-cd YOUR_DATASET && git add . && git comit -am 'add data' && git push
-```
+Now you're ready to submit your results by opening a PR on the leaderboard, go to `Submit results :rocket:`section for more details.
 
 ## Notes
 Some models might require some extra arguments, like [CodeGeeX2-6b](https://huggingface.co/THUDM/codegeex2-6b) which requires providing the language tag as a prefix and doing generation under torch 2.0. And [replit-v1-3b](https://huggingface.co/replit/replit-code-v1-3b) that requires adding extra. You can just add the prefix as a new argument
