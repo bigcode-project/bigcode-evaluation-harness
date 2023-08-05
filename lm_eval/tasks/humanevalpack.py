@@ -202,6 +202,8 @@ class HumanEvalPack(Task):
             prompt = inp + "\n\n" + prompt_base
         elif self.prompt == "octocoder":
             prompt = f'Question: {inp}\n\nAnswer:\n{prompt_base}'
+        elif self.prompt == "octogeex":
+            prompt = f'Question: {inp.strip()}\n\nAnswer:\n{prompt_base}'            
         elif self.prompt == "starchat":
             # https://huggingface.co/HuggingFaceH4/starchat-beta
             prompt = f'<|system|>\n<|end|>\n<|user|>\n{inp}<|end|>\n<|assistant|>\n{prompt_base}'
