@@ -259,14 +259,24 @@ def complete_code(
             
             inputs = batch["ids"][:, : batch["input_len"]]
             if "ids_encoder" in batch:
-                generated_tokens = model.generate(
-                    decoder_input_ids=inputs,
-                    input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
-                    num_return_sequences=batch_size,
-                    decoder_start_token_id=tokenizer.pad_token_id,
-                    eos_token_id=tokenizer.eos_token_id,
-                    **gen_kwargs,
-                )
+                if is_wrapped:
+                    generated_tokens = accelerator.unwrap_model(model).generate(
+                        decoder_input_ids=inputs,
+                        input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
+                        num_return_sequences=batch_size,
+                        decoder_start_token_id=tokenizer.pad_token_id,
+                        eos_token_id=tokenizer.eos_token_id,
+                        **gen_kwargs,
+                    )
+                else:
+                    generated_tokens = model.generate(
+                        decoder_input_ids=inputs,
+                        input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
+                        num_return_sequences=batch_size,
+                        decoder_start_token_id=tokenizer.pad_token_id,
+                        eos_token_id=tokenizer.eos_token_id,
+                        **gen_kwargs,
+                    )
             else:
                 if is_wrapped:
                     # 8bit and 4bit models are wrapped in accelerator

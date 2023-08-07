@@ -110,13 +110,13 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
-    # Do not use accelerate if the model is already sharded across multiple GPUs
-    if args.max_memory_per_gpu is None:
-        model = model.to(accelerator.device)
-    ds_loader = accelerator.prepare(ds_loader)
+
     is_loaded_in_8bit = getattr(model, "is_loaded_in_8bit", False)
     is_loaded_in_4bit = getattr(model, "is_loaded_in_4bit", False)
-    if not is_loaded_in_8bit and not is_loaded_in_4bit:
+    if args.max_memory_per_gpu is not None:
+        # The model is already sharded across multiple GPUs
+        ds_loader = accelerator.prepare(ds_loader)
+    elif not is_loaded_in_8bit and not is_loaded_in_4bit:
         # we only wrap data loader to avoid extra memory occupation
         model = model.to(accelerator.device)
         ds_loader = accelerator.prepare(ds_loader)

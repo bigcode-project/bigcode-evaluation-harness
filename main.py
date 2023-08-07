@@ -188,6 +188,7 @@ def pattern_match(patterns, source_list):
     return list(task_names)
 
 def get_gpus_max_memory(max_memory):
+    print("INFO: Using all available GPUs: " + torch.cuda.device_count())
     max_memory = {i: max_memory for i in range(torch.cuda.device_count())}
     return max_memory
 
@@ -254,6 +255,7 @@ def main():
                 **model_kwargs,
             )
         elif args.modeltype == "seq2seq":
+            print("WARNING: seq2seq models have only been tested for HumanEvalPack & CodeT5+ models.")
             model = AutoModelForSeq2SeqLM.from_pretrained(
                 args.model,
                 **model_kwargs,
