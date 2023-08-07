@@ -43,7 +43,7 @@ import termcolor
 from cdifflib import CSequenceMatcher
 from camel_converter import to_snake
 from datasets import load_dataset
-from typing import List, Dict
+from typing import List
 from tqdm import tqdm
 
 LANGUAGE_TO_NAME = {

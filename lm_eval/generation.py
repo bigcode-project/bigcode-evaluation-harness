@@ -1,10 +1,8 @@
 import json
-import os
 from math import ceil
 
 from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
-from tqdm import tqdm
 from transformers import StoppingCriteria, StoppingCriteriaList
 
 from lm_eval.utils import TokenizedDataset, complete_code
