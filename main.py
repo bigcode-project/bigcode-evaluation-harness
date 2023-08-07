@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument(
         "--modeltype",
         default="causal",
-        help="AutoModel to use",
+        help="AutoModel to use, it can be causal or seq2seq",
     )    
     parser.add_argument(
         "--revision",
@@ -162,7 +162,7 @@ def parse_args():
         "--prompt",
         type=str,
         default="prompt",
-        help="Prompt to use for generation",
+        help="Prompt type to use for generation in HumanEvalPack tasks",
     )
     parser.add_argument("--max_memory_per_gpu", type=str, default=None)
     parser.add_argument(

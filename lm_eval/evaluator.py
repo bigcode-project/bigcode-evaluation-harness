@@ -61,7 +61,6 @@ class Evaluator:
             n_tasks=n_tasks,
             args=self.args,
         )
-        references = [task.get_reference(dataset[i]) for i in range(self.args.limit_start, self.args.limit_start+n_tasks)]
         if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
             warnings.warn(
