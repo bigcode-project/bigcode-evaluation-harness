@@ -1,0 +1,23 @@
+defaults:
+  - base_config # inherits from base config
+  - _self_ # for hydra 1.1 compatibility
+
+experiment_name: code_evals
+
+model: bigcode/santacoder
+
+hub_kwargs:
+  use_auth_token: true
+  trust_remote_code: true
+
+backend:
+  torch_dtype: float16
+
+device: cuda:0
+
+benchmark:
+  memory: true
+  input_shapes:
+    batch_size: 1
+    sequence_length: 1
+  new_tokens: 1000

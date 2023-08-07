@@ -1,6 +1,5 @@
 import fnmatch
 import json
-import os
 
 import datasets
 import torch
@@ -42,7 +41,13 @@ def parse_args():
         "--modeltype",
         default="causal",
         help="AutoModel to use, it can be causal or seq2seq",
-    )    
+    )
+    parser.add_argument(    
+        "--peft_model",
+        type=str,
+        default=None,
+        help="Adapter to the PEFT base model. Can be utilized for loading PEFT adapters such as a LoRA trained model. The --model parameter needs to be the base model.",
+    )
     parser.add_argument(
         "--revision",
         default=None,
@@ -221,43 +226,50 @@ def main():
             )
 
         print(f"Loading tokenizer and model (in {args.precision})")
-        kwargs = {
+        model_kwargs = {
             "revision": args.revision,
             "trust_remote_code": args.trust_remote_code,
             "use_auth_token": args.use_auth_token,
-            "torch_dtype": dict_precisions[args.precision],
         }
-        if args.max_memory_per_gpu:
-            kwargs["max_memory"] = get_gpus_max_memory(args.max_memory_per_gpu)
-            kwargs["offload_folder"] = "offload"
-            kwargs["device_map"] = "auto"
         if args.load_in_8bit:
             print("Loading model in 8bit")
-            current_device = accelerator.process_index
-            # the model needs to fit in one GPU
-            kwargs["load_in_8bit"] = args.load_in_8bit
-            kwargs["device_map"] = {"": current_device}
+            model_kwargs["load_in_8bit"] = args.load_in_8bit
+            model_kwargs["device_map"] = {"": accelerator.process_index}
         elif args.load_in_4bit:
             print("Loading model in 4bit")
-            current_device = accelerator.process_index
-            # the model needs to fit in one GPU
-            kwargs["load_in_4bit"] = args.load_in_4bit
-            kwargs["device_map"] = {"": current_device}
+            model_kwargs["load_in_4bit"] = args.load_in_4bit
+            model_kwargs["device_map"] = {"": accelerator.process_index}
+        else:
+            model_kwargs["torch_dtype"] = dict_precisions[args.precision]
 
+            if args.max_memory_per_gpu:
+                model_kwargs["max_memory"] = get_gpus_max_memory(args.max_memory_per_gpu)
+                model_kwargs["offload_folder"] = "offload"
+                model_kwargs["device_map"] = "auto"
+
+        
         if args.modeltype == "causal":
             model = AutoModelForCausalLM.from_pretrained(
                 args.model,
-                **kwargs,
+                **model_kwargs,
             )
         elif args.modeltype == "seq2seq":
             model = AutoModelForSeq2SeqLM.from_pretrained(
                 args.model,
-                **kwargs,
+                **model_kwargs,
             )
         else:
             raise ValueError(
                 f"Non valid modeltype {args.modeltype}, choose from: causal, seq2seq"
             )
+
+        if args.peft_model:
+            from peft import PeftModel  # dynamic import to avoid dependency on peft
+            model = PeftModel.from_pretrained(model, args.peft_model)
+            print("Loaded PEFT model. Merging...")
+            model.merge_and_unload()
+            print("Merge complete.")
+
         tokenizer = AutoTokenizer.from_pretrained(
             args.model,
             revision=args.revision,
