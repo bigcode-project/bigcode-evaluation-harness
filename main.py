@@ -255,7 +255,7 @@ def main():
                 **model_kwargs,
             )
         elif args.modeltype == "seq2seq":
-            print("WARNING: seq2seq models have only been tested for HumanEvalPack & CodeT5+ models.")
+            warnings.warn("Seq2Seq models have only been tested for HumanEvalPack & CodeT5+ models.")
             model = AutoModelForSeq2SeqLM.from_pretrained(
                 args.model,
                 **model_kwargs,
