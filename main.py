@@ -1,5 +1,6 @@
 import fnmatch
 import json
+import warnings
 
 import datasets
 import torch
@@ -187,9 +188,9 @@ def pattern_match(patterns, source_list):
             task_names.add(matching)
     return list(task_names)
 
-def get_gpus_max_memory(max_memory):
-    print("INFO: Using all available GPUs: " + torch.cuda.device_count())
-    max_memory = {i: max_memory for i in range(torch.cuda.device_count())}
+def get_gpus_max_memory(max_memory, num_gpus):
+    max_memory = {i: max_memory for i in range(num_gpus)}
+    print("Loading model via these GPUs & max memories: " + max_memory)
     return max_memory
 
 def main():
@@ -244,7 +245,7 @@ def main():
             model_kwargs["torch_dtype"] = dict_precisions[args.precision]
 
             if args.max_memory_per_gpu:
-                model_kwargs["max_memory"] = get_gpus_max_memory(args.max_memory_per_gpu)
+                model_kwargs["max_memory"] = get_gpus_max_memory(args.max_memory_per_gpu, accelerator.num_processes)
                 model_kwargs["offload_folder"] = "offload"
                 model_kwargs["device_map"] = "auto"
 
