@@ -7,6 +7,7 @@ TODO: Add the paper's PDF URL (preferably from arXiv) on this line.
 TODO: Write a Short Description of the task.
 Homepage: TODO: Add the URL to the task's Homepage here.
 """
+from collections import defaultdict
 from lm_eval.base import Task
 
 from evaluate import load
@@ -158,15 +159,11 @@ class GeneralPerturbedHumanEval(Task):
 
         # We compute RP@1 for each transformation
         # transformation -> problem -> seed -> [n results]
-        transformation_problem_results = {}
-        for i, (ref, result) in enumerate(zip(references, detailed_results.values())):
+        transformation_problem_results = defaultdict(lambda: defaultdict(dict))
+        for i, ref in enumerate(references):
+            result = detailed_results[str(i)]
             result = [x[1]["passed"] for x in result]
-            if ref["perturbation_name"] not in transformation_problem_results:
-                transformation_problem_results[ref["perturbation_name"]] = {}
-            if ref["task_id"] not in transformation_problem_results[ref["perturbation_name"]]:
-                transformation_problem_results[ref["perturbation_name"]][ref["task_id"]] = {}
             assert ref["seed"] not in transformation_problem_results[ref["perturbation_name"]][ref["task_id"]]
-                # transformation_problem_results[ref["perturbation_name"]][ref["task_id"]][ref["seed"]] = []
             transformation_problem_results[ref["perturbation_name"]][ref["task_id"]][ref["seed"]] = result
 
         rp1 = {}
