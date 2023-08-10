@@ -25,7 +25,6 @@ TRANSFORMATION_CATEGORIES = [
     "natgen",
     "nlaugmenter"
 ]
-NUM_SEEDS = 5
 
 
 def create_all_tasks():
@@ -34,16 +33,17 @@ def create_all_tasks():
         e.g. {multiple-py: Task, multiple-java: Task}
     """
     return {
-        f"perturbed-humaneval-{category}": create_task(category)
+        f"perturbed-humaneval-{category}-num_seeds_{num_seeds}": create_task(category, num_seeds)
         for category in TRANSFORMATION_CATEGORIES
+        for num_seeds in range(1, 11)
     }
 
 
-def create_task(category):
+def create_task(category, num_seeds):
     class PerturbedHumanEval(GeneralPerturbedHumanEval):
         DATASET_NAME = category
         def __init__(self):
-            super().__init__(category)
+            super().__init__(category, num_seeds)
     return PerturbedHumanEval
 
 
@@ -51,14 +51,15 @@ class GeneralPerturbedHumanEval(Task):
     DATASET_PATH = "RaymondLi/perturbed_humaneval"
     
 
-    def __init__(self, category):
+    def __init__(self, category, num_seeds):
         super().__init__(
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
             requires_execution=True,
         )
         # Transformation category
         self.category = category
-        self.filtered_dataset = self.dataset['test'].filter(lambda x: x["seed"] < NUM_SEEDS)
+        self.num_seeds = num_seeds
+        self.filtered_dataset = self.dataset['test'].filter(lambda x: x["seed"] < num_seeds)
 
     def get_dataset(self):
         """
