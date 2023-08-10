@@ -161,7 +161,7 @@ class GeneralPerturbedHumanEval(Task):
         # transformation -> problem -> seed -> [n results]
         transformation_problem_results = defaultdict(lambda: defaultdict(dict))
         for i, ref in enumerate(references):
-            result = detailed_results[str(i)]
+            result = detailed_results[i]
             result = [x[1]["passed"] for x in result]
             assert ref["seed"] not in transformation_problem_results[ref["perturbation_name"]][ref["task_id"]]
             transformation_problem_results[ref["perturbation_name"]][ref["task_id"]][ref["seed"]] = result
