@@ -46,6 +46,15 @@ from datasets import load_dataset
 from typing import List
 from tqdm import tqdm
 
+_CITATION = """
+@article{muennighoff2023octopack,
+      title={OctoPack: Instruction Tuning Code Large Language Models}, 
+      author={Niklas Muennighoff and Qian Liu and Armel Zebaze and Qinkai Zheng and Binyuan Hui and Terry Yue Zhuo and Swayam Singh and Xiangru Tang and Leandro von Werra and Shayne Longpre},
+      journal={arXiv preprint arXiv:2308.07124},
+      year={2023}
+}
+"""
+
 LANGUAGE_TO_NAME = {
     "python": "Python",
     "cpp": "C++",
@@ -68,10 +77,10 @@ def get_prompt_base(doc, language):
 
 
 def get_prompt_synthesize(doc, language="python"):
-    # Problems which have a helper function
-    addon = f"Start your code with:\n{get_prompt_base(sample, language)}"
-    return doc["instruction"] + "\n" + addon
-    #return doc["instruction"]
+    # addon = f"Start your code with:\n{get_prompt_base(sample, language)}"
+    # return doc["instruction"] + "\n" + addon # Results in worse performance for GPT4
+    
+    return doc["instruction"] # Problem: Difficult for problems that have helper functions
 
 
 def get_base_prompt_fix(doc, language="python", mode="tests"):

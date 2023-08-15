@@ -4,6 +4,14 @@ import re
 from evaluate import load
 from lm_eval.base import Task
 
+_CITATION = """
+@article{muennighoff2023octopack,
+      title={OctoPack: Instruction Tuning Code Large Language Models}, 
+      author={Niklas Muennighoff and Qian Liu and Armel Zebaze and Qinkai Zheng and Binyuan Hui and Terry Yue Zhuo and Swayam Singh and Xiangru Tang and Leandro von Werra and Shayne Longpre},
+      journal={arXiv preprint arXiv:2308.07124},
+      year={2023}
+}
+"""
 
 LANGUAGES = ["python", "cpp", "js", "java", "go", "rust"]
 
