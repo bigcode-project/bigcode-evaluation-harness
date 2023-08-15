@@ -34,6 +34,7 @@ class HumanEval(Task):
     DATASET_PATH = "openai_humaneval"
 
     def __init__(self):
+        
         super().__init__(
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
             requires_execution=True,
