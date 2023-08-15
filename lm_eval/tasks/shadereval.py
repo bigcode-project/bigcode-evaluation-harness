@@ -15,12 +15,14 @@ Description: Doing everything better than before.
     Task-2: Function Generation - given a function signature and a docstring, generate the function body,
     tested by patching it back into the original shadercode and comparing if the rendered images are the same. (currently in development, open for debate)
     Task-3: Semantic generation given a title and description, recursively generate more shadercode untill it renders, scored by CLIP match (in planing...)
+    
+    (potential) Instruct variant: all banchmark tasks phrased for instruction tuned models (time permitting)
 Homepage: https://huggingface.co/spaces/Vipitis/ShaderEval (could be something else...?)
 """
 from lm_eval.base import Task
 import evaluate
 import datasets
-from ShaderCoder.utils import parse_functions, construct_model_context, replace_function #where to import this from(via custom metric?)
+# from ..ShaderCoder.utils import parse_functions, construct_model_context, replace_function #where to import this from(via custom metric?)
 
 # TODO: Add the BibTeX citation for the task.
 _CITATION = """tbd
@@ -33,7 +35,7 @@ def create_all_tasks():
     """
     return {
         "shadereval-1": ReturnCompletion,
-        "shadereval2": FunctionGeneration,
+        "shadereval-2": FunctionGeneration,
     }
 
 # TODO: Replace `NewTask` with the name of your Task.
@@ -119,28 +121,22 @@ class ReturnCompletion(Task): #Task1
 
 # TODO: Replace `NewTask` with the name of your Task.
 class FunctionGeneration(Task): #task2 
-    # TODO: Add the `DATASET_PATH` string. This will be the name of the `Task`
-    # dataset as denoted in HuggingFace `datasets`.
-    DATASET_PATH = "Vipitis/Shadertoys" #maybe fine in the future
-    # TODO: Add the `DATASET_NAME` string. This is the name of a subset within
+    DATASET_PATH = "Vipitis/Shadertoys-FunctionGeneration-dev" #as a temporary solution to reduce current problems
+    
     # `DATASET_PATH`. If there aren't specific subsets you need, leave this as `None`.
-    DATASET_NAME = None
+    DATASET_NAME = None #this will eventually be a subset for the Shadertoys dataset, but not right now
 
     def __init__(self):
         super().__init__(
             # TODO: Specify the list of stop words in `stop_words` for the code generation task \
             # and if the evaluation requires executing the generated code in `requires_execution`.
-            stop_words=[],
-            requires_execution=True, #we run shadercode - could that be harmful?
+            stop_words=[], #new function starts... so all the keywords
+            requires_execution=True, #we run shadercode - could that be harmful? (all in the metric)
         )
 
     def get_dataset(self):
-        # TODO: retrieve the evaluation subset from the loaded dataset (e.g. `self.dataset["test"]`)
-        """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        ds = self.dataset["test"]
-        ds = ds.filter(lambda x: not x["has_inputs"] and x["num_passes"] == 1 and x["code"].count("return") >= 1 and x["license"] != "unknown") 
-        # TODO: filter for docstrings -- how?
-        return ds
+        # TODO replace with subset once that is set up
+        return self.dataset["test"]
 
     def fewshot_examples(self):
         # TODO: load few-shot examples (from lm_eval/tasks/fewshot_examples) if they exist
@@ -155,9 +151,7 @@ class FunctionGeneration(Task): #task2
             sample from the test dataset
         :return: str
         """
-        func_node = parse_functions(doc["code"])[0] #always 0 for testing?
-        model_ctx = construct_model_context(func_node,prompt="")
-        return model_ctx
+        return doc["model_ctx"]
 
     def get_reference(self, doc):
         # TODO: get the reference solution from a sample `doc` from the dataset
@@ -167,7 +161,7 @@ class FunctionGeneration(Task): #task2
             sample from the test dataset
         :return: str
         """
-        return doc["code"] #returns full original code
+        return doc["full_code"] #returns full original code
 
     def postprocess_generation(self, generation, idx):
         # TODO: define the postprocessing for the LM generation
@@ -179,10 +173,13 @@ class FunctionGeneration(Task): #task2
             index of doc in the dataset to which the generation belongs
         :return: str
         """
-        first_func = parse_functions(generation)[0]
-        orignal_code = self.dataset[idx]["code"]
-        altered_code = replace_function(orignal_code, first_func)    
-        return altered_code
+        # TODO: trim generation to just the first function -> how do we get the parser in here?
+        # from: https://huggingface.co/spaces/Vipitis/ShaderCoder/blob/main/utils/tree_utils.py#L45
+        # generation = ShaderCoder.utils.parse_functions(generation)[0].text.decode() #not easily imported...
+        ref = self.dataset["test"][idx]
+        full_code = ref["full_code"]
+        start, end = ref["func_range"]
+        return full_code[:start] + generation + full_code[end:] #does this patch it together correctly?
 
     def process_results(self, generations, references):
         # TODO: define how the evaluation score is computed from list of \
