@@ -35,7 +35,7 @@ class MBPP(Task):
 
     def __init__(self):
         super().__init__(
-            stop_words=["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/"],
+            stop_words=["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/", "\n```"],
             requires_execution=True,
         )
 
