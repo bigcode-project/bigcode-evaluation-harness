@@ -190,7 +190,7 @@ def pattern_match(patterns, source_list):
 
 def get_gpus_max_memory(max_memory, num_gpus):
     max_memory = {i: max_memory for i in range(num_gpus)}
-    print("Loading model via these GPUs & max memories: " + max_memory)
+    print("Loading model via these GPUs & max memories: ", max_memory)
     return max_memory
 
 def main():
