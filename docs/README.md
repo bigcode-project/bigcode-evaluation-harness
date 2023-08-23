@@ -318,6 +318,23 @@ accelerate launch  main.py \
 We expect a model [finetuned](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS) on the train split of APPS.
 TODO: add few-shot setup for APPS.
 
+### Recode
+[Recode](https://github.com/amazon-science/recode/tree/main) proposes a set of code and natural language transformations to evaluate the robustness of code-generation models. The perturbations can be applied to any code-generation benchmark. Specifically, they release perturbed versions of HumanEval and MBPP.
+
+For now, we support the perturbed version of the HumanEval benchmark.
+The task is specified with `--tasks perturbed-humaneval-{category}-num_seeds_{num_seeds}` where `category` can be one of `format`, `func_name`, `natgen`, `nlaugmenter`, and the number of seeds per perturbation is from `1` to `10`. The author's recommendation is to run with 5 seeds, with greedy generation.
+
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation 1024 \
+  --tasks <TASK> \
+  --batch_size 1 \
+  --do_sample False \
+  --n_samples 1 \
+  --allow_code_execution
+```
+
 
 ## Code generation benchmarks without unit tests
 
