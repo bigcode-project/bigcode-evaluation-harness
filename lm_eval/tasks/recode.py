@@ -1,11 +1,9 @@
-# This template file is adapted from: https://github.com/EleutherAI/lm-evaluation-harness/blob/master/templates/new_task.py
 
-# TODO: Remove all TODO comments once the implementation is complete.
 """
-TODO: Add the Paper Title on this line.
-TODO: Add the paper's PDF URL (preferably from arXiv) on this line.
-TODO: Write a Short Description of the task.
-Homepage: TODO: Add the URL to the task's Homepage here.
+ReCode: Robustness Evaluation of Code Generation Models
+https://arxiv.org/abs/2212.10264
+Recode is a benchmark evaluating the robustness of code generation models to code and natural language perturbations.
+This task allows to run the released perturbed HumanEval benchmark, and compute the robust-pass-at-k metric.
 """
 from collections import defaultdict
 from lm_eval.base import Task
@@ -15,16 +13,16 @@ from evaluate import load
 from datasets import load_dataset
 import numpy as np
 
-# TODO: Add the BibTeX citation for the task.
 _CITATION = """
+@article{wang2022recode,
+  title={ReCode: Robustness Evaluation of Code Generation Models},
+  author={Wang, Shiqi and Li, Zheng and Qian, Haifeng and Yang, Chenghao and Wang, Zijian and Shang, Mingyue and Kumar, Varun and Tan, Samson and Ray, Baishakhi and Bhatia, Parminder and others},
+  journal={arXiv preprint arXiv:2212.10264},
+  year={2022}
+}
 """
 
-TRANSFORMATION_CATEGORIES = [
-    "format",
-    "func_name",
-    "natgen",
-    "nlaugmenter"
-]
+TRANSFORMATION_CATEGORIES = ["format", "func_name", "natgen", "nlaugmenter"]
 
 
 def create_all_tasks():
@@ -33,7 +31,9 @@ def create_all_tasks():
         e.g. {multiple-py: Task, multiple-java: Task}
     """
     return {
-        f"perturbed-humaneval-{category}-num_seeds_{num_seeds}": create_task(category, num_seeds)
+        f"perturbed-humaneval-{category}-num_seeds_{num_seeds}": create_task(
+            category, num_seeds
+        )
         for category in TRANSFORMATION_CATEGORIES
         for num_seeds in range(1, 11)
     }
@@ -42,14 +42,15 @@ def create_all_tasks():
 def create_task(category, num_seeds):
     class PerturbedHumanEval(GeneralPerturbedHumanEval):
         DATASET_NAME = category
+
         def __init__(self):
             super().__init__(category, num_seeds)
+
     return PerturbedHumanEval
 
 
 class GeneralPerturbedHumanEval(Task):
     DATASET_PATH = "RaymondLi/perturbed_humaneval"
-    
 
     def __init__(self, category, num_seeds):
         super().__init__(
@@ -59,7 +60,9 @@ class GeneralPerturbedHumanEval(Task):
         # Transformation category
         self.category = category
         self.num_seeds = num_seeds
-        self.filtered_dataset = self.dataset['test'].filter(lambda x: x["seed"] < num_seeds)
+        self.filtered_dataset = self.dataset["test"].filter(
+            lambda x: x["seed"] < num_seeds
+        )
 
     def get_dataset(self):
         """
@@ -92,7 +95,7 @@ class GeneralPerturbedHumanEval(Task):
             "task_id": doc["task_id"],
             "seed": doc["seed"],
             "perturbation_name": doc["perturbation_name"],
-            "test_code": test_code
+            "test_code": test_code,
         }
 
     @staticmethod
@@ -109,7 +112,7 @@ class GeneralPerturbedHumanEval(Task):
             if stop_index != -1 and stop_index < min_stop_index:
                 min_stop_index = stop_index
         return decoded_string[:min_stop_index]
-    
+
     def postprocess_generation(self, generation, idx):
         """
         Defines the postprocessing for a LM generation.
@@ -124,8 +127,6 @@ class GeneralPerturbedHumanEval(Task):
         return prompt + self._stop_at_stop_token(generation, self.stop_words)
 
     def process_results(self, generations, references):
-        # TODO: define how the evaluation score is computed from list of \
-        # generations and reference solutions
         """
         Takes the list of LM generations and evaluates them against ground truth references,
         returning the metric for the generations as in {"metric_name": result}.
@@ -136,24 +137,17 @@ class GeneralPerturbedHumanEval(Task):
             list of dict containing refrences
         :return: dict[str: float]
         """
-        # # Load from json TODO: remove this
-        # with open("code_eval_results.json", "r") as f:
-        #     import json
-        #     detailed_results = json.load(f)
+
         code_metric = load("code_eval")
-        results, detailed_results = code_metric.compute(
+        _, detailed_results = code_metric.compute(
             references=[ref["test_code"] for ref in references],
             predictions=generations,
         )
-        # Dump as json TODO: remove this
-        # with open("code_eval_results.json", "w") as f:
-        #     import json
-        #     json.dump(detailed_results, f)
 
         # Compute robust-pass-at-1. For each transformation and each prompt, we have s=5 randomly perturbed prompts.
         # With a single sample per prompt, RP@1 on a given transformation is the fraction of examples where completions
         # for all the perturbed prompts are correct.
-        # With n samples per prompt, https://arxiv.org/abs/2212.10264 defines RP@1 as the average of the 
+        # With n samples per prompt, https://arxiv.org/abs/2212.10264 defines RP@1 as the average of the
         # 1/n * sum_{i=1}^n I(all s correct for generation-seed i) over all prompts.
         # An alternate could be the average of the
         # prod_{j=1}^s 1/n * sum_{i=1}^n I(j-th prompt correct for generation-seed i) over all prompts.
@@ -164,8 +158,15 @@ class GeneralPerturbedHumanEval(Task):
         for i, ref in enumerate(references):
             result = detailed_results[i]
             result = [x[1]["passed"] for x in result]
-            assert ref["seed"] not in transformation_problem_results[ref["perturbation_name"]][ref["task_id"]]
-            transformation_problem_results[ref["perturbation_name"]][ref["task_id"]][ref["seed"]] = result
+            assert (
+                ref["seed"]
+                not in transformation_problem_results[ref["perturbation_name"]][
+                    ref["task_id"]
+                ]
+            )
+            transformation_problem_results[ref["perturbation_name"]][ref["task_id"]][
+                ref["seed"]
+            ] = result
 
         rp1 = {}
         for transformation, problem_results in transformation_problem_results.items():
@@ -181,12 +182,10 @@ class GeneralPerturbedHumanEval(Task):
             res["alt-robust-pass-at-1"] = sum(
                 # results = {seed -> [n results]}
                 # prod_{j=1}^s 1/n * sum_{i=1}^n I(j-th prompt correct for generation-seed i)
-                np.prod([
-                    np.mean(results[j])
-                    for j in results
-                ])
+                np.prod([np.mean(results[j]) for j in results])
                 for results in problem_results.values()
             ) / len(problem_results)
             rp1[transformation] = res
 
+        # TODO: for overall-performance, a prompt is solved if correct over the s prompts for all transformation categories.
         return rp1
