@@ -63,9 +63,19 @@ class MBPP(Task):
         return "\n".join(doc["test_list"])
 
     @staticmethod
-    def first_block(string, stop_words):
-        """Split off first block of code by scanning for class, def etc. on newlines."""
-        return re.split("|".join(stop_words), string)[0].rstrip()
+    def _stop_at_stop_token(decoded_string, stop_tokens):
+        """
+        Produces the prefix of decoded_string that ends at the first occurrence of
+        a stop_token.
+        WARNING: the decoded_string *must not* include the prompt, which may have stop tokens
+        itself.
+        """
+        min_stop_index = len(decoded_string)
+        for stop_token in stop_tokens:
+            stop_index = decoded_string.find(stop_token)
+            if stop_index != -1 and stop_index < min_stop_index:
+                min_stop_index = stop_index
+        return decoded_string[:min_stop_index]
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
@@ -74,9 +84,9 @@ class MBPP(Task):
         :param idx: int
             index of doc in the dataset to which the generation belongs
         """
-        prompt = self.get_prompt(self.get_dataset()[idx])
-        output = generation[len(prompt) :]
-        return self.first_block(output, self.stop_words)
+        prompt = self.get_prompt(self.dataset["test"][idx])
+        generation = generation[len(prompt) :]
+        return prompt + self._stop_at_stop_token(generation, self.stop_words)
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,

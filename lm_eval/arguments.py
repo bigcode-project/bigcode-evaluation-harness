@@ -7,11 +7,6 @@ class EvalArguments:
     """
     Configuration for running the evaluation.
     """
-
-    model_ckpt: Optional[str] = field(
-        default="codeparrot/codeparrot",
-        metadata={"help": "Model name in Hugging Face hub or its local path."},
-    )
     prefix: Optional[str] = field(
         default="",
         metadata={

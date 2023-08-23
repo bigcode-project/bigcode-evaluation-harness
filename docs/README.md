@@ -49,6 +49,70 @@ accelerate launch  main.py \
 
 If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `limit` argument to $n$. 
 
+
+### HumanEvalPack
+
+[HumanEvalPack](https://huggingface.co/datasets/bigcode/humanevalpack) extends HumanEval to **3** scenarios across **6** languages via human annotations. There are different prompting options depending on the model that can be specified with the `--prompt` flag:
+- `continue`: This prompt is the same as HumanEval and only works for HumanEvalSynthesize
+- `instruct`: For this prompt an intuitive instruction is given to the model to tell it what to do.
+- `octocoder`, `wizardcoder`, `instructcodet5p` etc.: These are custom prompt formats for individual models to align with how they were finetuned.
+
+The three scenarios are listed below. The selectable languages are: `python`, `js`, `java`, `go`, `cpp` & `rust`.
+- HumanEvalFix: In this task models are provided with a solution with a subtle bug and several unit tests. The task is to fix the function. There is a variant of this task where the function docstring instead of the unit tests are provided, which can be selected via `humanevalfixdocs`.
+```
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --prompt <PROMPT> \
+  --tasks humanevalfixtests-python \
+  --temperature 0.2 \
+  --n_samples 20 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+- HumanEvalExplain: In this task models need to explain a HumanEval solution (without docstring) and subsequently regenerate the solution given only the model's own explanation. Thus, it requires two runs. The first one generates the descriptions, the second loads the descriptions, generates the solution & is scored.
+```
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --prompt <PROMPT> \
+  --tasks humanevalexplaindescribe-python \
+  --temperature 0.2 \
+  --n_samples 20 \
+  --batch_size 10 \
+  --allow_code_execution \
+  --generation_only
+
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --prompt <PROMPT> \
+  --load_data_path <PATH_TO_EXPLANATIONS_FROM_ABOVE> \
+  --tasks humanevalexplainsynthesize-python \
+  --temperature 0.2 \
+  --n_samples 1 \
+  --batch_size 1 \
+  --allow_code_execution
+```
+- HumanEvalSynthesize: This is like HumanEval but with human translations for JavaScript, Java, Go, C++ and Rust. It is based on [HumanEval-X](https://arxiv.org/abs/2303.17568), however, with additional fixes and improvements documented [here](https://github.com/bigcode-project/octopack/tree/main/evaluation/create/humaneval-x#modifications-muennighoff).
+
+```
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --prompt <PROMPT> \
+  --tasks humanevalsynthesize-python \
+  --temperature 0.2 \
+  --n_samples 20 \
+  --batch_size 10 \
+  --allow_code_execution \
+  --save_generations
+```
+
+
+There is also a version to run the OpenAI API on HumanEvalPack at `lm_eval/tasks/humanevalpack_openai.py`. It requires the `openai` package that can be installed via `pip install openai`. You will need to set the environment variables `OPENAI_ORGANIZATION` and `OPENAI_API_KEY`. Then you may want to modify the global variables defined in the script, such as `LANGUAGE`. Finally, you can run it with `python lm_eval/tasks/humanevalpack_openai.py`.
+
+
 ### InstructHumanEval
 [InstructHumanEval](https://huggingface.co/datasets/codeparrot/instructhumaneval): 164 handwritten Python programming problems described by an instruction (derived from the HumanEval docstring), a function signature and several unit tests.
 
