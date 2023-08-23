@@ -25,21 +25,20 @@ _CITATION = """
 }
 """
 
+
 def create_all_tasks():
     """Creates a dictionary of tasks from a list of levels
     :return: {task_name: task}
         e.g. {multiple-py: Task, multiple-java: Task}
     """
-    return {
-        "humaneval": create_task(True),
-        "humaneval-unstripped": create_task(False)
-    }
+    return {"humaneval": create_task(True), "humaneval-unstripped": create_task(False)}
 
 
 def create_task(strip_prompt):
     class HumanEval(GeneralHumanEval):
         def __init__(self):
             super().__init__(strip_prompt)
+
     return HumanEval
 
 
