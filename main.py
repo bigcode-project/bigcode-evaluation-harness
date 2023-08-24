@@ -227,7 +227,6 @@ def main():
                 f"Non valid precision {args.precision}, choose from: fp16, fp32, bf16"
             )
 
-        print(f"Loading tokenizer and model (in {args.precision})")
         model_kwargs = {
             "revision": args.revision,
             "trust_remote_code": args.trust_remote_code,
@@ -242,6 +241,7 @@ def main():
             model_kwargs["load_in_4bit"] = args.load_in_4bit
             model_kwargs["device_map"] = {"": accelerator.process_index}
         else:
+            print(f"Loading model in {args.precision}")
             model_kwargs["torch_dtype"] = dict_precisions[args.precision]
 
             if args.max_memory_per_gpu:
