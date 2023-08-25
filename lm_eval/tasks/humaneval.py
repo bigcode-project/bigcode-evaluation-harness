@@ -36,7 +36,7 @@ class HumanEval(Task):
     def __init__(self):
         
         super().__init__(
-            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
+            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```"],
             requires_execution=True,
         )
 
