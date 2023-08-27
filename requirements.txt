@@ -1,5 +1,5 @@
 transformers>=4.25.1
-accelerate>=0.20.3
+accelerate==0.20.3
 datasets>=2.11
 evaluate>=0.3.0
 pyext==0.7
