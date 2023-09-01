@@ -49,6 +49,121 @@ accelerate launch  main.py \
 
 If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `limit` argument to $n$. 
 
+
+### HumanEvalPack
+
+[HumanEvalPack](https://huggingface.co/datasets/bigcode/humanevalpack) extends HumanEval to **3** scenarios across **6** languages via human annotations. There are different prompting options depending on the model that can be specified with the `--prompt` flag:
+- `continue`: This prompt is the same as HumanEval and only works for HumanEvalSynthesize
+- `instruct`: For this prompt an intuitive instruction is given to the model to tell it what to do.
+- `octocoder`, `wizardcoder`, `instructcodet5p` etc.: These are custom prompt formats for individual models to align with how they were finetuned.
+
+The three scenarios are listed below. The selectable languages are: `python`, `js`, `java`, `go`, `cpp` & `rust`.
+- HumanEvalFix: In this task models are provided with a solution with a subtle bug and several unit tests. The task is to fix the function. There is a variant of this task where the function docstring instead of the unit tests are provided, which can be selected via `humanevalfixdocs`.
+```
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --prompt <PROMPT> \
+  --tasks humanevalfixtests-python \
+  --temperature 0.2 \
+  --n_samples 20 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+- HumanEvalExplain: In this task models need to explain a HumanEval solution (without docstring) and subsequently regenerate the solution given only the model's own explanation. Thus, it requires two runs. The first one generates the descriptions, the second loads the descriptions, generates the solution & is scored.
+```
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --prompt <PROMPT> \
+  --tasks humanevalexplaindescribe-python \
+  --temperature 0.2 \
+  --n_samples 20 \
+  --batch_size 10 \
+  --allow_code_execution \
+  --generation_only
+
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --prompt <PROMPT> \
+  --load_data_path <PATH_TO_EXPLANATIONS_FROM_ABOVE> \
+  --tasks humanevalexplainsynthesize-python \
+  --temperature 0.2 \
+  --n_samples 1 \
+  --batch_size 1 \
+  --allow_code_execution
+```
+- HumanEvalSynthesize: This is like HumanEval but with human translations for JavaScript, Java, Go, C++ and Rust. It is based on [HumanEval-X](https://arxiv.org/abs/2303.17568), however, with additional fixes and improvements documented [here](https://github.com/bigcode-project/octopack/tree/main/evaluation/create/humaneval-x#modifications-muennighoff).
+
+```
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --prompt <PROMPT> \
+  --tasks humanevalsynthesize-python \
+  --temperature 0.2 \
+  --n_samples 20 \
+  --batch_size 10 \
+  --allow_code_execution \
+  --save_generations
+```
+
+
+There is also a version to run the OpenAI API on HumanEvalPack at `lm_eval/tasks/humanevalpack_openai.py`. It requires the `openai` package that can be installed via `pip install openai`. You will need to set the environment variables `OPENAI_ORGANIZATION` and `OPENAI_API_KEY`. Then you may want to modify the global variables defined in the script, such as `LANGUAGE`. Finally, you can run it with `python lm_eval/tasks/humanevalpack_openai.py`.
+
+
+### InstructHumanEval
+[InstructHumanEval](https://huggingface.co/datasets/codeparrot/instructhumaneval): 164 handwritten Python programming problems described by an instruction (derived from the HumanEval docstring), a function signature and several unit tests.
+
+This evaluation suite is similar to HumanEval but it is dedicated to instruction-tuned models. Each prompt is built as  an instruction followed by a context, which are separated by delimiter tokens (those used in the instruction-tuning of the model). Here we focus on 3 of such tokens:
+- <user_token> : this token represents the role of the person who uses/prompts the model to solve a given task. It can be `Question:`, `USER` etc.
+- <end_token> : this token is used to designate the end of the user turn (the end of their request). It can be `<|end|>` or `</s>`. It can even be as simple as `\n`, ` `, or `\n\n`.
+- <assistant_token> : similar to <user_token>, this represents the LLM. Some common templates include `Assistant:`, `Response:`, `Answer:`, `<|Assistant|>` etc.
+
+Our evaluation supports two scenarios :
+- *Code completion* (`tasks = instruct-humaneval`)
+Here the model is prompted with the following instruction
+```bash
+<user_token> + <instruction> + <end_token> + <assistant_token> + <context>
+```
+The model is expected to complete a function signature. Make sure to add a `\n` at the end of your `<assistant_token>` to trigger a return to line for the function declaration.
+- *Docstring to code* (`tasks = instruct-humaneval-nocontext`)
+Here the model is prompted with the following instruction
+```bash
+<user_token> + <instruction> + <end_token> + <assistant_token>
+```
+The model is expected to solve the problem formulated as instruction. There is no additional guidance provided by `<context>` (which contains imports, auxiliary functions and the function signature), which increases the complexity of the task.
+
+Here are the commands to run the evaluation in each setting:
+
+for code completion
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks instruction-humaneval \
+  --instruction_tokens <user_token>,<end_token>,<assistant_token>\
+  --temperature 0.2 \
+  --n_samples 200 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+
+for docstring to code
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks instruction-humaneval-nocontext \
+  --instruction_tokens <user_token>,<end_token>,<assistant_token>\
+  --temperature 0.2 \
+  --n_samples 200 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+The main change is the use of the `instruction_tokens` argument which represents the 3 tokens we mentionned above separated from each other by a comma `,`.
+For [StarChat-Beta](https://huggingface.co/HuggingFaceH4/starchat-beta) for example we used these tokens`<|user|>\n,<|end|>\n and <|assistant|>\n`. You might need to escape `|` and `\` characters in bash with `--instruction_tokens \<\|user\|\>$'\n',\<\|end\|\>$'\n',\<\|assistant\|\>$'\n'`
 ### MBPP
 [MBPP](https://huggingface.co/datasets/mbpp):  consists of around 1,000 crowd-sourced Python programming problems, 
 designed to be solvable by entry-level programmers. Each problem consists of a task description in English, a code solution and 3 automated test cases. We evaluate on the test set of samples from index 11 to 511.
@@ -75,6 +190,65 @@ accelerate launch  main.py \
 
 Low temperatures generally work better for small $k$ in pass@k.
 
+### DS-1000
+[DS-1000](https://ds1000-code-gen.github.io/): Code generation benchmark with 1000 data science questions spanning seven Python libraries that (1) reflects diverse, realistic, and practical use cases, (2) has a reliable metric, (3) defends against memorization by perturbing questions.
+
+The task can be specified as `--tasks ds1000-$SUBSET-$MODE`, where subset can include `all` libraries or any of the following subsets: `numpy`, `scipy`, `pandas`, `tensorflow`, `pytorch`, `sklearn`, `matplotlib`. Supported generation modes are `completion` (purely autoregressive) or `insertion` via fill-in-middle [FIM] (this mode now only supports InCoder and BigCode Models).
+
+- Prompts & Generation: prompts include partial code with one or more missing lines. The form of such prompts varies between `completion` and `insertion` modes (`[insert]` token used to reflect FIM region). Default generation args are reflected below.
+- Evaluation: generations are evaluated via execution of unit tests. As in the original manuscript, $pass@1$ is evaluated over each of `num_samples` and the mean pass rate is returned as the metric. Default evaluation args are presented below.
+
+Below is the command to run evaluation on the full benchmark in insertion mode with the arguments that correspond to the original manuscript.
+
+```bash
+export TF_FORCE_GPU_ALLOW_GROWTH=true
+TF_CPP_MIN_LOG_LEVEL=3 accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --batch_size <BATCH_SIZE> \
+  --tasks ds1000-all-insertion \
+  --n_samples 40 \
+  --max_length_generation 1024 \
+  --temperature 0.2 \
+  --top_p 0.95 \
+  --allow_code_execution
+```
+
+### MultiPL-E
+[MultiPL-E](https://huggingface.co/datasets/nuprl/MultiPL-E): is a benchmark for evaluating large language models for code generation that supports 18 programming languages. It takes the OpenAI "HumanEval" Python benchmark and uses little compilers to translate them to other languages. We use similar implementation as [the original repository](https://github.com/nuprl/MultiPL-E/tree/main) and evaluation parameters are similar to HumanEval. Although for this benchmark, we strongly recommend using the provided Dockerfile to build the MultiPL-E container with all required dependencies, and for more safety especially when evaluating on languages like `bash`.
+Tasks are named `multiple-<LANG>` where `<LANG>` is the language name, e.g. `multiple-py` for python.
+
+```bash
+$ sudo make DOCKERFILE=Dockerfile-multiple all
+```
+This creates an image called `evaluation-harness-multiple`.
+
+Suppose you generated text with the `bigcode/santacoder` model and saved it in `generations_py.json` with:
+```bash
+accelerate launch  main.py \
+    --model bigcode/santacoder  \
+    --tasks multiple-py  \
+    --max_length_generation 650 \
+    --temperature 0.8   \
+    --do_sample True  \
+    --n_samples 200  \
+    --batch_size 200  \
+    --trsut_remote_code \
+    --generation_only \
+    --save_generations \
+    --save_generations_path generations_py.json
+```
+To run the container (here from image `evaluation-harness-multiple`) to evaluate on `generations_py.json`, or another file mount it with `-v`, specify `n_samples` and allow code execution with `--allow_code_execution` (and add the number of problems `--limit`  if it was used during generation):
+```bash
+$ sudo docker run -v $(pwd)/generations_py.json:/app/generations_py.json:ro -it evaluation-harness-multiple python3 main.py \
+    --model bigcode/santacoder \
+    --tasks multiple-py \
+    --load_generations_path /app/generations_py.json \
+    --allow_code_execution  \
+    --temperature 0.8 \
+    --n_samples 200
+```
+Execution time may vary depending on the programming languages.
+
 ### APPS
 [APPS](https://huggingface.co/datasets/codeparrot/apps): is a challenging benchmark for code generation with 10,000 Python problems, 
 5,000 for the training and 5000 for the evaluation. It has three difficulty levels: introductory, interview and competition. 
@@ -100,7 +274,7 @@ we a similar prompt format to the original paper of Hendrycks et al. There are t
         prompt += call_format
     prompt += "\nANSWER:\n"
 ```
-Sometimes the prompts can be long and exceed model's context length, so they get truncated. In this case we truncate the prompt before the context length to be able to include the entry "\nUse Call-Based format\nANSWER:\n" for example. The problem description if always at the beginning of the prompt followed by examples that aren't always relevant while the entry is important for the model to know it has to generate Python code that can be executed and not natural text.
+Sometimes the prompts can be long and exceed model's context length, so they get truncated. In this case we truncate the prompt before the context length to be able to include the entry "\nUse Call-Based format\nANSWER:\n" for example. The problem description is always at the beginning of the prompt followed by examples that aren't always relevant while the entry is important for the model to know it has to generate Python code that can be executed and not natural text.
 
 To use this setting (it's the case by default) set the argument `setup_apps` to `finetuning`. To select a difficulty level use `level_apps`argument, by default it is `all`.
 
@@ -144,28 +318,23 @@ accelerate launch  main.py \
 We expect a model [finetuned](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main/finetuning/APPS) on the train split of APPS.
 TODO: add few-shot setup for APPS.
 
-### DS-1000
-[DS-1000](https://ds1000-code-gen.github.io/): Code generation benchmark with 1000 data science questions spanning seven Python libraries that (1) reflects diverse, realistic, and practical use cases, (2) has a reliable metric, (3) defends against memorization by perturbing questions.
+### Recode
+[Recode](https://github.com/amazon-science/recode/tree/main) proposes a set of code and natural language transformations to evaluate the robustness of code-generation models. The perturbations can be applied to any code-generation benchmark. Specifically, they release perturbed versions of HumanEval and MBPP.
 
-The task can be specified as `--tasks ds1000-$SUBSET-$MODE`, where subset can include `all` libraries or any of the following subsets: `numpy`, `scipy`, `pandas`, `tensorflow`, `pytorch`, `sklearn`, `matplotlib`. Supported generation modes are `completion` (purely autoregressive) or `insertion` (via fill-in-middle [FIM]).
+For now, we support the perturbed version of the HumanEval benchmark.
+The task is specified with `--tasks perturbed-humaneval-{category}-num_seeds_{num_seeds}` where `category` can be one of `format`, `func_name`, `natgen`, `nlaugmenter`, and the number of seeds per perturbation is from `1` to `10`. The author's recommendation is to run with 5 seeds, with greedy generation.
 
-- Prompts & Generation: prompts include partial code with one or more missing lines. The form of such prompts varies between `completion` and `insertion` modes (`[insert]` token used to reflect FIM region). Default generation args are reflected below.
-- Evaluation: generations are evaluated via execution of unit tests. As in the original manuscript, $pass@1$ is evaluated over each of `num_samples` and the mean pass rate is returned as the metric. Default evaluation args are presented below.
-
-Below is the command to run evaluation on the full benchmark in insertion mode with the arguments that correspond to the original manuscript.
-
-```bash
-export TF_FORCE_GPU_ALLOW_GROWTH=true
-TF_CPP_MIN_LOG_LEVEL=3 accelerate launch main.py \
+```python
+accelerate launch  main.py \
   --model <MODEL_NAME> \
-  --batch_size <BATCH_SIZE> \
-  --tasks ds1000-all-insertion \
-  --n_samples 40 \
   --max_length_generation 1024 \
-  --temperature 0.2 \
-  --top_p 0.95 \
+  --tasks <TASK> \
+  --batch_size 1 \
+  --do_sample False \
+  --n_samples 1 \
   --allow_code_execution
 ```
+
 
 ## Code generation benchmarks without unit tests
 
@@ -266,6 +435,8 @@ accelerate launch  main.py \
   --top_p 0.95 \
   --allow_code_execution
 ```
+
+The complete prompt with 8 shot examples (as used in [PAL](https://github.com/reasoning-machines/pal)) take up `~1500` tokens, hence the value should be greater than that and the recommended value of `max_length_generation` is `2048`.
 
 ## How to add a new benchmark
 

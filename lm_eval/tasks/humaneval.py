@@ -26,18 +26,35 @@ _CITATION = """
 """
 
 
-class HumanEval(Task):
+def create_all_tasks():
+    """Creates a dictionary of tasks from a list of levels
+    :return: {task_name: task}
+        e.g. {multiple-py: Task, multiple-java: Task}
+    """
+    return {"humaneval": create_task(True), "humaneval-unstripped": create_task(False)}
+
+
+def create_task(strip_prompt):
+    class HumanEval(GeneralHumanEval):
+        def __init__(self):
+            super().__init__(strip_prompt)
+
+    return HumanEval
+
+
+class GeneralHumanEval(Task):
     """A task represents an entire benchmark including its dataset, problems,
     answers, generation settings and evaluation methods.
     """
 
     DATASET_PATH = "openai_humaneval"
 
-    def __init__(self):
+    def __init__(self, strip_prompt):
         super().__init__(
-            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
+            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```"],
             requires_execution=True,
         )
+        self.strip_prompt = strip_prompt
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -45,7 +62,10 @@ class HumanEval(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        return doc["prompt"].strip()
+        if self.strip_prompt:
+            return doc["prompt"].strip()
+        else:
+            return doc["prompt"]
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""

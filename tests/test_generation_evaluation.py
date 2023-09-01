@@ -34,18 +34,24 @@ def update_args(args):
     args.metric_output_path = TMPDIR
     args.load_generations_path = None
     args.generation_only = False
+    args.check_references = False
     # postprocessing for HumanEval and MBPP makes generations
     # with dummy model not distinctive
     args.postprocess = False
+    args.instruction_tokens = None
 
     args.limit = 2
+    args.limit_start = 0
     args.batch_size = 1
     args.max_length_generation = 300
     args.do_sample = False
     args.top_p = 0
     args.n_samples = 1
     args.seed = 0
+    args.prompt = None
     args.precision = None
+    args.modeltype = None
+    args.max_memory_per_gpu = None
     return args
 
 
