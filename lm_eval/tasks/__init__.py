@@ -1,6 +1,7 @@
 import inspect
 from pprint import pprint
 
+
 from . import (
     apps,
     codexglue_code_to_text,
@@ -18,13 +19,13 @@ from . import (
     python_bugs,
     quixbugs,
     recode,
-)
+    odex,
+
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
     **codexglue_code_to_text.create_all_tasks(),
     **codexglue_text_to_text.create_all_tasks(),
-    **multiple.create_all_tasks(),
     "codexglue_code_to_text-python-left": codexglue_code_to_text.LeftCodeToText,
     "conala": conala.Conala,
     "concode": concode.Concode,
@@ -38,6 +39,7 @@ TASK_REGISTRY = {
     **gsm.create_all_tasks(),
     **instruct_humaneval.create_all_tasks(),
     **recode.create_all_tasks(),
+    **odex.create_all_tasks(),
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))

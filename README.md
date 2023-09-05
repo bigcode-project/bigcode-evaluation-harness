@@ -47,6 +47,11 @@ Install [`torch`](https://pytorch.org/get-started/locally/) based on your device
 ```
 pip install -e .
 ```
+To run the `ODEX` benchmark, additional libraries are needed
+```
+pip install -e ".[odex]"
+```
+
 To run the `DS-1000` benchmark, additional constraints must be resolved.
 ```
 # python version must be 3.7.10
