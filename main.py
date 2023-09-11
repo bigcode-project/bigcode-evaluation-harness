@@ -6,7 +6,12 @@ import datasets
 import torch
 import transformers
 from accelerate import Accelerator
-from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer, HfArgumentParser
+from transformers import (
+    AutoModelForCausalLM,
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    HfArgumentParser,
+)
 
 from lm_eval.arguments import EvalArguments
 from lm_eval.evaluator import Evaluator
@@ -43,7 +48,7 @@ def parse_args():
         default="causal",
         help="AutoModel to use, it can be causal or seq2seq",
     )
-    parser.add_argument(    
+    parser.add_argument(
         "--peft_model",
         type=str,
         default=None,
@@ -114,7 +119,7 @@ def parse_args():
         type=int,
         default=0,
         help="Optional offset to start from when limiting the number of samples",
-    )    
+    )
     parser.add_argument(
         "--postprocess",
         action="store_false",
@@ -141,7 +146,7 @@ def parse_args():
         type=str,
         default=None,
         help="Path of additional data to load for the tasks",
-    )    
+    )
     parser.add_argument(
         "--metric_output_path",
         type=str,
@@ -170,12 +175,17 @@ def parse_args():
         default="prompt",
         help="Prompt type to use for generation in HumanEvalPack tasks",
     )
-    parser.add_argument("--max_memory_per_gpu", type=str, default=None)
+    parser.add_argument(
+        "--max_memory_per_gpu",
+        type=str,
+        default=None,
+        help="Max memroy to allocate per gpu, you can also use 'auto'",
+    )
     parser.add_argument(
         "--check_references",
         action="store_true",
         help="Don't run generation but benchmark groundtruth (useful for debugging)",
-    )    
+    )
     return parser.parse_args()
 
 
@@ -188,10 +198,12 @@ def pattern_match(patterns, source_list):
             task_names.add(matching)
     return list(task_names)
 
+
 def get_gpus_max_memory(max_memory, num_gpus):
     max_memory = {i: max_memory for i in range(num_gpus)}
     print("Loading model via these GPUs & max memories: ", max_memory)
     return max_memory
+
 
 def main():
     args = parse_args()
@@ -245,18 +257,24 @@ def main():
             model_kwargs["torch_dtype"] = dict_precisions[args.precision]
 
             if args.max_memory_per_gpu:
-                model_kwargs["max_memory"] = get_gpus_max_memory(args.max_memory_per_gpu, accelerator.num_processes)
-                model_kwargs["offload_folder"] = "offload"
-                model_kwargs["device_map"] = "auto"
+                if args.max_memory_per_gpu != "auto":
+                    model_kwargs["max_memory"] = get_gpus_max_memory(
+                        args.max_memory_per_gpu, accelerator.num_processes
+                    )
+                    model_kwargs["offload_folder"] = "offload"
+                else:
+                    model_kwargs["device_map"] = "auto"
+                    print("Loading model in auto mode")
 
-        
         if args.modeltype == "causal":
             model = AutoModelForCausalLM.from_pretrained(
                 args.model,
                 **model_kwargs,
             )
         elif args.modeltype == "seq2seq":
-            warnings.warn("Seq2Seq models have only been tested for HumanEvalPack & CodeT5+ models.")
+            warnings.warn(
+                "Seq2Seq models have only been tested for HumanEvalPack & CodeT5+ models."
+            )
             model = AutoModelForSeq2SeqLM.from_pretrained(
                 args.model,
                 **model_kwargs,
@@ -268,6 +286,7 @@ def main():
 
         if args.peft_model:
             from peft import PeftModel  # dynamic import to avoid dependency on peft
+
             model = PeftModel.from_pretrained(model, args.peft_model)
             print("Loaded PEFT model. Merging...")
             model.merge_and_unload()
@@ -279,7 +298,7 @@ def main():
             trust_remote_code=args.trust_remote_code,
             use_auth_token=args.use_auth_token,
             truncation_side="left",
-            padding_side="right", # padding on the right is needed to cut off padding in `complete_code`
+            padding_side="right",  # padding on the right is needed to cut off padding in `complete_code`
         )
         if not tokenizer.eos_token:
             if tokenizer.bos_token:
