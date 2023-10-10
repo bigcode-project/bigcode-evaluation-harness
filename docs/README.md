@@ -142,7 +142,7 @@ for code completion
 accelerate launch  main.py \
   --model <MODEL_NAME> \
   --max_length_generation <MAX_LENGTH> \
-  --tasks instruction-humaneval \
+  --tasks instruct-humaneval \
   --instruction_tokens <user_token>,<end_token>,<assistant_token>\
   --temperature 0.2 \
   --n_samples 200 \
@@ -155,7 +155,7 @@ for docstring to code
 accelerate launch  main.py \
   --model <MODEL_NAME> \
   --max_length_generation <MAX_LENGTH> \
-  --tasks instruction-humaneval-nocontext \
+  --tasks instruct-humaneval-nocontext \
   --instruction_tokens <user_token>,<end_token>,<assistant_token>\
   --temperature 0.2 \
   --n_samples 200 \
