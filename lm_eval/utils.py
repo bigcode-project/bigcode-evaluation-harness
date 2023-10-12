@@ -25,9 +25,11 @@ class TokenizedDataset(IterableDataset):
         tokenizer,
         num_devices,
         max_length,
+        limit_start=0,
         n_tasks=None,
         n_copies=1,
         prefix="",
+        has_encoder=False,
         instruction_tokens=None,
     ):
         self.task = task
@@ -35,16 +37,19 @@ class TokenizedDataset(IterableDataset):
         self.tokenizer = tokenizer
         self.num_devices = num_devices
         self.max_length = max_length
+        self.limit_start = limit_start
         self.n_tasks = n_tasks
         self.n_copies = n_copies
         self.prefix = prefix
+        self.has_encoder = has_encoder
         self.instruction_tokens = instruction_tokens
 
     def __iter__(self):
         prompts = []
+        prompts_encoder = []
         infill = []
         instruction = []
-        for sample in range(self.n_tasks):
+        for sample in range(self.limit_start, self.limit_start+self.n_tasks):
             prompt_contents = self.task.get_prompt(self.dataset[sample])
             if isinstance(prompt_contents, str):
                 # Normal code completion mode
@@ -69,6 +74,11 @@ class TokenizedDataset(IterableDataset):
             else:
                 raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
             prompts.append(prompt)
+            if self.has_encoder:
+                prompt_encoder = self.task.get_prompt_encoder(self.dataset[sample])
+                if isinstance(prompt_encoder, str):
+                    prompt_encoder = self.prefix + prompt_encoder
+                prompts_encoder.append(prompt_encoder)
 
         if not len(set(infill)) == 1 or not len(set(instruction)) == 1:
             raise ValueError(
@@ -91,6 +101,17 @@ class TokenizedDataset(IterableDataset):
             max_length=self.max_length,
             return_token_type_ids=return_token_type_ids,
         )
+        if self.has_encoder:
+            outputs_encoder = self.tokenizer(
+                prompts_encoder,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
+                max_length=self.max_length,
+                return_token_type_ids=return_token_type_ids,
+            )
+
+
 
         if self.n_copies == 1 and self.n_tasks % self.num_devices != 0:
             self.n_copies = 2
@@ -100,11 +121,20 @@ class TokenizedDataset(IterableDataset):
 
         for sample in range(self.n_tasks):
             for _ in range(self.n_copies):
-                yield {
-                    "ids": outputs.input_ids[sample],
-                    "task_id": sample,
-                    "input_len": outputs.attention_mask[sample].sum(),
-                }
+                if self.has_encoder:
+                    yield {
+                        "ids": outputs.input_ids[sample],
+                        "ids_encoder": outputs_encoder.input_ids[sample],
+                        "task_id": sample,
+                        "input_len": outputs.attention_mask[sample].sum(),
+                        "input_len_encoder": outputs_encoder.attention_mask[sample].sum(),
+                    }
+                else:
+                    yield {
+                        "ids": outputs.input_ids[sample],
+                        "task_id": sample,
+                        "input_len": outputs.attention_mask[sample].sum(),
+                    }
 
     def _make_infill_prompt(self, prefix, suffix, preprefix=""):
         """Make a prompt for infilling.
@@ -195,6 +225,7 @@ def complete_code(
     tokenizer,
     dataloader,
     n_tasks,
+    limit_start=0,
     batch_size=20,
     prefix="",
     instruction_tokens=None,
@@ -218,23 +249,48 @@ def complete_code(
         with torch.no_grad():
             if task.stop_words:
                 # Set the start_length after which to check for stopping to be the longest input ignoring padding
-                gen_kwargs["stopping_criteria"][0].start_length = (
-                    batch["input_len"].max().item()
-                )
+                max_len = batch["input_len"].max().item()
+                if "ids_encoder" in batch:
+                    max_len += 1 # Add 1 for decoder_start_token_id
+                gen_kwargs["stopping_criteria"][0].start_length = max_len
+            if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
+                idx = 1 if task.stop_words else 0
+                gen_kwargs["stopping_criteria"][idx].input_length = batch["input_len"].max().item()                
+            
             inputs = batch["ids"][:, : batch["input_len"]]
-            if is_wrapped:
-                # 8bit and 4bit models are wrapped in accelerator
-                generated_tokens = accelerator.unwrap_model(model).generate(
-                    input_ids=inputs,
-                    num_return_sequences=batch_size,
-                    **gen_kwargs,
-                )
+            if "ids_encoder" in batch:
+                if is_wrapped:
+                    generated_tokens = accelerator.unwrap_model(model).generate(
+                        decoder_input_ids=inputs,
+                        input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
+                        num_return_sequences=batch_size,
+                        decoder_start_token_id=tokenizer.pad_token_id,
+                        eos_token_id=tokenizer.eos_token_id,
+                        **gen_kwargs,
+                    )
+                else:
+                    generated_tokens = model.generate(
+                        decoder_input_ids=inputs,
+                        input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
+                        num_return_sequences=batch_size,
+                        decoder_start_token_id=tokenizer.pad_token_id,
+                        eos_token_id=tokenizer.eos_token_id,
+                        **gen_kwargs,
+                    )
             else:
-                generated_tokens = model.generate(
-                    input_ids=inputs,
-                    num_return_sequences=batch_size,
-                    **gen_kwargs,
-                )
+                if is_wrapped:
+                    # 8bit and 4bit models are wrapped in accelerator
+                    generated_tokens = accelerator.unwrap_model(model).generate(
+                        input_ids=inputs,
+                        num_return_sequences=batch_size,
+                        **gen_kwargs,
+                    )
+                else:
+                    generated_tokens = model.generate(
+                        input_ids=inputs,
+                        num_return_sequences=batch_size,
+                        **gen_kwargs,
+                    )
             # each task is generated batch_size times
             generated_tasks = batch["task_id"].repeat(batch_size)
             generated_tokens = accelerator.pad_across_processes(
@@ -256,6 +312,10 @@ def complete_code(
             if INFILL_MODE or tokenizer.eos_token in task.stop_words:
                 if s[0] == tokenizer.bos_token_id:
                     s = s[1:]
+                # Treat eos token as a regular stop word not removing it from the output
+                # If it's removed it may have the effect of removing it in the middle of a
+                # longer generation in case a batch size > 1 is used, which will result in
+                # a wrong generation as it won't be used for splitting lateron 
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                 )
@@ -271,7 +331,7 @@ def complete_code(
                 gen_code = gen_code[len(prefix) :]
             if postprocess:
                 code_gens[sample].append(
-                    task.postprocess_generation(gen_code, int(sample))
+                    task.postprocess_generation(gen_code, int(sample) + limit_start)
                 )
             else:
                 warnings.warn(

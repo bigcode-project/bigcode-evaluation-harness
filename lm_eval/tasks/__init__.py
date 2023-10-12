@@ -1,7 +1,10 @@
+import inspect
 from pprint import pprint
 
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
-               concode, ds1000, gsm, humaneval, mbpp, multiple, instruct_humaneval, shadereval)
+               concode, ds1000, gsm, humaneval, humanevalpack,
+               instruct_humaneval, instruct_wizard_humaneval, mbpp, multiple,
+               parity, python_bugs, quixbugs, recode, shadereval)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
@@ -12,19 +15,30 @@ TASK_REGISTRY = {
     "conala": conala.Conala,
     "concode": concode.Concode,
     **ds1000.create_all_tasks(),
-    "humaneval": humaneval.HumanEval,
+    **humaneval.create_all_tasks(),
+    **humanevalpack.create_all_tasks(),
     "mbpp": mbpp.MBPP,
+    "parity": parity.Parity,
+    "python_bugs": python_bugs.PythonBugs,
+    "quixbugs": quixbugs.QuixBugs,
+    "instruct_wizard_humaneval": instruct_wizard_humaneval.HumanEvalWizardCoder,
     **gsm.create_all_tasks(),
     **instruct_humaneval.create_all_tasks(),
-    "shadereval": shadereval.ReturnCompletion,
+    **recode.create_all_tasks(),
+    **shadereval.create_all_tasks(),
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))
 
 
-def get_task(task_name):
+def get_task(task_name, args=None):
     try:
-        return TASK_REGISTRY[task_name]()
+        kwargs = {}
+        if "prompt" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
+            kwargs["prompt"] = args.prompt
+        if "load_data_path" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
+            kwargs["load_data_path"] = args.load_data_path
+        return TASK_REGISTRY[task_name](**kwargs)
     except KeyError:
         print("Available tasks:")
         pprint(TASK_REGISTRY)
