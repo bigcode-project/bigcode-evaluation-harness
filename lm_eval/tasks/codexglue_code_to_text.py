@@ -10,8 +10,6 @@ import os
 import re
 import typing
 
-from mosestokenizer import MosesDetokenizer
-
 from lm_eval.base import Task
 
 _CITATION = """
@@ -168,6 +166,7 @@ class GeneralCodeToText(Task):
         """Builds the reference solution for the doc (sample from the test dataset).
         :param doc: dict[str: str]
         """
+        from mosestokenizer import MosesDetokenizer
         # deactivate tokenizer parallelism when calling MosesDetokenizer TODO: do it for all refs once
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         # docstring_tokens are preprocessed and don't have extra context like variable defs

@@ -1,4 +1,5 @@
-"""Evaluating Large Language Models Trained on Code
+"""Instruction version of HumanEval used for WizardCoder Models evaluation
+Evaluating Large Language Models Trained on Code
 https://arxiv.org/abs/2107.03374
 
 The HumanEval dataset released by OpenAI includes 164 programming problems with a function signature,
@@ -26,35 +27,31 @@ _CITATION = """
 """
 
 
-def create_all_tasks():
-    """Creates a dictionary of tasks from a list of levels
-    :return: {task_name: task}
-        e.g. {multiple-py: Task, multiple-java: Task}
-    """
-    return {"humaneval": create_task(True), "humaneval-unstripped": create_task(False)}
+def generate_prompt(input):
+    INSTRUCTION = f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.
 
 
-def create_task(strip_prompt):
-    class HumanEval(GeneralHumanEval):
-        def __init__(self):
-            super().__init__(strip_prompt)
+### Instruction:
+Create a Python script for this problem:
+{input}
 
-    return HumanEval
+### Response:"""
+    return INSTRUCTION
 
 
-class GeneralHumanEval(Task):
+class HumanEvalWizardCoder(Task):
     """A task represents an entire benchmark including its dataset, problems,
     answers, generation settings and evaluation methods.
     """
 
     DATASET_PATH = "openai_humaneval"
 
-    def __init__(self, strip_prompt):
+    def __init__(self):
+
         super().__init__(
-            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```"],
+            stop_words=[],
             requires_execution=True,
         )
-        self.strip_prompt = strip_prompt
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -62,10 +59,9 @@ class GeneralHumanEval(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        if self.strip_prompt:
-            return doc["prompt"].strip()
-        else:
-            return doc["prompt"]
+        prompt = doc["prompt"].replace("    ", "\t")
+        prompt = generate_prompt(prompt)
+        return prompt
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -74,19 +70,29 @@ class GeneralHumanEval(Task):
         return "\n" + test_func + "\n" + entry_point
 
     @staticmethod
-    def _stop_at_stop_token(decoded_string, stop_tokens):
-        """
-        Produces the prefix of decoded_string that ends at the first occurrence of
-        a stop_token.
-        WARNING: the decoded_string *must not* include the prompt, which may have stop tokens
-        itself.
-        """
-        min_stop_index = len(decoded_string)
-        for stop_token in stop_tokens:
-            stop_index = decoded_string.find(stop_token)
-            if stop_index != -1 and stop_index < min_stop_index:
-                min_stop_index = stop_index
-        return decoded_string[:min_stop_index]
+    def clean_comp(completion):
+        # adapted from https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/process_humaneval.py
+        if "```python" in completion:
+            def_line = completion.index("```python")
+            completion = completion[def_line:].strip()
+            completion = completion.replace("```python", "")
+            try:
+                next_line = completion.index("```")
+                completion = completion[:next_line].strip()
+            except:
+                a += 1
+        if '__name__ == "__main__"' in completion:
+            next_line = completion.index('if __name__ == "__main__":')
+            completion = completion[:next_line].strip()
+
+        if "# Example usage" in completion:
+            next_line = completion.index("# Example usage")
+            completion = completion[:next_line].strip()
+        if completion.startswith("Here's"):
+            completion = completion.split("\n")[1:]
+            completion = "\n".join(completion)
+        result = completion
+        return result
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
@@ -96,9 +102,11 @@ class GeneralHumanEval(Task):
             index of doc in the dataset to which the generation belongs
             (not used for Humaneval-Task)
         """
-        prompt = self.get_prompt(self.dataset["test"][idx])
-        generation = generation[len(prompt) :]
-        return prompt + self._stop_at_stop_token(generation, self.stop_words)
+        generation = generation.split("### Response:")[-1]
+        generation = generation.replace("\t", "    ")
+        generation = generation.split("</s>")[0]
+        generation = self.clean_comp(generation)
+        return generation
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,

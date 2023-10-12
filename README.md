@@ -27,7 +27,9 @@ Below are the features and tasks of this framework:
 
 - Tasks:
     - 5 code generation **Python** tasks (with unit tests): [HumanEval](https://huggingface.co/datasets/openai_humaneval), [InstructHumanEval](https://huggingface.co/datasets/codeparrot/instructhumaneval), [APPS](https://huggingface.co/datasets/codeparrot/apps), [MBPP](https://huggingface.co/datasets/mbpp) and [DS-1000](https://github.com/HKUNLP/DS-1000/) for both completion (left-to-right) and insertion (FIM) mode.
+    - [HumanEvalPack](https://huggingface.co/datasets/bigcode/humanevalpack) extends HumanEval to **3** scenarios across **6** languages via human translations and was released with [OctoPack](https://arxiv.org/abs/2308.07124).
     - [MultiPL-E](https://github.com/nuprl/MultiPL-E) evaluation suite (HumanEval translated into **18** programming languages).
+    - [Recode](https://github.com/amazon-science/recode/tree/main) applied to the HumanEval benchmark. It evaluates the robustness of code-generation models.
     - [Pal](https://github.com/reasoning-machines/pal) Program-aided Language Models evaluation for grade school math problems : [GSM8K](https://huggingface.co/datasets/gsm8k) and [GSM-HARD](https://huggingface.co/datasets/reasoning-machines/gsm-hard). These problems are solved by generating reasoning chains of text and code.
     - Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text) (zero-shot & fine-tuning) for 6 languages: **Python, Go, Ruby, Java, JavaScript and PHP.**  Documentation translation task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_tt_text_to_text).
     - [CoNaLa](https://huggingface.co/datasets/neulab/conala) for **Python** code generation (2-shot setting and evaluation with BLEU score).
@@ -100,6 +102,7 @@ accelerate launch  main.py \
 * `allow_code_execution` is for executing the generated code: it is off by default, read the displayed warning before calling it to enable execution. 
 * Some models with custom code on the HF hub like [SantaCoder](https://huggingface.co/bigcode/santacoder) require calling `--trust_remote_code`, for private models add `--use_auth_token`.
 * `save_generations` saves the post-processed generations in a json file at `save_generations_path` (by default `generations.json`). You can also save references by calling `--save_references`
+* `max_length_generation` is the maximum token length of generation including the input token length. The default is 512, but for some tasks like GSM8K and GSM-Hard, the complete prompt with 8 shot examples (as used in [PAL](https://github.com/reasoning-machines/pal)) take up `~1500` tokens, hence the value should be greater than that and the recommended value of `max_length_generation` is `2048` for these tasks.
 
 Some tasks don't require code execution such as
 `codexglue_code_to_text-<LANGUAGE>`/`codexglue_code_to_text-python-left`/`conala`/`concode` that use BLEU evaluation. In addition, we generate one candidate solution for each problem in these tasks, so use `n_samples=1` and `batch_size=1`. (Note that `batch_size` should always be equal or less than `n_samples`).
@@ -195,15 +198,16 @@ We thank EleutherAI for their work on the [lm-evaluation harness](https://github
 ## Cite as
 
 ```
-@software{bigcode-evaluation-harness,
+@misc{bigcode-evaluation-harness,
   author       = {Ben Allal, Loubna and
                   Muennighoff, Niklas and
                   Kumar Umapathi, Logesh and
                   Lipkin, Ben and
                   von Werra, Leandro},
   title = {A framework for the evaluation of code generation models},
+  publisher = {GitHub},
+  journal = {GitHub repository},
   howpublished = {\url{https://github.com/bigcode-project/bigcode-evaluation-harness}},
   year = 2022,
-  month = December
 }
 ```

@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -31,7 +31,7 @@ setup(
     description="A framework for the evaluation of autoregressive code generation language models.",
     long_description=readme,
     license="Apache 2.0",
-    packages=["lm_eval"],
+    packages=find_packages() ,
     install_requires=requirements,
     extras_require={"ds1000": ds1000_requirements},
 )
