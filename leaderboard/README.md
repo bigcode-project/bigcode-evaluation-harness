@@ -201,7 +201,7 @@ accelerate launch main.py \
 ```
 
 ## Bonus
-For the throughput and peak memory measurments, we point you to [optimum-benchamrk](https://github.com/huggingface/optimum-benchmark).
+For the throughput and peak memory measurments, we point you to [optimum-benchamrk](https://github.com/huggingface/optimum-benchmark) (checkout commit `49f0924e2bb041cf17d78dd0848d8e2cad31632d` [here](https://github.com/huggingface/optimum-benchmark/commit/49f0924e2bb041cf17d78dd0848d8e2cad31632d)).
 You can follow the instructions in the repo, copy our config yaml and run the command below:
 ```bash
 cp throughput_config.yaml optimum-benchmark/examples
