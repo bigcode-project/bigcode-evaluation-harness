@@ -87,3 +87,30 @@ def evaluate_problem(
             test_results["results"].append(j)
             with open(test_results_path, "w") as f:
                 f.write(json.dumps(test_results, indent=2))
+
+def cached_eval_script_per_program(program, language) -> dict:
+    # here prompt is already included in completions
+    CACHE_LOCK.acquire(True)
+    cached = cache_get(program)
+    if cached is not None:
+        CACHE_LOCK.release()
+        return cached
+    else:
+        result_yaml = dict()
+        cache_set(program, result_yaml)
+        CACHE_LOCK.release()
+        result_dict = eval_string_script(language, program)
+        for k in result_dict.keys():
+            result_yaml[k] = result_dict[k]
+            result_yaml["timestamp"] = int(time.time())
+        return result_yaml
+    
+def evaluate_programs(programs: list[str], test_results_list: list[dict], language: str, max_workers: int):
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for j, test_results, in zip(executor.map(
+            lambda program: cached_eval_script_per_program(program, language),
+            programs
+        ), test_results_list):
+            test_results["lock"].acquire()
+            test_results["results"].append(j)
+            test_results["lock"].release()

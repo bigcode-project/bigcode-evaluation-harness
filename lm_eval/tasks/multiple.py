@@ -7,23 +7,18 @@ It takes the OpenAI "HumanEval" and the MBPP Python benchmarks and uses little c
 Homepage: https://nuprl.github.io/MultiPL-E/
 """
 
-import json
-import os
 import re
-import tempfile
 from multiprocessing import cpu_count
-from pathlib import Path
-from time import time
+from threading import Lock
 
 import numpy as np
 from datasets import load_dataset
-from tqdm import tqdm
 
 from lm_eval.base import Task
 from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import \
-    evaluate_problem
+    evaluate_programs
 from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import \
-    for_file
+    for_result
 
 _CITATION = """
 @article{cassano2022scalable,
@@ -157,45 +152,54 @@ class GeneralMultiPLE(Task):
             if i < len(generations)
         ]
         # a common temp dir for all the problems
-        temp_dir = tempfile.gettempdir()
-        list_files = []
+        problems = []
         for (prompt_name, generation, reference) in zip(
             prompts_names, generations, references
         ):
-            problem = {
+            problems.append({
                 "name": prompt_name["name"],
                 "language": self.language,
                 "prompt": prompt_name["prompt"],
                 "completions": generation,
                 "tests": reference,
-            }
-            # each problem is save in a json file
-            temp_file_name = os.path.join(temp_dir, f"{prompt_name['name']}.json")
-            list_files.append(temp_file_name)
-            with open(temp_file_name, "wt") as f:
-                json.dump(problem, f)
+            })            
         print(
-            f"Saved {len(list_files)} problems in {temp_dir} for evaluation, each problem has {len(generations[0])} completions"
+            f"Assembled {len(problems)} problems for evaluation, each problem has {len(generations[0])} completions"
         )
 
         # execute the problems to evaluate them
         max_workers = cpu_count() - 1 if cpu_count() > 1 else 1
-        for file in tqdm(list_files):
-            evaluate_problem(temp_dir, file, max_workers)
+        programs, test_results_list =  self.unroll_problems(problems)
+        evaluate_programs(programs, test_results_list, self.language, max_workers)
+
+        # Purge duplicates
+        result_array = []
+        [result_array.append(result) for result in test_results_list if result not in result_array]
 
         # compute pass@k scores
-        result_array = np.array(
-            [for_file(p) for p in Path(temp_dir).glob("*.results.json")]
-        )
-        result = result_array.mean(axis=0)
-        name = (
-            temp_dir.split("/")[-1]
-            if temp_dir.split("/")[-1] != ""
-            else temp_dir.split("/")[-2]
-        )
+        result = np.mean([for_result(result) for result in result_array], axis=0)
         results = {
             f"pass@{k}": v
             for k, v in zip([1, 10, 100], result)
             if k <= len(generations[0])
         }
         return results
+    
+
+    def unroll_problems(self, problems):
+        programs = list()
+        test_results_list = list()
+        for problem in problems:
+            test_results = problem.copy()
+            del test_results["completions"]
+            test_results["results"] = []
+            test_results["lock"] = Lock()
+
+            num_problems = len(problem["completions"])
+            min_problem = len(test_results["results"])
+
+            for index in range(min_problem, num_problems): 
+                programs.append(problem["completions"][index] + "\n" + problem["tests"])
+                test_results_list.append(test_results)
+            
+        return programs, test_results_list
