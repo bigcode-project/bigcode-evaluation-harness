@@ -1,7 +1,21 @@
 defaults:
-  - base_config # inherits from base config
+  - backend: pytorch # default backend
+  - benchmark: inference # default benchmark
+  - experiment # inheriting experiment schema
   - _self_ # for hydra 1.1 compatibility
+  - override hydra/job_logging: colorlog # colorful logging
+  - override hydra/hydra_logging: colorlog # colorful logging
 
+hydra:
+  run:
+    dir: runs/${experiment_name}
+  sweep:
+    dir: sweeps/${experiment_name}
+  job:
+    chdir: true
+    env_set:
+      CUDA_VISIBLE_DEVICES: 0,1,2,3,4,5,6,7
+    
 experiment_name: code_evals
 
 model: bigcode/santacoder
