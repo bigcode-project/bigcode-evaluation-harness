@@ -226,7 +226,7 @@ class HumanEvalPack(Task):
         elif self.prompt == "codellama":
             prompt = f"[INST] {inp.strip()} [/INST] {prompt_base}"
         else:
-            raise NotImplementedError
+            raise ValueError(f"The --prompt argument {self.prompt} wasn't provided or isn't supported")
         # Strip off the final \n to make the tokens more natural
         # Essentially, we want to make sure that if there was no distinction between
         # input & output, the tokens would be the same
