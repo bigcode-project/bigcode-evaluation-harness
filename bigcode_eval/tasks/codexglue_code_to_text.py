@@ -10,7 +10,7 @@ import os
 import re
 import typing
 
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 
 _CITATION = """
 @article{husain2019codesearchnet,
@@ -63,7 +63,7 @@ def compute_codexglue_code_to_text_bleu(
 
     Taken from: https://github.com/dpfried/lm-evaluation-harness/blob/5d9a6aaaaa929bcad95bb73d85e78fe75eb64b4e/lm_eval/tasks/codexglue_summarization.py#L102
     """
-    from lm_eval.tasks.custom_metrics import codexglue_code_to_text_bleu
+    from bigcode_eval.tasks.custom_metrics import codexglue_code_to_text_bleu
 
     predicted_map = {}
     gold_map = {}

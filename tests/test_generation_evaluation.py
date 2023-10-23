@@ -6,8 +6,8 @@ from accelerate import Accelerator
 from accelerate.utils import write_basic_config
 from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
 
-from lm_eval.arguments import EvalArguments
-from lm_eval.evaluator import Evaluator
+from bigcode_eval.arguments import EvalArguments
+from bigcode_eval.evaluator import Evaluator
 
 # TODO add more tasks
 

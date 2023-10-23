@@ -9,8 +9,8 @@ Homepage: https://github.com/openai/human-eval
 """
 
 from evaluate import load
-from lm_eval.base import Task
-from lm_eval.utils import remove_after_return
+from bigcode_eval.base import Task
+from bigcode_eval.utils import remove_after_return
 
 _CITATION = ""
 
