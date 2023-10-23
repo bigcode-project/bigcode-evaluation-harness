@@ -7,7 +7,7 @@ TODO: Add the paper's PDF URL (preferably from arXiv) on this line.
 TODO: Write a Short Description of the task.
 Homepage: TODO: Add the URL to the task's Homepage here.
 """
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 
 # TODO: Add the BibTeX citation for the task.
 _CITATION = """

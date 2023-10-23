@@ -14,7 +14,7 @@ import json
 
 from evaluate import load
 
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 
 _CITATION = """
 @article{iyer2018mapping,

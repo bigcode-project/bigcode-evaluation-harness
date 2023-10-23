@@ -2,7 +2,7 @@ import json
 import re
 
 from evaluate import load
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 
 _CITATION = """
 @article{muennighoff2023octopack,
@@ -357,7 +357,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
                         fixed_code = ""
                     gen[i] = fixed_code
         elif self.prompt == "diff-carper":
-            from lm_eval.tasks.custom_metrics.diff_eval import apply_diff
+            from bigcode_eval.tasks.custom_metrics.diff_eval import apply_diff
             ds = self.get_dataset().select(range(len(generations)))
             for gen, doc in zip(generations, ds):
                 prompt_base = self.get_prompt_base(doc)
@@ -522,7 +522,7 @@ class HumanEvalFixBase(HumanEvalPackGenerative):
             # Only remove final stopwords like <MSG>
             generation = self.remove_last_block(generation[len(prompt):].rstrip())
             generation = prompt + generation
-            from lm_eval.tasks.custom_metrics.diff_eval import split_diff
+            from bigcode_eval.tasks.custom_metrics.diff_eval import split_diff
             # From https://github.com/CarperAI/OpenELM/blob/e6402a0696096011572152334ccbe049f89c332e/src/openelm/benchmarks/benchmark_bugs.py#L93
             end_of_diff = re.compile("\n[^ +-@]+")
             parsed: dict = split_diff(generation)

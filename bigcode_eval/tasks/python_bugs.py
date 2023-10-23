@@ -10,7 +10,7 @@ Make sure to run with sufficient context length (512 is not enough for e.g. Code
 import re
 
 from evaluate import load
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 import tqdm
 
 _CITATION = """

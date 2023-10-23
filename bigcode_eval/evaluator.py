@@ -3,8 +3,8 @@ import json
 import os
 import warnings
 
-from lm_eval import tasks
-from lm_eval.generation import parallel_generations
+from bigcode_eval import tasks
+from bigcode_eval.generation import parallel_generations
 
 _WARNING = """
 ################################################################################

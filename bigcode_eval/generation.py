@@ -5,7 +5,7 @@ from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
 
-from lm_eval.utils import TokenizedDataset, complete_code
+from bigcode_eval.utils import TokenizedDataset, complete_code
 
 
 class EndOfFunctionCriteria(StoppingCriteria):

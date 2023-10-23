@@ -19,10 +19,10 @@ import numpy as np
 from datasets import load_dataset
 from tqdm import tqdm
 
-from lm_eval.base import Task
-from lm_eval.tasks.custom_metrics.multiple_metrics.evaluation import \
+from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.multiple_metrics.evaluation import \
     evaluate_problem
-from lm_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import \
+from bigcode_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k import \
     for_file
 
 _CITATION = """

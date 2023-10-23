@@ -13,9 +13,9 @@ from transformers import (
     HfArgumentParser,
 )
 
-from lm_eval.arguments import EvalArguments
-from lm_eval.evaluator import Evaluator
-from lm_eval.tasks import ALL_TASKS
+from bigcode_eval.arguments import EvalArguments
+from bigcode_eval.evaluator import Evaluator
+from bigcode_eval.tasks import ALL_TASKS
 
 
 class MultiChoice:
