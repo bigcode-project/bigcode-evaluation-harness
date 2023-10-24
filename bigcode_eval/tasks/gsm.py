@@ -105,7 +105,7 @@ class Gsm8k(Task):
     def fewshot_examples(self):
         """Loads and returns the few-shot examples for the task if they exist."""
         with open(
-            "lm_eval/tasks/few_shot_examples/gsm8k_few_shot_prompts.json",
+            "bigcode_eval/tasks/few_shot_examples/gsm8k_few_shot_prompts.json",
             "r",
         ) as file:
             examples = json.load(file)
