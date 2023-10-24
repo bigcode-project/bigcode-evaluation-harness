@@ -47,7 +47,7 @@ class Conala(Task):
     def fewshot_examples(self):
         """Loads and returns the few-shot examples for the task if they exist."""
         with open(
-            "lm_eval/tasks/few_shot_examples/conala_few_shot_prompts.json", "r"
+            "bigcode_eval/tasks/few_shot_examples/conala_few_shot_prompts.json", "r"
         ) as file:
             examples = json.load(file)
         return examples

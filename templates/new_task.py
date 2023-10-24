@@ -37,7 +37,7 @@ class NewTask(Task):
         return []
 
     def fewshot_examples(self):
-        # TODO: load few-shot examples (from lm_eval/tasks/fewshot_examples) if they exist
+        # TODO: load few-shot examples (from bigcode_eval/tasks/fewshot_examples) if they exist
         """Loads and returns the few-shot examples for the task if they exist."""
         pass
 

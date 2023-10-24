@@ -110,7 +110,7 @@ accelerate launch main.py \
 ```
 
 
-There is also a version to run the OpenAI API on HumanEvalPack at `lm_eval/tasks/humanevalpack_openai.py`. It requires the `openai` package that can be installed via `pip install openai`. You will need to set the environment variables `OPENAI_ORGANIZATION` and `OPENAI_API_KEY`. Then you may want to modify the global variables defined in the script, such as `LANGUAGE`. Finally, you can run it with `python lm_eval/tasks/humanevalpack_openai.py`.
+There is also a version to run the OpenAI API on HumanEvalPack at `bigcode_eval/tasks/humanevalpack_openai.py`. It requires the `openai` package that can be installed via `pip install openai`. You will need to set the environment variables `OPENAI_ORGANIZATION` and `OPENAI_API_KEY`. Then you may want to modify the global variables defined in the script, such as `LANGUAGE`. Finally, you can run it with `python bigcode_eval/tasks/humanevalpack_openai.py`.
 
 
 ### InstructHumanEval
