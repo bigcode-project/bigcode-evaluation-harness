@@ -18,8 +18,8 @@ from typing import Union
 
 from evaluate import load
 
-from lm_eval.base import Task
-from lm_eval.tasks.custom_metrics.pal_metric.pal_code_exec import compute
+from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.pal_metric.pal_code_exec import compute
 
 _CITATION = """
 @article{gao2022pal,
@@ -105,7 +105,7 @@ class Gsm8k(Task):
     def fewshot_examples(self):
         """Loads and returns the few-shot examples for the task if they exist."""
         with open(
-            "lm_eval/tasks/few_shot_examples/gsm8k_few_shot_prompts.json",
+            "bigcode_eval/tasks/few_shot_examples/gsm8k_few_shot_prompts.json",
             "r",
         ) as file:
             examples = json.load(file)

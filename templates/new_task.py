@@ -7,7 +7,7 @@ TODO: Add the paper's PDF URL (preferably from arXiv) on this line.
 TODO: Write a Short Description of the task.
 Homepage: TODO: Add the URL to the task's Homepage here.
 """
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 
 # TODO: Add the BibTeX citation for the task.
 _CITATION = """
@@ -37,7 +37,7 @@ class NewTask(Task):
         return []
 
     def fewshot_examples(self):
-        # TODO: load few-shot examples (from lm_eval/tasks/fewshot_examples) if they exist
+        # TODO: load few-shot examples (from bigcode_eval/tasks/fewshot_examples) if they exist
         """Loads and returns the few-shot examples for the task if they exist."""
         pass
 

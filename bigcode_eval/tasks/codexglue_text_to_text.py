@@ -11,7 +11,7 @@ import re
 
 from evaluate import load
 
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 
 _CITATION = """
 @article{CodeXGLUE,
@@ -64,7 +64,7 @@ class CodexglueTextToText(Task):
     def fewshot_examples(self):
         """Loads and returns the few-shot examples for the task if they exist."""
         with open(
-            "lm_eval/tasks/few_shot_examples/codexglue_text_to_text_few_shot_prompts.json",
+            "bigcode_eval/tasks/few_shot_examples/codexglue_text_to_text_few_shot_prompts.json",
             "r",
         ) as file:
             examples = json.load(file)

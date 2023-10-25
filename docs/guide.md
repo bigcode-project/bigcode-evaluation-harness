@@ -16,10 +16,10 @@ pip install -r requirements.txt
 
 ## Creating Your Task File
 
-From the `bigcode-evaluation-harness` project root, copy over the `new_task.py` template to `lm_eval/tasks`.
+From the `bigcode-evaluation-harness` project root, copy over the `new_task.py` template to `bigcode_eval/tasks`.
 
 ```sh
-cp template/new_task.py lm_eval/tasks/<task-name>.py
+cp template/new_task.py bigcode_eval/tasks/<task-name>.py
 ```
 
 ## Task Heading
@@ -81,11 +81,11 @@ def get_prompt(self, doc):
     return ""
 ```
 
-If the prompt involves few-shot examples, you first need to save them in a json `<task_name>_few_shot_prompts.json` in `lm_eval/tasks/few_shot_example` and then load them in `fewshot_examples` method like this:
+If the prompt involves few-shot examples, you first need to save them in a json `<task_name>_few_shot_prompts.json` in `bigcode_eval/tasks/few_shot_example` and then load them in `fewshot_examples` method like this:
 
 ```python
 def fewshot_examples(self):
-    with open("lm_eval/tasks/few_shot_examples/<task_name>_few_shot_prompts.json", "r") as file:
+    with open("bigcode_eval/tasks/few_shot_examples/<task_name>_few_shot_prompts.json", "r") as file:
         examples = json.load(file)
     return examples
 ```
@@ -113,12 +113,12 @@ def process_results(self, generations, references):
     return {}
 ```
 
-You need to load your metric and run it. Check Hugging Face `evaluate` [library](https://huggingface.co/docs/evaluate/index) for the available metrics. For example [code_eval](https://huggingface.co/spaces/evaluate-metric/code_eval) for pass@k, [BLEU](https://huggingface.co/spaces/evaluate-metric/bleu) for BLEU score and [apps_metric](https://huggingface.co/spaces/codeparrot/apps_metric) are implemented. If you cannot find your desired metric, you can either add it to the `evaluate` library or implement it in the `lm_eval/tasks/custom_metrics` folder and import it from there.
+You need to load your metric and run it. Check Hugging Face `evaluate` [library](https://huggingface.co/docs/evaluate/index) for the available metrics. For example [code_eval](https://huggingface.co/spaces/evaluate-metric/code_eval) for pass@k, [BLEU](https://huggingface.co/spaces/evaluate-metric/bleu) for BLEU score and [apps_metric](https://huggingface.co/spaces/codeparrot/apps_metric) are implemented. If you cannot find your desired metric, you can either add it to the `evaluate` library or implement it in the `bigcode_eval/tasks/custom_metrics` folder and import it from there.
 
 
 ### Registering Your Task
 
-Now's a good time to register your task to expose it for usage. All you'll need to do is import your task module in `lm_eval/tasks/__init__.py` and provide an entry in the `TASK_REGISTRY`  dictionary with the key as the name of your benchmark task (in the form it'll be referred to in the command line) and the value as the task class. See how it's done for other tasks in the [file](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/lm_eval/tasks/__init__.py).
+Now's a good time to register your task to expose it for usage. All you'll need to do is import your task module in `bigcode_eval/tasks/__init__.py` and provide an entry in the `TASK_REGISTRY`  dictionary with the key as the name of your benchmark task (in the form it'll be referred to in the command line) and the value as the task class. See how it's done for other tasks in the [file](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/__init__.py).
 
 ## Task submission
 
@@ -136,7 +136,7 @@ Few-shot tasks are easier to conduct, but if you need to add the finetuning scri
 ## Code formatting
 You can format your changes and perform `black` standard checks
 ```sh
-black lm_eval/tasks/<task-name>.py
+black bigcode_eval/tasks/<task-name>.py
 ```
 ## Task documentation
 Please document your task with advised parameters for execution from litterature in the [docs](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md) like it's done for the other benchamrks.

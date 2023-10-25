@@ -4,7 +4,7 @@ import itertools
 import re
 
 from evaluate import load
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 import tqdm
 
 def mutate_code(

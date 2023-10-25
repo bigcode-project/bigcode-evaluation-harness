@@ -1,37 +1,38 @@
-"""Mapping Language to Code in Programmatic Context (Concode)
-https://arxiv.org/abs/1808.09588
+"""Learning to Mine Aligned Code and Natural Language Pairs from Stack Overflow
+https://arxiv.org/pdf/1805.08949.pdf
 
-CodeXGLUE: A Machine Learning Benchmark Dataset for Code Understanding and Generation
-https://arxiv.org/abs/2102.04664
+Python Code generation with CoNaLa. It is a benchmark of code and natural language pairs, for the evaluation of code generation tasks. 
+The dataset was crawled from Stack Overflow, automatically filtered, then curated by annotators,
+split into 2,379 training and 500 test examples.
 
-Java code generation in CodeXGLUE text-to-code dataset (built from Concode dataset)
-Available at https://huggingface.co/datasets/code_x_glue_ct_code_to_text
-2000 samples are available in the test set.
-
+Homepage: https://conala-corpus.github.io/
 Here we use two-shot evaluation (the original paper evaluates finetuned models)
 """
+
 import json
 
 from evaluate import load
 
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 
 _CITATION = """
-@article{iyer2018mapping,
-  title={Mapping language to code in programmatic context},
-  author={Iyer, Srinivasan and Konstas, Ioannis and Cheung, Alvin and Zettlemoyer, Luke},
-  journal={arXiv preprint arXiv:1808.09588},
-  year={2018}
+@inproceedings{yin2018learning,
+  title={Learning to mine aligned code and natural language pairs from stack overflow},
+  author={Yin, Pengcheng and Deng, Bowen and Chen, Edgar and Vasilescu, Bogdan and Neubig, Graham},
+  booktitle={2018 IEEE/ACM 15th international conference on mining software repositories (MSR)},
+  pages={476--486},
+  year={2018},
+  organization={IEEE}
 }
 """
 
 
-class Concode(Task):
+class Conala(Task):
     """A task represents an entire benchmark including its dataset, problems,
     answers, generation settings and evaluation methods.
     """
 
-    DATASET_PATH = "code_x_glue_tc_text_to_code"
+    DATASET_PATH = "neulab/conala"
 
     def __init__(self):
         super().__init__(
@@ -41,13 +42,12 @@ class Concode(Task):
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        # test split of the dataset doesn't have targets
-        return self.dataset["validation"]
+        return self.dataset["test"]
 
     def fewshot_examples(self):
         """Loads and returns the few-shot examples for the task if they exist."""
         with open(
-            "lm_eval/tasks/few_shot_examples/concode_few_shot_prompts.json", "r"
+            "bigcode_eval/tasks/few_shot_examples/conala_few_shot_prompts.json", "r"
         ) as file:
             examples = json.load(file)
         return examples
@@ -69,16 +69,15 @@ class Concode(Task):
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
         examples = self.fewshot_examples()
-        text = doc["nl"].split("concode_field_sep")[0].strip()
-        if text.endswith("."):
-            text = text[:-1].strip()
-        entry = "Answer the following instructions in a one line of Java code:\n"
+        text_column = "rewritten_intent" if doc["rewritten_intent"] else "intent"
+        text = doc[text_column].strip()
+        entry = "Answer the following instructions in one line of Python code:\n"
         prompt = self.two_shot_prompt(entry, text, examples)
         return prompt
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
-        return doc["code"]
+        return doc["snippet"]
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
