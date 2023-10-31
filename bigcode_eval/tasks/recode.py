@@ -7,6 +7,7 @@ This task allows to run the released perturbed HumanEval benchmark, and compute 
 """
 from collections import defaultdict
 from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 
 from evaluate import load
 
@@ -138,8 +139,7 @@ class GeneralPerturbedHumanEval(Task):
         :return: dict[str: float]
         """
 
-        code_metric = load("code_eval")
-        _, detailed_results = code_metric.compute(
+        _, detailed_results = compute_code_eval(
             references=[ref["test_code"] for ref in references],
             predictions=generations,
         )

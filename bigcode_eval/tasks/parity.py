@@ -5,6 +5,7 @@ import re
 
 from evaluate import load
 from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 import tqdm
 
 def mutate_code(
@@ -128,11 +129,10 @@ class Parity(Task):
         :param references: list(str)
             list of str containing refrences
         """
-        code_metric = load("code_eval")
         out = {}
         # Compute metrics for each number of bugs
         for idx, gens in tqdm.tqdm(enumerate(generations), total=len(generations)):
-            results, _ = code_metric.compute(
+            results, _ = compute_code_eval(
                 references=[self.parity_tests for _ in gens],
                 predictions=[[g] for g in gens],
             )

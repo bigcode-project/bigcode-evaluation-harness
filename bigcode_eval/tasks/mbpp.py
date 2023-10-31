@@ -15,6 +15,7 @@ import re
 from evaluate import load
 
 from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 
 _CITATION = """
 @article{austin2021program,
@@ -96,8 +97,7 @@ class MBPP(Task):
         :param references: list(str)
             list of str containing refrences
         """
-        code_metric = load("code_eval")
-        results, _ = code_metric.compute(
+        results, _ = compute_code_eval(
             references=references,
             predictions=generations,
         )
