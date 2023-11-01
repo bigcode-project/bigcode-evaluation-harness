@@ -48,9 +48,10 @@ RUN mkdir /usr/multiple && wget https://repo.mavenlibs.com/maven/org/javatuples/
 RUN apt-get update -yqq && apt-get install -yqq lua-unit
 
 # Standard requirements
-COPY . /app
 WORKDIR /app
+COPY ./requirements.txt /app/requirements.txt
+RUN pip3 install -r requirements.txt
+COPY . /app
 RUN test -f /app/generations.json && rm /app/generations.json || true
 
-RUN pip3 install .
 CMD ["python3", "main.py"]
