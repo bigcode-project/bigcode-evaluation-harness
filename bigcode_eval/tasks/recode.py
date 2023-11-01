@@ -9,9 +9,6 @@ from collections import defaultdict
 from bigcode_eval.base import Task
 from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 
-from evaluate import load
-
-from datasets import load_dataset
 import numpy as np
 
 _CITATION = """

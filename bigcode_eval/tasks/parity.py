@@ -3,7 +3,6 @@
 import itertools
 import re
 
-from evaluate import load
 from bigcode_eval.base import Task
 from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 import tqdm
