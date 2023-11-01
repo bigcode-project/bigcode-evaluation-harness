@@ -73,7 +73,6 @@ def unsafe_execute(check_program, result, timeout):
             exec_globals = {}
             # with swallow_io():
             with time_limit(timeout):
-                print(check_program)
                 exec(check_program, exec_globals)
             result.append("passed")
         except TimeoutException:

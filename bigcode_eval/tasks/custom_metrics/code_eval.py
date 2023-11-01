@@ -164,6 +164,8 @@ def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, ti
     correct = np.array(correct)
 
     ks = k
+    if not isinstance(ks, (list, tuple)):
+        ks = [ks]
     pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
 
     return pass_at_k, results
