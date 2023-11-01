@@ -166,3 +166,5 @@ cython_debug/
 # Script outputs
 evaluation*.json
 generations*.json
+
+playground/

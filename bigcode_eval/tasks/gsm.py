@@ -65,8 +65,8 @@ def create_all_tasks():
 
 def create_task(cls, evaluation_type):
     class Gsm(cls):
-        def __init__(self):
-            super().__init__(evaluation_type)
+        def __init__(self, **kwargs):
+            super().__init__(evaluation_type, **kwargs)
 
     return Gsm
 

@@ -33,11 +33,13 @@ class Concode(Task):
 
     DATASET_PATH = "code_x_glue_tc_text_to_code"
 
-    def __init__(self):
+    def __init__(self, max_order=4, smooth=True):
         super().__init__(
             stop_words=["\n"],
             requires_execution=False,
         )
+        self.max_order = max_order
+        self.smooth = smooth
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -102,6 +104,6 @@ class Concode(Task):
         bleu = load("bleu")
         gens = [gen[0] for gen in generations]
         results = bleu.compute(
-            references=references, predictions=gens, max_order=4, smooth=True
+            references=references, predictions=gens, max_order=self.max_order, smooth=self.smooth
         )
         return results

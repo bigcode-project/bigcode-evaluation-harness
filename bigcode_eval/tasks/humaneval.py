@@ -37,8 +37,8 @@ def create_all_tasks():
 
 def create_task(strip_prompt):
     class HumanEval(GeneralHumanEval):
-        def __init__(self):
-            super().__init__(strip_prompt)
+        def __init__(self, **kwargs):
+            super().__init__(strip_prompt, **kwargs)
 
     return HumanEval
 
@@ -50,12 +50,15 @@ class GeneralHumanEval(Task):
 
     DATASET_PATH = "openai_humaneval"
 
-    def __init__(self, strip_prompt):
+    def __init__(self, strip_prompt, k=[1, 10, 100], num_workers=16, timeout=3.0):
         super().__init__(
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```"],
             requires_execution=True,
         )
         self.strip_prompt = strip_prompt
+        self.k = k
+        self.num_workers = num_workers
+        self.timeout = timeout
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -112,6 +115,8 @@ class GeneralHumanEval(Task):
         results, _ = compute_code_eval(
             references=references,
             predictions=generations,
-            num_workers=4,
+            k=self.k,
+            num_workers=self.num_workers,
+            timeout=self.timeout,
         )
         return results

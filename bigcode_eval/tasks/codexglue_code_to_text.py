@@ -46,8 +46,8 @@ def create_all_tasks():
 
 def create_task(language):
     class CodeToText(GeneralCodeToText):
-        def __init__(self):
-            super().__init__(language)
+        def __init__(self, **kwargs):
+            super().__init__(language, **kwargs)
 
     return CodeToText
 
