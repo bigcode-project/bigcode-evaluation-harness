@@ -38,7 +38,7 @@ def check_correctness(check_program, timeout, task_id, completion_id):
 
     p = multiprocessing.Process(target=unsafe_execute, args=(check_program, result, timeout))
     p.start()
-    p.join(timeout=timeout + 3)
+    p.join(timeout=timeout + 1)
     if p.is_alive():
         p.kill()
 
@@ -71,9 +71,9 @@ def unsafe_execute(check_program, result, timeout):
         # Run program.
         try:
             exec_globals = {}
-            # with swallow_io():
-            with time_limit(timeout):
-                exec(check_program, exec_globals)
+            with swallow_io():
+                with time_limit(timeout):
+                    exec(check_program, exec_globals)
             result.append("passed")
         except TimeoutException:
             result.append("timed out")
