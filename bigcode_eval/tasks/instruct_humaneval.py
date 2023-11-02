@@ -8,9 +8,9 @@ They were handwritten to ensure not to be included in the training set of code g
 Homepage: https://github.com/openai/human-eval
 """
 
-from evaluate import load
 from bigcode_eval.base import Task
 from bigcode_eval.utils import remove_after_return
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 
 _CITATION = ""
 
@@ -78,8 +78,7 @@ class InstructHumanEval(Task):
         :param references: list(str)
             list of str containing references
         """
-        code_metric = load("code_eval")
-        results, _ = code_metric.compute(
+        results, _ = compute_code_eval(
             references=references,
             predictions=generations,
         )

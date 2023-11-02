@@ -36,8 +36,8 @@ def create_all_tasks():
 
 def create_task(level):
     class APPS(GeneralAPPS):
-        def __init__(self):
-            super().__init__(level)
+        def __init__(self, **kwargs):
+            super().__init__(level, **kwargs)
 
     return APPS
 
@@ -50,12 +50,13 @@ class GeneralAPPS(Task):
     DATASET_PATH = "codeparrot/apps"
     DATASET_NAME = None
 
-    def __init__(self, level):
+    def __init__(self, level, k_list=[1, 10, 100]):
         self.DATASET_NAME = level
         super().__init__(
             stop_words=["\nQUESTION", "\n---", "\nANSWER"],
             requires_execution=True,
         )
+        self.k_list = k_list
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -115,7 +116,9 @@ class GeneralAPPS(Task):
             list of str containing refrences (not needed for APPS Task)
         """
         code_metric = load("codeparrot/apps_metric")
+        if level is None:
+            level = self.DATASET_NAME
         results = code_metric.compute(
-            predictions=generations, k_list=[1, 10, 100], level=self.DATASET_NAME
+            predictions=generations, k_list=self.k_list, level=self.DATASET_NAME
         )
         return results
