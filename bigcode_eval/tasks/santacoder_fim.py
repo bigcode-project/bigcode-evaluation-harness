@@ -26,18 +26,20 @@ FIM_SUFFIX = "<fim_suffix>"
 EOD = "<|endoftext|>"
 
 
-def initialize_empty_metrics() -> Dict[str, float]:
+def initialize_empty_metrics(languages: list[str]) -> Dict[str, float]:
     metrics = {}
-    for lang in LANGUAGES:
+    for lang in languages:
         metrics[f"n_accurate_{lang}"] = 0.0
         metrics[f"n_count_{lang}"] = 0.0
     return metrics
 
 
 # TODO (Max): add docstrings
-def aggregate_per_lang_accuracy(metrics: Dict[str, float]) -> Dict[str, float]:
+def aggregate_per_lang_accuracy(
+    metrics: Dict[str, float], languages: list[str]
+) -> Dict[str, float]:
     em_metrics = {}
-    for lang in LANGUAGES:
+    for lang in languages:
         # avoid div by 0
         acc = (
             metrics[f"n_accurate_{lang}"] / metrics[f"n_count_{lang}"]
@@ -73,7 +75,6 @@ class SantaCoderFIM(Task):
         """
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
-        # correct_code = self.get_reference(doc)
         output = generation[len(prompt) :]
         return self._stop_at_stop_token(output, EOD)
 
@@ -86,7 +87,7 @@ class SantaCoderFIM(Task):
             list of str containing refrences
         :return: dict[str: float]
         """
-        metrics = initialize_empty_metrics()
+        metrics = initialize_empty_metrics(LANGUAGES)
         for idx, (gen, reference) in tqdm(enumerate(zip(generations, references))):
             language = self.get_dataset()[idx]["language"]
             for g in gen:
@@ -94,6 +95,6 @@ class SantaCoderFIM(Task):
 
             metrics[f"n_count_{language}"] += len(gen)
 
-        em_metrics = aggregate_per_lang_accuracy(metrics)
+        em_metrics = aggregate_per_lang_accuracy(metrics, LANGUAGES)
 
         return em_metrics
