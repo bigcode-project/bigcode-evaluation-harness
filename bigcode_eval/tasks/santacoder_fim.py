@@ -23,7 +23,7 @@ LANGUAGES = [
 FIM_PREFIX = "<fim_prefix>"
 FIM_MIDDLE = "<fim_middle>"
 FIM_SUFFIX = "<fim_suffix>"
-EOD = "<|endoftext|>"
+# EOD = "<|endoftext|>"
 
 
 def initialize_empty_metrics(languages: list[str]) -> Dict[str, float]:
@@ -53,6 +53,13 @@ def aggregate_per_lang_accuracy(
 class SantaCoderFIM(Task):
     DATASET_PATH = "bigcode/santacoder-fim-task"
 
+    def __init__(self):
+        stop_words = ["<|endoftext|>"]
+        super().__init__(
+            stop_words=stop_words,
+            requires_execution=False,
+        )
+
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
         dataset = self.dataset["train"]
@@ -76,7 +83,7 @@ class SantaCoderFIM(Task):
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
         output = generation[len(prompt) :]
-        return self._stop_at_stop_token(output, EOD)
+        return self._stop_at_stop_token(output, self.stop_words)
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
