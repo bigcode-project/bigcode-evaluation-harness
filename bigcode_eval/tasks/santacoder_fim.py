@@ -67,7 +67,7 @@ class SantaCoderFIM(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        return f"""{FIM_PREFIX}{doc["prompt"]}{FIM_SUFFIX}{doc["suffix"]}{FIM_MIDDLE}{FIM_MIDDLE}"""
+        return f"""{FIM_PREFIX}{doc["prompt"]}{FIM_SUFFIX}{doc["suffix"]}{FIM_MIDDLE}"""
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
