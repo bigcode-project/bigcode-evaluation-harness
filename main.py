@@ -121,6 +121,12 @@ def parse_args():
         help="Optional offset to start from when limiting the number of samples",
     )
     parser.add_argument(
+        "--save_every_k_samples",
+        type=int,
+        default=-1,
+        help="Optional saving after every k samples",
+    )
+    parser.add_argument(
         "--postprocess",
         action="store_false",
         help="Postprocess model outputs before execution, always on except during generation tests",
