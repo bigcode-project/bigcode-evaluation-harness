@@ -1,3 +1,4 @@
+import os
 import fnmatch
 import json
 import warnings
@@ -163,6 +164,12 @@ def parse_args():
         "--save_generations",
         action="store_true",
         help="Whether to save code generations",
+    )
+    parser.add_argument(
+        "--save_generations_intermediate_path",
+        type=str,
+        default="generations.json",
+        help="Path for saving the intermediate code generations",
     )
     parser.add_argument(
         "--save_generations_path",
@@ -335,18 +342,19 @@ def main():
             if args.generation_only:
                 if accelerator.is_main_process:
                     print("generation mode only")
-                generations, references = evaluator.generate_text(task)
+                generations, references = evaluator.generate_text(task)  # TODO (Max): pass intermediate generations file here
                 if accelerator.is_main_process:
                     # TODO (Max): refactor this with evaluator.save_json_files()?
-                    with open(args.save_generations_path, "w") as fp:
-                        json.dump(generations, fp)
-                        print(f"generations were saved at {args.save_generations_path}")
-                    if args.save_references:
-                        with open("references.json", "w") as fp:
-                            json.dump(references, fp)
-                            print("references were saved")
+                    save_generations_path = f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
+                    save_references_path = f"references_{task}.json"
+                    evaluator.save_json_files(
+                        generations,
+                        references,
+                        save_generations_path,
+                        save_references_path,
+                    )
             else:
-                results[task] = evaluator.evaluate(task)
+                results[task] = evaluator.evaluate(task)  # TODO (Max): pass intermediate generations file here
 
     # Save all args to config
     results["config"] = vars(args)
