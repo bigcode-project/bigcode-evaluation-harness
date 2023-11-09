@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from tqdm import tqdm
 
@@ -26,7 +26,7 @@ FIM_SUFFIX = "<fim_suffix>"
 # EOD = "<|endoftext|>"
 
 
-def initialize_empty_metrics(languages: list[str]) -> Dict[str, float]:
+def initialize_empty_metrics(languages: List[str]) -> Dict[str, float]:
     metrics = {}
     for lang in languages:
         metrics[f"n_accurate_{lang}"] = 0.0
@@ -36,7 +36,7 @@ def initialize_empty_metrics(languages: list[str]) -> Dict[str, float]:
 
 # TODO (Max): add docstrings
 def aggregate_per_lang_accuracy(
-    metrics: Dict[str, float], languages: list[str]
+    metrics: Dict[str, float], languages: List[str]
 ) -> Dict[str, float]:
     em_metrics = {}
     for lang in languages:
