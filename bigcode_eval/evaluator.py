@@ -88,6 +88,7 @@ class Evaluator:
         intermediate_save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}-intermediate.json"
 
         for iter, data_chunk in enumerate(dataset_chunks):
+            curr_sample_idx = len(generations)  
             generation_chunk = parallel_generations(
                 task,
                 Dataset.from_dict(data_chunk),
@@ -97,6 +98,7 @@ class Evaluator:
                 n_tasks=n_tasks,
                 args=self.args,
                 curr_iter=iter,  # Note: this is because we manually change limit_start to 0 if curr_iter > 0
+                curr_sample_idx=curr_sample_idx,  # curr_sample_idx will be used in `complete_code` so we don't mess up indexing during post-process
             )
             generations.extend(generation_chunk)
 
