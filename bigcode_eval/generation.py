@@ -37,7 +37,18 @@ class TooLongFunctionCriteria(StoppingCriteria):
         return input_ids.shape[1] > int(self.input_length * self.multiplier)
         
 
-def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args, curr_sample_idx, save_every_k_samples, intermediate_save_generations_path):
+def parallel_generations(
+        task,
+        dataset,
+        accelerator,
+        model,
+        tokenizer,
+        n_tasks,
+        curr_sample_idx,
+        save_every_k_samples,
+        intermediate_save_generations_path,
+        args,
+):
     if args.load_generations_path:
         # load generated code
         with open(args.load_generations_path) as fp:

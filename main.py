@@ -3,6 +3,8 @@ import fnmatch
 import json
 import warnings
 
+from typing import List, Optional
+
 import datasets
 import torch
 import transformers
@@ -166,10 +168,10 @@ def parse_args():
         help="Whether to save code generations",
     )
     parser.add_argument(
-        "--save_generations_intermediate_path",
+        "--load_generations_intermediate_paths",
         type=str,
-        default="generations.json",
-        help="Path for saving the intermediate code generations",
+        nargs="*",
+        help="List of paths for saving the intermediate code generations",
     )
     parser.add_argument(
         "--save_generations_path",
@@ -338,13 +340,28 @@ def main():
 
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
-        for task in task_names:
+        if (
+            args.load_generations_intermediate_paths
+            and len(args.load_generations_intermediate_paths) != len(task_names)
+        ):
+            raise ValueError(
+                "If passing --load_generations_intermediate_paths, \
+                must pass equal number of files as number of tasks"
+            )
+
+        for idx, task in enumerate(task_names):
+            intermediate_generations = None
+            if args.load_generations_intermediate_paths:
+                with open(args.load_generations_intermediate_paths[idx], "r") as f_in:
+                    # intermediate_generations: list[list[str | None]] of len n_tasks
+                    # where list[i] = generated codes or empty
+                    intermediate_generations = json.load(f_in)
+
             if args.generation_only:
                 if accelerator.is_main_process:
                     print("generation mode only")
-                generations, references = evaluator.generate_text(task)  # TODO (Max): pass intermediate generations file here
+                generations, references = evaluator.generate_text(task, intermediate_generations)  # TODO (Max): pass intermediate generations file here
                 if accelerator.is_main_process:
-                    # TODO (Max): refactor this with evaluator.save_json_files()?
                     save_generations_path = f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
                     save_references_path = f"references_{task}.json"
                     evaluator.save_json_files(
@@ -354,7 +371,7 @@ def main():
                         save_references_path,
                     )
             else:
-                results[task] = evaluator.evaluate(task)  # TODO (Max): pass intermediate generations file here
+                results[task] = evaluator.evaluate(task, intermediate_generations)  # TODO (Max): pass intermediate generations file here
 
     # Save all args to config
     results["config"] = vars(args)

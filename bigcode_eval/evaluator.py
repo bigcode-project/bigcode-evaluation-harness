@@ -42,7 +42,7 @@ class Evaluator:
         self.allow_code_execution = args.allow_code_execution
 
     # TODO (Max): add in the passed list of generations to start from an intermediate checkpoint
-    def generate_text(self, task_name):  # TODO (Max): pass intermediate generations file here
+    def generate_text(self, task_name, intermediate_generations):  # TODO (Max): pass intermediate generations file here
         task = tasks.get_task(task_name, self.args)
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
@@ -58,25 +58,25 @@ class Evaluator:
 
         generations = []  # list[list[str | None]] (list of a list of generations)
         # Note (Max): when passing an intermediate list of generations, the len would be the same as n_tasks
-        # so need to subset by 
-        # generations = [gen for gen in loaded_generations if len(gen) > 0] or [gen for gen in loaded_generations if gen]
-        
+        # so need to subset by [gen for gen in intermediate_generations if gen]
+        if intermediate_generations:
+            generations = [gen for gen in intermediate_generations if gen]
         intermediate_save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}_intermediate.json"
+        curr_sample_idx = len(generations)
 
-        curr_sample_idx = len(generations)  
-        generation_chunk = parallel_generations(
+        new_generations = parallel_generations(
             task,
             dataset,
             self.accelerator,
             self.model,
             self.tokenizer,
             n_tasks=n_tasks,
-            args=self.args,
             curr_sample_idx=curr_sample_idx,  # curr_sample_idx will added to limit_start to fix indexing
-            save_every_k_samples = self.args.save_every_k_samples,
-            intermediate_save_generations_path=intermediate_save_generations_path
+            save_every_k_samples=self.args.save_every_k_samples,
+            intermediate_save_generations_path=intermediate_save_generations_path,
+            args=self.args,
         )
-        generations.extend(generation_chunk)
+        generations.extend(new_generations)
 
 
         if len(generations[0]) > self.args.n_samples:
