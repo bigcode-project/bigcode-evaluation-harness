@@ -85,7 +85,7 @@ class Evaluator:
         chunk_size = self.args.save_every_k_samples if self.args.save_every_k_samples >= 1 else len(references)
         dataset_chunks = chunk_list(dataset, chunk_size)
         
-        intermediate_save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}-intermediate.json"
+        intermediate_save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}_intermediate.json"
 
         for iter, data_chunk in enumerate(dataset_chunks):
             curr_sample_idx = len(generations)  
@@ -108,7 +108,7 @@ class Evaluator:
                     generations,
                     references[:len(generations)],
                     intermediate_save_generations_path,
-                    "references-intermediate.json"
+                    f"references_{task_name}_intermediate.json"
                 )
 
         if len(generations[0]) > self.args.n_samples:
@@ -127,7 +127,8 @@ class Evaluator:
 
         if self.accelerator.is_main_process:
             if not self.args.load_generations_path:
-                self.save_json_files(generations, references, self.args.save_generations_path, "references.json")
+                save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}.json"
+                self.save_json_files(generations, references, save_generations_path, f"references_{task_name}.json")
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
