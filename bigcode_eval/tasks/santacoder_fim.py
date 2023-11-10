@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from tqdm import tqdm
 
 from bigcode_eval.base import Task
@@ -19,18 +17,15 @@ LANGUAGES = [
     "java",
 ]
 
-# TODO (Max): make this configurable?
-# FIM_PREFIX = "<fim_prefix>"
-# FIM_MIDDLE = "<fim_middle>"
-# FIM_SUFFIX = "<fim_suffix>"
 
-# FIM_PREFIX = "<fim-prefix>"
-# FIM_MIDDLE = "<fim-middle>"
-# FIM_SUFFIX = "<fim-suffix>"
-# EOD = "<|endoftext|>"
+def create_all_tasks():
+    return {
+        "santacoder_fim": SantaCoderFIM,
+        "starcoder_fim": StarCoderFIM,
+    }
 
 
-def initialize_empty_metrics(languages: List[str]) -> Dict[str, float]:
+def initialize_empty_metrics(languages: list[str]) -> dict[str, float]:
     metrics = {}
     for lang in languages:
         metrics[f"n_accurate_{lang}"] = 0.0
@@ -40,8 +35,8 @@ def initialize_empty_metrics(languages: List[str]) -> Dict[str, float]:
 
 # TODO (Max): add docstrings
 def aggregate_per_lang_accuracy(
-    metrics: Dict[str, float], languages: List[str]
-) -> Dict[str, float]:
+    metrics: dict[str, float], languages: list[str]
+) -> dict[str, float]:
     em_metrics = {}
     for lang in languages:
         # avoid div by 0
@@ -65,7 +60,7 @@ class SantaCoderFIM(Task):
     DATASET_PATH = "bigcode/santacoder-fim-task"
 
     def __init__(self, fim_prefix = "<fim-prefix>",...):
-    
+
 class StarCoder(SantaCoderFIM):
     DATASET_PATH = "bigcode/santacoder-fim-task"
 
@@ -74,7 +69,7 @@ class StarCoder(SantaCoderFIM):
         super().__init__(
             stop_words=stop_words,
             requires_execution=False,
-            fim_prefix = "<fim-prefix>", 
+            fim_prefix = "<fim-prefix>",
             ...
         )
 """
@@ -83,7 +78,12 @@ class StarCoder(SantaCoderFIM):
 class SantaCoderFIM(Task):
     DATASET_PATH = "bigcode/santacoder-fim-task"
 
-    def __init__(self, fim_prefix: str = "<fim-prefix>", fim_middle: str = "<fim-middle>", fim_suffix: str = "<fim-suffix>"):
+    def __init__(
+        self,
+        fim_prefix: str = "<fim-prefix>",
+        fim_middle: str = "<fim-middle>",
+        fim_suffix: str = "<fim-suffix>",
+    ):
         stop_words = ["<|endoftext|>"]
         super().__init__(
             stop_words=stop_words,
@@ -92,7 +92,6 @@ class SantaCoderFIM(Task):
         self.fim_prefix = fim_prefix
         self.fim_middle = fim_middle
         self.fim_suffix = fim_suffix
-
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -140,3 +139,20 @@ class SantaCoderFIM(Task):
         em_metrics = aggregate_per_lang_accuracy(metrics, LANGUAGES)
 
         return em_metrics
+
+
+class StarCoderFIM(SantaCoderFIM):
+    DATASET_PATH = "bigcode/santacoder-fim-task"
+
+    def __init__(self):
+        fim_prefix = ("<fim_prefix>",)
+        fim_middle = ("<fim_middle>",)
+        fim_suffix = ("<fim_suffix>",)
+        stop_words = ["<|endoftext|>"]
+        super().__init__(
+            stop_words=stop_words,
+            requires_execution=False,
+            fim_prefix=fim_prefix,
+            fim_middle=fim_middle,
+            fim_suffix=fim_suffix,
+        )

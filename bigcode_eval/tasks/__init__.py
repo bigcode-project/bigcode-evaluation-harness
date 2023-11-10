@@ -25,7 +25,7 @@ TASK_REGISTRY = {
     **gsm.create_all_tasks(),
     **instruct_humaneval.create_all_tasks(),
     **recode.create_all_tasks(),
-    "santacoder_fim": santacoder_fim.SantaCoderFIM,
+    **santacoder_fim.create_all_tasks(),
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))
