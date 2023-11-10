@@ -20,9 +20,13 @@ LANGUAGES = [
 ]
 
 # TODO (Max): make this configurable?
-FIM_PREFIX = "<fim_prefix>"
-FIM_MIDDLE = "<fim_middle>"
-FIM_SUFFIX = "<fim_suffix>"
+# FIM_PREFIX = "<fim_prefix>"
+# FIM_MIDDLE = "<fim_middle>"
+# FIM_SUFFIX = "<fim_suffix>"
+
+# FIM_PREFIX = "<fim-prefix>"
+# FIM_MIDDLE = "<fim-middle>"
+# FIM_SUFFIX = "<fim-suffix>"
 # EOD = "<|endoftext|>"
 
 
@@ -47,18 +51,48 @@ def aggregate_per_lang_accuracy(
             else 0
         )
         em_metrics[f"{lang} Exact Match"] = acc
+
+        # TODO: remove
+        em_metrics["metrics"] = metrics
     return em_metrics
+
+
+# Note (Max): maybe need to init 2 tasks eg
+# class StarCoderFIM(SantaCoderFIM)
+# and in constructor have the prefix/suffix/middle tokens so
+"""
+class SantaCoderFIM(Task):
+    DATASET_PATH = "bigcode/santacoder-fim-task"
+
+    def __init__(self, fim_prefix = "<fim-prefix>",...):
+    
+class StarCoder(SantaCoderFIM):
+    DATASET_PATH = "bigcode/santacoder-fim-task"
+
+        def __init__(self):
+        stop_words = ["<|endoftext|>"]
+        super().__init__(
+            stop_words=stop_words,
+            requires_execution=False,
+            fim_prefix = "<fim-prefix>", 
+            ...
+        )
+"""
 
 
 class SantaCoderFIM(Task):
     DATASET_PATH = "bigcode/santacoder-fim-task"
 
-    def __init__(self):
+    def __init__(self, fim_prefix: str = "<fim-prefix>", fim_middle: str = "<fim-middle>", fim_suffix: str = "<fim-suffix>"):
         stop_words = ["<|endoftext|>"]
         super().__init__(
             stop_words=stop_words,
             requires_execution=False,
         )
+        self.fim_prefix = fim_prefix
+        self.fim_middle = fim_middle
+        self.fim_suffix = fim_suffix
+
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -67,7 +101,7 @@ class SantaCoderFIM(Task):
 
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        return f"""{FIM_PREFIX}{doc["prompt"]}{FIM_SUFFIX}{doc["suffix"]}{FIM_MIDDLE}"""
+        return f"""{self.fim_prefix}{doc["prompt"]}{self.fim_suffix}{doc["suffix"]}{self.fim_middle}"""
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -80,10 +114,11 @@ class SantaCoderFIM(Task):
         :param idx: int
             index of doc in the dataset to which the generation belongs
         """
-        doc = self.get_dataset()[idx]
-        prompt = self.get_prompt(doc)
-        output = generation[len(prompt) :]
-        return self._stop_at_stop_token(output, self.stop_words)
+        # doc = self.get_dataset()[idx]
+        # prompt = self.get_prompt(doc)
+        # output = generation[len(prompt) :]
+        # return self._stop_at_stop_token(output, self.stop_words)
+        return generation
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -98,7 +133,7 @@ class SantaCoderFIM(Task):
         for idx, (gen, reference) in tqdm(enumerate(zip(generations, references))):
             language = self.get_dataset()[idx]["language"]
             for g in gen:
-                metrics[f"n_accurate_{language}"] += int(g == reference)
+                metrics[f"n_accurate_{language}"] += int(g.strip() == reference.strip())
 
             metrics[f"n_count_{language}"] += len(gen)
 
