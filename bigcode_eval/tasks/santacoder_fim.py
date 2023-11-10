@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 from tqdm import tqdm
 
 from bigcode_eval.base import Task
@@ -25,7 +27,7 @@ def create_all_tasks():
     }
 
 
-def initialize_empty_metrics(languages: list[str]) -> dict[str, float]:
+def initialize_empty_metrics(languages: List[str]) -> Dict[str, float]:
     metrics = {}
     for lang in languages:
         metrics[f"n_accurate_{lang}"] = 0.0
@@ -33,10 +35,9 @@ def initialize_empty_metrics(languages: list[str]) -> dict[str, float]:
     return metrics
 
 
-# TODO (Max): add docstrings
 def aggregate_per_lang_accuracy(
-    metrics: dict[str, float], languages: list[str]
-) -> dict[str, float]:
+    metrics: Dict[str, float], languages: List[str]
+) -> Dict[str, float]:
     em_metrics = {}
     for lang in languages:
         # avoid div by 0
@@ -47,32 +48,7 @@ def aggregate_per_lang_accuracy(
         )
         em_metrics[f"{lang} Exact Match"] = acc
 
-        # TODO: remove
-        em_metrics["metrics"] = metrics
     return em_metrics
-
-
-# Note (Max): maybe need to init 2 tasks eg
-# class StarCoderFIM(SantaCoderFIM)
-# and in constructor have the prefix/suffix/middle tokens so
-"""
-class SantaCoderFIM(Task):
-    DATASET_PATH = "bigcode/santacoder-fim-task"
-
-    def __init__(self, fim_prefix = "<fim-prefix>",...):
-
-class StarCoder(SantaCoderFIM):
-    DATASET_PATH = "bigcode/santacoder-fim-task"
-
-        def __init__(self):
-        stop_words = ["<|endoftext|>"]
-        super().__init__(
-            stop_words=stop_words,
-            requires_execution=False,
-            fim_prefix = "<fim-prefix>",
-            ...
-        )
-"""
 
 
 class SantaCoderFIM(Task):
@@ -84,7 +60,7 @@ class SantaCoderFIM(Task):
         fim_middle: str = "<fim-middle>",
         fim_suffix: str = "<fim-suffix>",
     ):
-        stop_words = ["<|endoftext|>"]
+        stop_words = ["<|endoftext|>", "<|filename|>"]
         super().__init__(
             stop_words=stop_words,
             requires_execution=False,
@@ -113,11 +89,11 @@ class SantaCoderFIM(Task):
         :param idx: int
             index of doc in the dataset to which the generation belongs
         """
-        # doc = self.get_dataset()[idx]
-        # prompt = self.get_prompt(doc)
-        # output = generation[len(prompt) :]
-        # return self._stop_at_stop_token(output, self.stop_words)
-        return generation
+        doc = self.get_dataset()[idx]
+        prompt = self.get_prompt(doc)
+        output = generation[len(prompt) :]
+        return self._stop_at_stop_token(output, self.stop_words)
+        # return generation
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
