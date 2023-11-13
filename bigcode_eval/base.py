@@ -25,9 +25,6 @@ class Task(ABC):
         self.stop_words = stop_words
         self.requires_execution = requires_execution
         try:
-            # TODO (Max): remove this 
-            import datasets
-            datasets.builder.has_sufficient_disk_space = lambda needed_bytes, directory='.': True
             self.dataset = load_dataset(path=self.DATASET_PATH, name=self.DATASET_NAME)
         except Exception as e:
             warn(
