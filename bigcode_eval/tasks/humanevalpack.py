@@ -565,18 +565,10 @@ class HumanEvalExplainDescribeBase(HumanEvalPack):
             
             func_def = doc["declaration"]
             func_solution = doc["canonical_solution"]
-            if self.DATASET_NAME in "python":
+            if self.DATASET_NAME in ["python", "cpp", "js", "go", "rust"]:
                 prompt = f"<fim_prefix>{func_def}    \"\"\" <fim_suffix>\n    \"\"\"\n    {func_solution}<fim_middle>"
-            elif self.DATASET_NAME == "cpp":
-                prompt = f"<fim_prefix>/* <fim_suffix>\n*/{func_def}{func_solution}<fim_middle>"
             elif self.DATASET_NAME == "java":
-                prompt = f"<fim_prefix>/**\n<fim_suffix>\n*/{func_def}{func_solution}<fim_middle>"
-            elif self.DATASET_NAME == "js":
-                prompt = f"<fim_prefix>/* <fim_suffix>\n*/{func_def}{func_solution}<fim_middle>"
-            elif self.DATASET_NAME == "go":
-                prompt = f"<fim_prefix>// <fim_suffix>\n{func_def}{func_solution}<fim_middle>"
-            elif self.DATASET_NAME == "rust":
-                prompt = f"<fim_prefix>/// <fim_suffix>\n{func_def}{func_solution}<fim_middle>"
+                prompt = f"<fim_prefix>/* <fim_suffix> */{func_def}{func_solution}<fim_middle>"
             else:
                 raise ValueError(f"Language {self.DATASET_NAME} not supported for StarCoderFIM")
             return prompt
