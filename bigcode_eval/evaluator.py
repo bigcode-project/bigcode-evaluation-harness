@@ -45,6 +45,10 @@ class Evaluator:
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
         n_tasks = self.args.limit if self.args.limit else len(dataset)
+        # when args.limit is None
+        # adjust n_tasks by args.limit_start to prevent out of bounds issues 
+        if not self.args.limit:
+            n_tasks -= self.args.limit_start
         references = [task.get_reference(dataset[i]) for i in range(self.args.limit_start, self.args.limit_start+n_tasks)]
 
         if self.args.check_references:
@@ -59,7 +63,7 @@ class Evaluator:
             generations = [gen for gen in intermediate_generations if gen]
             n_tasks -= len(generations)
         intermediate_save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}_intermediate.json"
-        curr_sample_idx = len(generations) - 1
+        curr_sample_idx = len(generations)
 
         new_generations = parallel_generations(
             task,
