@@ -315,10 +315,7 @@ def complete_code(
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
 
-            if save_every_k_samples >= 1 and step % save_every_k_samples == 0:
-                # Note (Max):
-                # This should be fine since we iterate over each task at a time
-                # so all generations per task would be complete before saving
+            if save_every_k_samples >= 1 and (step + 1) % save_every_k_samples == 0:
                 if not intermediate_save_generations_path:
                     raise ValueError(
                         "intermediate_save_generations_path cannot be empty!"
@@ -339,7 +336,7 @@ def complete_code(
                     print(
                         f"intermediate generations were saved at {intermediate_save_generations_path}"
                     )
-                # reset gen_token_dict
+                # reset gen_token_dict - prevent redundant decoding
                 gen_token_dict = defaultdict(list)
 
     code_gens = update_code_gens(
@@ -397,6 +394,7 @@ def update_code_gens(
                     "model output is not postprocessed, this might lower evaluation scores"
                 )
                 code_gens[sample].append(gen_code)
+    return code_gens
 
 
 def remove_after_return(code):
