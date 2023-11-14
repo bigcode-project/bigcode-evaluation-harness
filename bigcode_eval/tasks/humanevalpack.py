@@ -454,29 +454,28 @@ class HumanEvalPackGenerative(HumanEvalPack):
         with open("logs.json", "w") as f:
             json.dump(logs, f, indent=4, ensure_ascii=False)
 
-        """Debugging help
-        for i, (gen, ref) in enumerate(zip(generations, references)):
-            import time
-            starttime = time.time()            
-            results, log = code_metric.compute(
-                references=[ref],
-                predictions=[gen],
-                language=language,
-                timeout=timeout,
-            )
-            print("Took: ", time.time() - starttime)
-            with open("errors.txt", "a") as f:
-                f.write(log[0][0][1]["result"] + "\n")
-            if ("compilation error" in log[0][0][1]["result"]):
-                print("Result")
-                print(results)
-                print("Log")
-                print(log)
-                print("Gen")
-                print(gen[0])
-                print("Ref")
-                print(ref)
-        """
+        # Debugging help
+        # for i, (gen, ref) in enumerate(zip(generations, references)):
+        #     import time
+        #     starttime = time.time()            
+        #     result, log = code_metric.compute(
+        #         references=[ref],
+        #         predictions=[gen],
+        #         language=language,
+        #         timeout=timeout,
+        #     )
+            # print("Took: ", time.time() - starttime)
+            # with open("errors.txt", "a") as f:
+            #     f.write(log[0][0][1]["result"] + "\n")
+            # if ("compilation error" in log[0][0][1]["result"]):
+            #     print("Result")
+            #     print(results)
+            #     print("Log")
+            #     print(log)
+            #     print("Gen")
+            #     print(gen[0])
+            #     print("Ref")
+            #     print(ref)
         return results
 
 
@@ -562,11 +561,30 @@ class HumanEvalExplainDescribeBase(HumanEvalPack):
     
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        prompt_base = self.get_prompt_base(doc)
-        instruction = f"Provide a concise natural language description of the code using at most {len(doc['docstring'])} characters."
-        context = prompt_base + doc["canonical_solution"]
-        
-        return super().get_prompt("", instruction, context)
+        if self.prompt == "starcoderfim":
+            
+            func_def = doc["declaration"]
+            func_solution = doc["canonical_solution"]
+            if self.DATASET_NAME in "python":
+                prompt = f"<fim_prefix>{func_def}    \"\"\" <fim_suffix>\n    \"\"\"\n    {func_solution}<fim_middle>"
+            elif self.DATASET_NAME == "cpp":
+                prompt = f"<fim_prefix>/* <fim_suffix>\n*/{func_def}{func_solution}<fim_middle>"
+            elif self.DATASET_NAME == "java":
+                prompt = f"<fim_prefix>/**\n<fim_suffix>\n*/{func_def}{func_solution}<fim_middle>"
+            elif self.DATASET_NAME == "js":
+                prompt = f"<fim_prefix>/* <fim_suffix>\n*/{func_def}{func_solution}<fim_middle>"
+            elif self.DATASET_NAME == "go":
+                prompt = f"<fim_prefix>// <fim_suffix>\n{func_def}{func_solution}<fim_middle>"
+            elif self.DATASET_NAME == "rust":
+                prompt = f"<fim_prefix>/// <fim_suffix>\n{func_def}{func_solution}<fim_middle>"
+            else:
+                raise ValueError(f"Language {self.DATASET_NAME} not supported for StarCoderFIM")
+            return prompt
+        else:
+            prompt_base = self.get_prompt_base(doc)
+            instruction = f"Provide a concise natural language description of the code using at most {len(doc['docstring'])} characters."
+            context = prompt_base + doc["canonical_solution"]
+            return super().get_prompt("", instruction, context)
 
     def remove_last_block(self, text):
         for w in self.stop_words:
@@ -592,9 +610,15 @@ class HumanEvalExplainDescribeBase(HumanEvalPack):
         doc = self.get_dataset()[idx]
         prompt = self.get_prompt(doc)
         docstring_len = len(doc["docstring"])
-        gen = self.remove_last_block(generation[len(prompt):].strip()[:docstring_len]).rstrip()
-        gen = self.remove_code(gen, doc["canonical_solution"])
-        return gen
+        if self.prompt == "starcoderfim":
+            # only take the first sentence
+            doc = generation[len(prompt):].strip().split("\n")[0]
+            doc = doc.replace("<|endoftext|>", "")
+            return doc
+        else:
+            gen = self.remove_last_block(generation[len(prompt):].strip()[:docstring_len]).rstrip()
+            gen = self.remove_code(gen, doc["canonical_solution"])
+            return gen
 
     def get_reference(self, doc, get_solution=False):
         return None
@@ -633,11 +657,30 @@ class HumanEvalExplainSynthesizeBase(HumanEvalPackGenerative):
     
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from."""
-        prompt_base = self.get_prompt_base(doc)
-        instruction = f"Write functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description."
-        context = doc["description"]
-
-        return super().get_prompt(prompt_base, instruction, context)
+        if self.prompt == "starcoderfim":
+            desc = doc["description"]
+            # func_name already has the \n and the space before
+            func_name = doc["declaration"]
+            if self.DATASET_NAME == "python":
+                prompt = f"{func_name}    \"\"\" {desc} \"\"\""
+            elif self.DATASET_NAME == "cpp":
+                prompt = f"/*\n{desc}\n*/\n{func_name}"
+            elif self.DATASET_NAME == "java":
+                prompt = func_name.replace("class Solution {\n", f"class Solution {{\n    /**\n     * {desc}\n     */\n")
+            elif self.DATASET_NAME == "js":
+                prompt = f"/* {desc} */\n{func_name}"
+            elif self.DATASET_NAME == "go":
+                prompt = f"// {desc}\n{func_name}"
+            elif self.DATASET_NAME == "rust":
+                prompt = f"/// {desc} \n{func_name}"
+            else:
+                raise ValueError(f"Language {self.DATASET_NAME} not supported for StarCoderFIM")
+            return prompt
+        else:
+            prompt_base = self.get_prompt_base(doc)
+            instruction = f"Write functional code in {LANGUAGE_TO_NAME[self.DATASET_NAME]} according to the description."
+            context = doc["description"]
+            return super().get_prompt(prompt_base, instruction, context)
 
 
 class HumanEvalSynthesizeBase(HumanEvalPackGenerative):
