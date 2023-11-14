@@ -360,7 +360,9 @@ def main():
             if args.generation_only:
                 if accelerator.is_main_process:
                     print("generation mode only")
-                generations, references = evaluator.generate_text(task, intermediate_generations)  # TODO (Max): pass intermediate generations file here
+                generations, references = evaluator.generate_text(
+                    task, intermediate_generations=intermediate_generations
+                )
                 if accelerator.is_main_process:
                     save_generations_path = f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
                     save_references_path = f"references_{task}.json"
@@ -371,7 +373,9 @@ def main():
                         save_references_path,
                     )
             else:
-                results[task] = evaluator.evaluate(task, intermediate_generations)  # TODO (Max): pass intermediate generations file here
+                results[task] = evaluator.evaluate(
+                    task, intermediate_generations=intermediate_generations
+                )
 
     # Save all args to config
     results["config"] = vars(args)
