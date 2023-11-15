@@ -357,6 +357,29 @@ accelerate launch  main.py \
 ```
 If you ever get index out-of-range errors try using a number of problems `limit` that is proportional to the number of devices you are using.
 
+### SantaCoder-FIM
+[SantaCoder-FIM](https://huggingface.co/datasets/bigcode/santacoder-fim-task): 4,792 tasks for FIM insertion described in [SantaCoder: don't reach for the stars!](https://arxiv.org/abs/2301.03988). The tasks are similar to other tasks without unit tests, with two key differences:
+1. Instead of BLEU Score, Exact Match is used to score the generations.
+2. Use zero-shot setting instead of 2-shot
+
+SantaCoder-FIM includes 2 tasks:
+- `StarCoderFIM`: which uses the default FIM tokens `"<fim_prefix>", "<fim_middle>", "<fim_suffix>"`, and
+- `SantaCoderFIM`: which uses SantaCoder FIM tokens `"<fim-prefix>", "<fim-middle>", "<fim-suffix>"`
+So depending on the FIM tokens used to train the model, you will need to select the appropriate task for evaluation.
+
+We only do single generation `n_samples=1`, and use the same generation settings as before.
+Below are the commands to run the evaluation:
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks <TASK> \
+  --n_samples 1 \
+  --temperature 0.2 \
+  --batch_size 1 
+```
+If you ever get index out-of-range errors try using a number of problems `limit` that is proportional to the number of devices you are using.
+
 ## Documentation generation task
 Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text): is a benchmark for English documentation generation from for 6 programming languages: Python, Go, Ruby, Java, JavaScript and PHP. 
 

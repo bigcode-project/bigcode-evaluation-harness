@@ -121,9 +121,9 @@ class StarCoderFIM(SantaCoderFIM):
     DATASET_PATH = "bigcode/santacoder-fim-task"
 
     def __init__(self):
-        fim_prefix = ("<fim_prefix>",)
-        fim_middle = ("<fim_middle>",)
-        fim_suffix = ("<fim_suffix>",)
+        fim_prefix = "<fim_prefix>"
+        fim_middle = "<fim_middle>"
+        fim_suffix = "<fim_suffix>"
         stop_words = ["<|endoftext|>"]
         super().__init__(
             stop_words=stop_words,
