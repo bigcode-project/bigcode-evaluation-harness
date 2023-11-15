@@ -201,6 +201,9 @@ if __name__ == '__main__':
         with jsonlines.open(f"completions_{LANGUAGE}_humanevalexplaindescribe.jsonl", "r") as f:
             descriptions = [line["raw_generation"][0] for line in f]
 
+    # Equivalent to:
+    # openai.organization = os.getenv("OPENAI_ORGANIZATION")
+    # openai.api_key = os.getenv("OPENAI_API_KEY")
     litellm.organization = os.getenv("OPENAI_ORGANIZATION")
     litellm.api_key = os.getenv("OPENAI_API_KEY")
 
