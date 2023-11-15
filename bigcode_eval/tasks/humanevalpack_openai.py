@@ -171,6 +171,7 @@ class ChatWrapper:
         ]
         while True:
             try:
+                # Equivalent to response = openai.ChatCompletion.create(
                 response = litellm.completion(
                     model=self._model,
                     messages=messages,
