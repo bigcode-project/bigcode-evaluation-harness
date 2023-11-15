@@ -3,8 +3,6 @@ import fnmatch
 import json
 import warnings
 
-from typing import List, Optional
-
 import datasets
 import torch
 import transformers

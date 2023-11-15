@@ -72,10 +72,10 @@ class Evaluator:
             self.model,
             self.tokenizer,
             n_tasks=n_tasks,
+            args=self.args,
             curr_sample_idx=curr_sample_idx,  # curr_sample_idx will added to limit_start to fix indexing
             save_every_k_samples=self.args.save_every_k_samples,
             intermediate_save_generations_path=intermediate_save_generations_path,
-            args=self.args,
         )
         generations.extend(new_generations)
 

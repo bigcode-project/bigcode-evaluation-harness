@@ -1,6 +1,8 @@
 import json
 from math import ceil
 
+from typing import Optional
+
 from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
@@ -44,10 +46,10 @@ def parallel_generations(
         model,
         tokenizer,
         n_tasks,
-        curr_sample_idx,
-        save_every_k_samples,
-        intermediate_save_generations_path,
         args,
+        curr_sample_idx: int = 0,
+        save_every_k_samples: int = -1,
+        intermediate_save_generations_path: Optional[str] = None,
 ):
     if args.load_generations_path:
         # load generated code
