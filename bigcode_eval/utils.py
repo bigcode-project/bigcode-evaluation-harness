@@ -234,7 +234,7 @@ def complete_code(
     instruction_tokens=None,
     postprocess=True,
     is_wrapped=False,
-    save_every_k_samples: int = -1,
+    save_every_k_tasks: int = -1,
     intermediate_save_generations_path: Optional[str] = None,
     **gen_kwargs,
 ):
@@ -315,7 +315,7 @@ def complete_code(
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
 
-            if save_every_k_samples >= 1 and (step + 1) % save_every_k_samples == 0:
+            if save_every_k_tasks >= 1 and (step + 1) % save_every_k_tasks == 0:
                 if not intermediate_save_generations_path:
                     raise ValueError(
                         "intermediate_save_generations_path cannot be empty!"
