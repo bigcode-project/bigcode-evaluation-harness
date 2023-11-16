@@ -35,6 +35,9 @@ Below are the features and tasks of this framework:
     - [CoNaLa](https://huggingface.co/datasets/neulab/conala) for **Python** code generation (2-shot setting and evaluation with BLEU score).
     - [Concode](https://huggingface.co/datasets/code_x_glue_tc_text_to_code) for **Java** code generation (2-shot setting and evaluation with BLEU score).
     - 3 multilingual downstream classification tasks: [Java Complexity prediction](https://huggingface.co/datasets/codeparrot/codecomplex), [Java code equivalence prediction](https://huggingface.co/datasets/code_x_glue_cc_clone_detection_big_clone_bench), [C code defect prediction](https://huggingface.co/datasets/code_x_glue_cc_defect_detection).
+    - [SantaCoder-FIM](https://huggingface.co/datasets/bigcode/santacoder-fim-task) for evaluating FIM on **Python** code using Exact Match. Further details are described in [SantaCoder](https://arxiv.org/abs/2301.03988). Includes two tasks:
+        - `StarCoderFIM`: which uses the default FIM tokens `"<fim_prefix>", "<fim_middle>", "<fim_suffix>"`, and
+        - `SantaCoderFIM`: which uses SantaCoder FIM tokens `"<fim-prefix>", "<fim-middle>", "<fim-suffix>"`
 
 More details about each task can be found in  the documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md).
 ## Setup
