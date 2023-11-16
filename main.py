@@ -122,10 +122,10 @@ def parse_args():
         help="Optional offset to start from when limiting the number of samples",
     )
     parser.add_argument(
-        "--save_every_k_samples",
+        "--save_every_k_tasks",
         type=int,
         default=-1,
-        help="Optional saving after every k samples",
+        help="Optional saving after every k tasks",
     )
     parser.add_argument(
         "--postprocess",

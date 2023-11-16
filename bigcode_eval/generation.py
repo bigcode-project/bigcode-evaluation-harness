@@ -48,7 +48,7 @@ def parallel_generations(
         n_tasks,
         args,
         curr_sample_idx: int = 0,
-        save_every_k_samples: int = -1,
+        save_every_k_tasks: int = -1,
         intermediate_save_generations_path: Optional[str] = None,
 ):
     if args.load_generations_path:
@@ -150,7 +150,7 @@ def parallel_generations(
         instruction_tokens=instruction_tokens,
         postprocess=args.postprocess,
         is_wrapped=is_loaded_in_8bit or is_loaded_in_4bit,
-        save_every_k_samples=save_every_k_samples,
+        save_every_k_tasks=save_every_k_tasks,
         intermediate_save_generations_path=intermediate_save_generations_path,
         **gen_kwargs,
     )
