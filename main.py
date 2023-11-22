@@ -290,6 +290,7 @@ def main():
                 **model_kwargs,
             )
 
+            # model.train()
             original_sd = model.state_dict()
 
             recipe_file = os.path.join(args.model, 'recipe.yaml')
@@ -299,11 +300,19 @@ def main():
                 model=model,
                 recipe=recipe_file,
                 framework=Framework.pytorch,
+                device=model.device
             )
 
             # reload the state dict for the model now that architecture matches expected
             _reload_model_state(model, args.model, original_sd)
-            model.to(model.device)
+            # model.to(model.device)
+            # HOTFIX. assign proper device ids to quantwrapper again
+            # print("Starting")
+            for layer in model.model.layers:
+                # assuming each layer is contained in a single GPU, different layers maybe in different GPUs
+                # hack to enable quantwrapper(.module) to have all class members on one device.
+                layer.to(layer.self_attn.q_proj.module.weight.device)
+            model.lm_head.to(model.lm_head.module.weight.device)
         else:
             raise ValueError(
                 f"Non valid modeltype {args.modeltype}, choose from: causal, seq2seq"
