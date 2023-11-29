@@ -59,11 +59,12 @@ class SantaCoderFIM(Task):
         fim_prefix: str = "<fim-prefix>",
         fim_middle: str = "<fim-middle>",
         fim_suffix: str = "<fim-suffix>",
+        stop_words: List[str] = ["<|endoftext|>", "<|filename|>"],
+        requires_execution: bool = False
     ):
-        stop_words = ["<|endoftext|>", "<|filename|>"]
         super().__init__(
             stop_words=stop_words,
-            requires_execution=False,
+            requires_execution=requires_execution,
         )
         self.fim_prefix = fim_prefix
         self.fim_middle = fim_middle
