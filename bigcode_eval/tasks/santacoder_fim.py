@@ -125,7 +125,7 @@ class StarCoderFIM(SantaCoderFIM):
         fim_prefix = "<fim_prefix>"
         fim_middle = "<fim_middle>"
         fim_suffix = "<fim_suffix>"
-        stop_words = ["<|endoftext|>", "<|filename|>"]
+        stop_words = ["<|endoftext|>", "<|filename|>", "<file_sep>"]
         super().__init__(
             stop_words=stop_words,
             requires_execution=False,
