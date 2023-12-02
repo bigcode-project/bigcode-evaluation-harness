@@ -10,11 +10,8 @@ has been hand-verified by the authors.
 Homepage:: https://github.com/google-research/google-research/tree/master/mbpp
 """
 
-import re
-
-from evaluate import load
-
 from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 
 _CITATION = """
 @article{austin2021program,
@@ -62,20 +59,6 @@ class MBPP(Task):
         """Builds the reference solution for the doc (sample from the test dataset)."""
         return "\n".join(doc["test_list"])
 
-    @staticmethod
-    def _stop_at_stop_token(decoded_string, stop_tokens):
-        """
-        Produces the prefix of decoded_string that ends at the first occurrence of
-        a stop_token.
-        WARNING: the decoded_string *must not* include the prompt, which may have stop tokens
-        itself.
-        """
-        min_stop_index = len(decoded_string)
-        for stop_token in stop_tokens:
-            stop_index = decoded_string.find(stop_token)
-            if stop_index != -1 and stop_index < min_stop_index:
-                min_stop_index = stop_index
-        return decoded_string[:min_stop_index]
 
     def postprocess_generation(self, generation, idx):
         """Defines the postprocessing for a LM generation.
@@ -96,8 +79,7 @@ class MBPP(Task):
         :param references: list(str)
             list of str containing refrences
         """
-        code_metric = load("code_eval")
-        results, _ = code_metric.compute(
+        results, _ = compute_code_eval(
             references=references,
             predictions=generations,
         )

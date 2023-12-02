@@ -8,9 +8,9 @@ They were handwritten to ensure not to be included in the training set of code g
 Homepage: https://github.com/openai/human-eval
 """
 
-from evaluate import load
 from bigcode_eval.base import Task
 from bigcode_eval.utils import remove_after_return
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 
 _CITATION = ""
 
@@ -55,20 +55,6 @@ class InstructHumanEval(Task):
         entry_point = f"check({doc['entry_point']})"
         return "\n" + test_func + "\n" + entry_point
 
-    @staticmethod
-    def _stop_at_stop_token(decoded_string, stop_tokens):
-        """
-        Produces the prefix of decoded_string that ends at the first occurrence of
-        a stop_token.
-        WARNING: the decoded_string *must not* include the prompt, which may have stop tokens
-        itself.
-        """
-        min_stop_index = len(decoded_string)
-        for stop_token in stop_tokens:
-            stop_index = decoded_string.find(stop_token)
-            if stop_index != -1 and stop_index < min_stop_index:
-                min_stop_index = stop_index
-        return decoded_string[:min_stop_index]
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
@@ -78,8 +64,7 @@ class InstructHumanEval(Task):
         :param references: list(str)
             list of str containing references
         """
-        code_metric = load("code_eval")
-        results, _ = code_metric.compute(
+        results, _ = compute_code_eval(
             references=references,
             predictions=generations,
         )

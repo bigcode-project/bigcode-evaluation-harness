@@ -2,8 +2,8 @@
 
 import re
 
-from evaluate import load
 from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 
 _CITATION = """
 @inproceedings{lin2017quixbugs,
@@ -116,10 +116,9 @@ class QuixBugs(Task):
         :param references: list(str)
             list of str containing refrences
         """
-        code_metric = load("code_eval")
         results = {}
         for i, (gen, (name, ref)) in enumerate(zip(generations, references)):
-            sub_results, _ = code_metric.compute(
+            sub_results, _ = compute_code_eval(
                 references=[ref],
                 predictions=[gen],
                 timeout=10, # Levenshtein distance is slow
