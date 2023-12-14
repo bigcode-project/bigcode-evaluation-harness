@@ -42,7 +42,7 @@ def create_task(category, num_seeds):
         DATASET_NAME = category
 
         def __init__(self):
-            super().__init__(category, num_seeds)
+            super().__init__(category, num_seeds, prompt="octocoder")
 
     return PerturbedHumanEval
 
@@ -50,7 +50,7 @@ def create_task(category, num_seeds):
 class GeneralPerturbedHumanEval(Task):
     DATASET_PATH = "RaymondLi/perturbed_humaneval"
 
-    def __init__(self, category, num_seeds):
+    def __init__(self, category, num_seeds, prompt="octocoder"):
         super().__init__(
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"],
             requires_execution=True,
@@ -58,6 +58,7 @@ class GeneralPerturbedHumanEval(Task):
         # Transformation category
         self.category = category
         self.num_seeds = num_seeds
+        self.prompt = prompt
         self.filtered_dataset = self.dataset["test"].filter(
             lambda x: x["seed"] < num_seeds
         )
@@ -76,7 +77,10 @@ class GeneralPerturbedHumanEval(Task):
             sample from the test dataset
         :return: str
         """
-        return doc["prompt"].strip()
+        if self.prompt == "octocoder":
+            return f'Question: Create a Python script for this problem.\n\nAnswer: {doc["prompt"].strip()}'
+        else:
+            return doc["prompt"].strip()
 
     def get_reference(self, doc):
         """
@@ -108,7 +112,7 @@ class GeneralPerturbedHumanEval(Task):
         """
         prompt = self.get_prompt(self.filtered_dataset[idx])
         generation = generation[len(prompt) :]
-        return prompt + self._stop_at_stop_token(generation, self.stop_words)
+        return self.filtered_dataset[idx]["prompt"].strip() + self._stop_at_stop_token(generation, self.stop_words)
 
     def process_results(self, generations, references):
         """
