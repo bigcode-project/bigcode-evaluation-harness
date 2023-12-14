@@ -38,6 +38,7 @@ Below are the features and tasks of this framework:
     - [SantaCoder-FIM](https://huggingface.co/datasets/bigcode/santacoder-fim-task) for evaluating FIM on **Python** code using Exact Match. Further details are described in [SantaCoder](https://arxiv.org/abs/2301.03988). Includes two tasks:
         - `StarCoderFIM`: which uses the default FIM tokens `"<fim_prefix>", "<fim_middle>", "<fim_suffix>"`, and
         - `SantaCoderFIM`: which uses SantaCoder FIM tokens `"<fim-prefix>", "<fim-middle>", "<fim-suffix>"`
+    - [AsleepAtTheKeyboard](https://huggingface.co/datasets/moyix/asleep_keyboard)(WIP) for **C** and **Python** secure code generation. The current implementation is for generation only. To evaluate the generation, please use [this repository](https://github.com/moyix/AsleepKeyboardDataset).
 
 More details about each task can be found in  the documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md).
 ## Setup
