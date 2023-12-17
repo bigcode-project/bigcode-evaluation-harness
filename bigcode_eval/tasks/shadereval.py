@@ -19,10 +19,9 @@ Description: Doing everything better than before.
     (potential) Instruct variant: all banchmark tasks phrased for instruction tuned models (time permitting)
 Homepage: https://huggingface.co/spaces/Vipitis/ShaderEval (could be something else...?)
 """
-from lm_eval.base import Task
+from bigcode_eval.base import Task
 import evaluate
 import datasets
-# from ..ShaderCoder.utils import parse_functions, construct_model_context, replace_function #where to import this from(via custom metric?)
 
 # TODO: Add the BibTeX citation for the task.
 _CITATION = """tbd
