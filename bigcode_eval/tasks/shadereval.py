@@ -211,7 +211,7 @@ class FunctionGeneration(Task): #task2
         start, end = ref["func_range"]
         gen = self.remove_last_block(generation[len(model_ctx):]) #remove last block to avoid syntax errors
 
-        return full_code[:start] + gen + full_code[end:] #does this patch it together correctly?
+        return full_code[:start] + model_ctx + gen + full_code[end:] #does this patch it together correctly?
 
     def process_results(self, generations, references):
         # TODO: define how the evaluation score is computed from list of \
