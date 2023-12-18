@@ -20,7 +20,8 @@ from bigcode_eval.tasks import ALL_TASKS
 
 import sparseml.core.session as session_manager
 from sparseml.core.framework import Framework
-from sparseml.transformers.sparsification.obcq.export import load_task_model, _reload_model_state
+from sparseml.transformers.sparsification.obcq.export import load_task_model
+from sparseml.pytorch.model_load.helpers import reload_model_state
 
 class MultiChoice:
     def __init__(self, choices):
@@ -304,7 +305,7 @@ def main():
             )
 
             # reload the state dict for the model now that architecture matches expected
-            _reload_model_state(model, args.model, original_sd)
+            reload_model_state(model, args.model, original_sd)
             # model.to(model.device)
             # HOTFIX. assign proper device ids to quantwrapper again
             # print("Starting")
