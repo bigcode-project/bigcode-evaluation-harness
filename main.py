@@ -288,9 +288,13 @@ def main():
             from peft import PeftModel  # dynamic import to avoid dependency on peft
 
             model = PeftModel.from_pretrained(model, args.peft_model)
-            print("Loaded PEFT model. Merging...")
-            model.merge_and_unload()
-            print("Merge complete.")
+            print("Loaded PEFT model.")
+            try:
+                print("Merging...")
+                model.merge_and_unload()
+                print("Merge complete.")
+            except:
+                pass
 
         tokenizer = AutoTokenizer.from_pretrained(
             args.model,
