@@ -175,13 +175,14 @@ class FunctionGeneration(Task): #task2
         ### Find the first occassion where a chain of { } is closed??      
         open_brackets = 1
         cut = False
-        for i, c in enumerate(code):
+        for i, c in enumerate(code.encode("utf-8")):
+            c = chr(c)
             if c == '{':
                 open_brackets += 1
             elif c == '}':
                 open_brackets -= 1
             if open_brackets == 0:
-                code = code[:i+1]
+                code = code.encode("utf-8")[:i+1].decode("utf-8", "ignore")
                 cut = True
                 break
         if not cut:
@@ -209,9 +210,10 @@ class FunctionGeneration(Task): #task2
         model_ctx = ref["model_ctx"]
         full_code = ref["full_code"]
         start, end = ref["func_range"]
-        gen = self.remove_last_block(generation[len(model_ctx):]) #remove last block to avoid syntax errors
-
-        return full_code[:start] + model_ctx + gen + full_code[end:] #does this patch it together correctly?
+        gen = self.remove_last_block(generation.encode("utf-8")[len(model_ctx.encode("utf-8")):].decode("utf-8")) #remove last block to avoid syntax errors
+        before_gen = full_code.encode("utf-8")[:start].decode("utf-8")
+        after_gen = full_code.encode("utf-8")[end:].decode("utf-8")
+        return before_gen + model_ctx + gen + after_gen #does this patch it together correctly?
 
     def process_results(self, generations, references):
         # TODO: define how the evaluation score is computed from list of \
