@@ -84,9 +84,9 @@ class Evaluator:
                             f"generations were saved at {self.args.save_generations_path}"
                         )
                 if self.args.save_references:
-                    with open("references.json", "w") as fp:
+                    with open(self.args.save_references_path, "w") as fp:
                         json.dump(references, fp)
-                        print("references were saved at references.json")
+                        print(f"references were saved at {self.args.save_references_path}")
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"

@@ -170,6 +170,12 @@ def parse_args():
         help="Whether to save reference solutions/tests",
     )
     parser.add_argument(
+        "--save_references_path",
+        type=str,
+        default="references.json",
+        help="Path for saving the references solutions/tests",
+    )
+    parser.add_argument(
         "--prompt",
         type=str,
         default="prompt",
@@ -335,9 +341,9 @@ def main():
                         json.dump(generations, fp)
                         print(f"generations were saved at {args.save_generations_path}")
                     if args.save_references:
-                        with open("references.json", "w") as fp:
+                        with open(args.save_references_path, "w") as fp:
                             json.dump(references, fp)
-                            print("references were saved")
+                            print(f"references were saved at {args.save_references_path}")
             else:
                 results[task] = evaluator.evaluate(task)
 
