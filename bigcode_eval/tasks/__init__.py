@@ -38,6 +38,8 @@ def get_task(task_name, args=None):
             kwargs["prompt"] = args.prompt
         if "load_data_path" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
             kwargs["load_data_path"] = args.load_data_path
+        if "trust_remote_code" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
+            kwargs["trust_remote_code"] = args.trust_remote_code
         return TASK_REGISTRY[task_name](**kwargs)
     except KeyError:
         print("Available tasks:")
