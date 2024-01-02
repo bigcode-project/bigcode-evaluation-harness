@@ -14,7 +14,7 @@ The LeaderBoard is a demo for evaluating and comparing the performance of langua
 The LeaderBoard is open for submissions of results produced by the community. If you have a model that you want to submit results for, please follow the instructions below.
 
 ## Running the evaluation
-We report the passs@1 for [HumanEval](https://huggingface.co/datasets/openai_humaneval) Python benchamrk and some languages from the [MultiPL-E](https://huggingface.co/datasets/nuprl/MultiPL-E) benchmark. We use the same template and parameters for all models.
+We report the passs@1 for [HumanEval](https://huggingface.co/datasets/openai_humaneval) Python benchmark and some languages from the [MultiPL-E](https://huggingface.co/datasets/nuprl/MultiPL-E) benchmark. We use the same template and parameters for all models.
 
 ### 1-Setup
 Follow the setup instructions in the evaluation harness [README](https://github.com/bigcode-project/bigcode-evaluation-harness/tree/main#setup).
