@@ -31,6 +31,7 @@ def update_args(args):
     args.save_generations = False
     args.save_generations_path = ""
     args.save_references = False
+    args.save_references_path = ""
     args.metric_output_path = TMPDIR
     args.load_generations_path = None
     args.generation_only = False

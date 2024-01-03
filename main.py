@@ -183,6 +183,12 @@ def parse_args():
         help="Whether to save reference solutions/tests",
     )
     parser.add_argument(
+        "--save_references_path",
+        type=str,
+        default="references.json",
+        help="Path for saving the references solutions/tests",
+    )
+    parser.add_argument(
         "--prompt",
         type=str,
         default="prompt",
