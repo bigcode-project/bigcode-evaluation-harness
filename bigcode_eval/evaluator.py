@@ -44,7 +44,8 @@ class Evaluator:
         task = tasks.get_task(task_name, self.args)
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
-        n_tasks = self.args.limit if self.args.limit else len(dataset)
+        # if args.limit is used, make sure args.limit_start + args.limit <= len(dataset)
+        n_tasks = min(self.args.limit, len(dataset) - self.args.limit_start) if self.args.limit else len(dataset)
         # when args.limit is None
         # adjust n_tasks by args.limit_start to prevent out of bounds issues 
         if not self.args.limit:
