@@ -235,6 +235,7 @@ def complete_code(
     postprocess=True,
     is_wrapped=False,
     save_every_k_tasks: int = -1,
+    intermediate_generations: Optional[List[Optional[List[Optional[str]]]]] = None,
     intermediate_save_generations_path: Optional[str] = None,
     **gen_kwargs,
 ):
@@ -246,6 +247,7 @@ def complete_code(
     # keep track of the list of generated codes
     # where len(code_gens) = n_tasks and len(code_gens[0]) = number of generated code samples
     code_gens: List[List[Optional[str]]] = [[] for _ in range(n_tasks)]
+    intermediate_generations = [] if not intermediate_generations else intermediate_generations
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(
         enumerate(dataloader),
@@ -332,7 +334,8 @@ def complete_code(
                     gen_token_dict,
                 )
                 with open(intermediate_save_generations_path, "w") as fp:
-                    json.dump(code_gens, fp)
+                    intermediate_generations.extend(code_gens)
+                    json.dump(intermediate_generations, fp)
                     print(
                         f"intermediate generations were saved at {intermediate_save_generations_path}"
                     )

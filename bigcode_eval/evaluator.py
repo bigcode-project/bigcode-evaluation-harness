@@ -75,6 +75,7 @@ class Evaluator:
             args=self.args,
             curr_sample_idx=curr_sample_idx,  # curr_sample_idx will added to limit_start to fix indexing
             save_every_k_tasks=self.args.save_every_k_tasks,
+            intermediate_generations=generations,
             intermediate_save_generations_path=intermediate_save_generations_path,
         )
         generations.extend(new_generations)

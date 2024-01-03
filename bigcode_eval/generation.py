@@ -1,7 +1,7 @@
 import json
 from math import ceil
 
-from typing import Optional
+from typing import List, Optional
 
 from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
@@ -49,6 +49,7 @@ def parallel_generations(
         args,
         curr_sample_idx: int = 0,
         save_every_k_tasks: int = -1,
+        intermediate_generations: Optional[List[Optional[List[Optional[str]]]]] = None,
         intermediate_save_generations_path: Optional[str] = None,
 ):
     if args.load_generations_path:
@@ -151,6 +152,7 @@ def parallel_generations(
         postprocess=args.postprocess,
         is_wrapped=is_loaded_in_8bit or is_loaded_in_4bit,
         save_every_k_tasks=save_every_k_tasks,
+        intermediate_generations=intermediate_generations,
         intermediate_save_generations_path=intermediate_save_generations_path,
         **gen_kwargs,
     )
