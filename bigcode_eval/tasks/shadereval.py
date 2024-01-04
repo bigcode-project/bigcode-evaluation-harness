@@ -125,14 +125,14 @@ class FunctionGeneration(Task): #task2
     # `DATASET_PATH`. If there aren't specific subsets you need, leave this as `None`.
     DATASET_NAME = None #this will eventually be a subset for the Shadertoys dataset, but not right now
 
-    def __init__(self):
+    def __init__(self, prompt="minimal"):
         super().__init__(
             # TODO: Specify the list of stop words in `stop_words` for the code generation task \
             # and if the evaluation requires executing the generated code in `requires_execution`.
             stop_words=["\nfloat ", "\nvec", "\nint", "\nvoid", "\nmat"], #new function starts... so all the keywords
             requires_execution=True, #we run shadercode - could that be harmful? (all in the metric)
-            prompt="minimal", # "minimal" or "full". "minimal" is the function header and comments before/after it, "full" is the whole code up untill the function declaration ends
         )
+        self.prompt = prompt # "minimal" or "full". "minimal" is the function header and comments before/after it, "full" is the whole code up untill the function declaration ends
 
     def get_dataset(self):
         # TODO replace with subset once that is set up
