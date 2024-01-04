@@ -3,6 +3,7 @@ import math
 import re
 import warnings
 from collections import defaultdict
+from copy import deepcopy
 from typing import List, Optional
 
 import torch
@@ -334,8 +335,9 @@ def complete_code(
                     gen_token_dict,
                 )
                 with open(intermediate_save_generations_path, "w") as fp:
-                    intermediate_generations.extend(code_gens)
-                    json.dump(intermediate_generations, fp)
+                    intermediate_save_generations = deepcopy(intermediate_generations)
+                    intermediate_save_generations.extend(code_gens)
+                    json.dump(intermediate_save_generations, fp)
                     print(
                         f"intermediate generations were saved at {intermediate_save_generations_path}"
                     )
@@ -353,7 +355,7 @@ def complete_code(
         gen_token_dict,
     )
 
-    return code_gens
+    return intermediate_generations.extend(code_gens)
 
 
 def update_code_gens(

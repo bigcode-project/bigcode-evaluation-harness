@@ -59,14 +59,14 @@ class Evaluator:
                 solutions = [[ref] for ref in references]
             return solutions, references
 
-        generations = []  # list[list[str | None] | None]
+        curr_generations = []  # list[list[str | None] | None]
         if intermediate_generations:
-            generations = [gen for gen in intermediate_generations if gen]
-            n_tasks -= len(generations)
+            curr_generations = [gen for gen in intermediate_generations if gen]
+            n_tasks -= len(curr_generations)
         intermediate_save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}_intermediate.json"
-        curr_sample_idx = len(generations)
+        curr_sample_idx = len(curr_generations)
 
-        new_generations = parallel_generations(
+        generations = parallel_generations(
             task,
             dataset,
             self.accelerator,
@@ -76,10 +76,9 @@ class Evaluator:
             args=self.args,
             curr_sample_idx=curr_sample_idx,  # curr_sample_idx will added to limit_start to fix indexing
             save_every_k_tasks=self.args.save_every_k_tasks,
-            intermediate_generations=generations,
+            intermediate_generations=curr_generations,
             intermediate_save_generations_path=intermediate_save_generations_path,
         )
-        generations.extend(new_generations)
 
         if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
