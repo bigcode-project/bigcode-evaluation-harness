@@ -355,7 +355,8 @@ def complete_code(
         gen_token_dict,
     )
 
-    return intermediate_generations.extend(code_gens)
+    intermediate_generations.extend(code_gens)
+    return intermediate_generations
 
 
 def update_code_gens(
