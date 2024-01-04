@@ -131,6 +131,7 @@ class FunctionGeneration(Task): #task2
             # and if the evaluation requires executing the generated code in `requires_execution`.
             stop_words=["\nfloat ", "\nvec", "\nint", "\nvoid", "\nmat"], #new function starts... so all the keywords
             requires_execution=True, #we run shadercode - could that be harmful? (all in the metric)
+            prompt="minimal", # "minimal" or "full". "minimal" is the function header and comments before/after it, "full" is the whole code up untill the function declaration ends
         )
 
     def get_dataset(self):
@@ -146,13 +147,19 @@ class FunctionGeneration(Task): #task2
         # TODO: build the prompt for the language model from a sample `doc` from the dataset
         """
         Builds the prompt for the LM to generate from.
+        if prompt == "minimal" -> function header and comments before/after it
+        if prompt == "full" -> also includes full code before the function header
         :param doc: dict[str: str]
             sample from the test dataset
         :return: str
         """
-
-        # alternatively, give the whole code up untill the function declaration ends? as in this paper: https://arxiv.org/abs/2306.03203
-        return doc["model_ctx"]
+        model_context = ""
+        if self.prompt == "full":
+            # alternatively, give the whole code up untill the function declaration ends? as in this paper: https://arxiv.org/abs/2306.03203
+            model_context += doc["full_code"].encode("utf-8")[:doc["func_range"][0]].decode("utf-8") #returns full original code up untill the function declaration ends
+        # only have one alternative, but could be more?
+        model_context += doc["model_ctx"]
+        return model_context
 
     def get_reference(self, doc):
         # TODO: get the reference solution from a sample `doc` from the dataset
@@ -172,7 +179,7 @@ class FunctionGeneration(Task): #task2
             if w in code:
                 code = code[:code.find(w)]
 
-        ### Find the first occassion where a chain of { } is closed??      
+        ### Find the first occassion where a chain of { } is closed??
         open_brackets = 1
         cut = False
         for i, c in enumerate(code.encode("utf-8")):
@@ -210,9 +217,13 @@ class FunctionGeneration(Task): #task2
         model_ctx = ref["model_ctx"]
         full_code = ref["full_code"]
         start, end = ref["func_range"]
-        gen = self.remove_last_block(generation.encode("utf-8")[len(model_ctx.encode("utf-8")):].decode("utf-8")) #remove last block to avoid syntax errors
         before_gen = full_code.encode("utf-8")[:start].decode("utf-8")
         after_gen = full_code.encode("utf-8")[end:].decode("utf-8")
+
+        if self.prompt == "full":
+            gen = self.remove_last_block(generation.encode("utf-8")[start + len(model_ctx.encode("utf-8")):].decode("utf-8"))
+        else:
+            gen = self.remove_last_block(generation.encode("utf-8")[len(model_ctx.encode("utf-8")):].decode("utf-8")) #remove last block to avoid syntax errors
         return before_gen + model_ctx + gen + after_gen #does this patch it together correctly?
 
     def process_results(self, generations, references):
