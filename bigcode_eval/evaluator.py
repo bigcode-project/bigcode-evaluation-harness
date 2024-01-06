@@ -70,6 +70,25 @@ class EvaluatorForEndpoint:
             task.get_reference(dataset[i])
             for i in range(self.config.limit_start, self.config.limit_start + n_tasks)
         ]
+        return prompts, references
+    
+    def evaluate_task(self, task_name, generations):
+        task = tasks.get_task(task_name, args=self.args)
+        _, references = self.fetch_dataset_from_task(task_name=task_name)
+        
+        if task.requires_execution and not self.args.allow_code_execution:
+            raise ValueError(_WARNING)
+        
+        if task.requires_execution and self.args.allow_code_execution:
+            os.environ["HF_ALLOW_CODE_EVAL"] = "1"
+        
+        results = task.process_results(generations, references)
+        results['config'] = self.args.dict()
+        
+        if self.args.metric_output_path:
+            with open(self.args.metric_output_path, "w") as f:
+                json.dump(results, f)
+        return results 
     
 
 class Evaluator:
