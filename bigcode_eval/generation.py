@@ -6,6 +6,7 @@ from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
 
 from bigcode_eval.utils import TokenizedDataset, complete_code
+from bigcode_eval import tasks 
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
@@ -36,6 +37,30 @@ class TooLongFunctionCriteria(StoppingCriteria):
         """Returns true if generated sequence is too long."""
         return input_ids.shape[1] > int(self.input_length * self.multiplier)
         
+
+def parallel_generations_from_api(task, dataset, model, n_tasks, args):
+    if args.load_generations_path:
+        # load generated code
+        with open(args.load_generations_path) as fp:
+            generations = json.load(fp)
+        return generations[:n_tasks]
+
+    # Set up all the generation settings
+    gen_kwargs = {
+        "do_sample": args.do_sample,
+        "temperature": args.temperature,
+        "top_p": args.top_p,
+        "top_k": args.top_k,
+        "max_length": args.max_length_generation,
+    }
+    
+    # Todo: not using any stopping criteria, since it requires tokenizer.
+    # For gpt-3.5 we can use tiktoken, however this can be done on the next iterations
+    # also not giving passing instruction tokens here.
+    
+    n_copies = ceil(args.n_samples / args.batch_size)
+    
+    
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
     if args.load_generations_path:
