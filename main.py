@@ -354,7 +354,7 @@ def evaluate_api_endpoints(task_names, args):
     _API_ORG = os.environ['API_ORG'] if  not os.environ['API_ORG'].startswith('<') else None
     
     evaluator = EvaluatorForEndpoint(
-        api_key=_API_KEY, api_base=_API_BASE, api_organization=_API_ORG
+        api_key=_API_KEY, api_base=_API_BASE, api_organization=_API_ORG, args=args
     )
     
     results = {}
@@ -386,7 +386,7 @@ def main():
     else:
         task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
 
-    if args.model_type == 'endpoint':
+    if args.service == 'endpoint':
         results = evaluate_api_endpoints(task_names=task_names, args=args)
     else:
         results = evaluate_huggingface_model_with_accelarator(task_names=task_names, args=args)
@@ -402,3 +402,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# text-davinci-003

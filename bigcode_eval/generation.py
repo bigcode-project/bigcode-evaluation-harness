@@ -52,18 +52,19 @@ def generate_response_from_api(prompt: str, args):
         response = completion(
             model=args.model,
             temperature=args.temperature, top_p=args.top_p,
-            max_tokens=args.max_length_generations, n=args.n_samples,
+            max_tokens=args.max_length_generation, n=args.n_samples,
             messages=[{'content': prompt, 'role': 'user'}],
             request_timeout=60
         )
     except Exception as e:
         print(f"Error encountered: {e}. Retrying ... ")
-        raise RetryError
+        response = None
+        #raise RetryError
     return response 
 
 def yield_generation_from_prompts(prompts, task, args):
     for sample, prompt in enumerate(prompts):
-        response = generate_response_from_api(prompt=prompt)
+        response = generate_response_from_api(prompt=prompt, args=args)
         if response is not None:
             if args.postprocess:
                 generation_from_prompt = [
@@ -98,8 +99,8 @@ def parallel_generations_from_api(task, dataset, prompts, args):
     for generation in tqdm(yield_generation_from_prompts(prompts=prompts, task=task, args=args), total=len(prompts)):
         generations.append(generation)
         
-    if args.save_generation_path and args.save_generations:
-        with open(args.save_generation_path, "w") as f:
+    if args.save_generations_path and args.save_generations:
+        with open(args.save_generations_path, "w") as f:
             json.dump(generations, f)
         return generations
 

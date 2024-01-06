@@ -68,7 +68,7 @@ class EvaluatorForEndpoint:
         # Build the references
         references = [
             task.get_reference(dataset[i])
-            for i in range(self.config.limit_start, self.config.limit_start + n_tasks)
+            for i in range(self.args.limit_start, self.args.limit_start + n_tasks)
         ]
         return prompts, references
 
@@ -87,7 +87,7 @@ class EvaluatorForEndpoint:
             return solutions, references
         
         prompts, references = self.fetch_dataset_from_task(task_name=task_name)
-        generations = parallel_generations_from_api(task_name=task, dataset=dataset, prompts=prompts, args=self.args)
+        generations = parallel_generations_from_api(task=task, dataset=dataset, prompts=prompts, args=self.args)
         if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
             warnings.warn(
@@ -108,7 +108,7 @@ class EvaluatorForEndpoint:
             os.environ["HF_ALLOW_CODE_EVAL"] = "1"
         
         results = task.process_results(generations, references)
-        results['config'] = self.args.dict()
+        results['config'] = vars(self.args)
         
         if self.args.metric_output_path:
             with open(self.args.metric_output_path, "w") as f:
