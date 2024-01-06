@@ -1,6 +1,7 @@
 import os 
 import json
 from math import ceil
+from tqdm.auto import tqdm 
 from tenacity import retry, stop_after_attempt, wait_fixed, RetryError
 
 from accelerate.utils import set_seed
@@ -41,7 +42,7 @@ class TooLongFunctionCriteria(StoppingCriteria):
         
 
 @retry(stop=stop_after_attempt(10), wait=wait_fixed(1))
-def generate_response_from_api(self, prompt: str, args):
+def generate_response_from_api(prompt: str, args):
     try:
         from litellm import completion
     except ImportError as e:
@@ -60,34 +61,47 @@ def generate_response_from_api(self, prompt: str, args):
         raise RetryError
     return response 
 
-def parallel_generations_from_api(task, prompts, references, model, n_tasks, args):
+def yield_generation_from_prompts(prompts, task, args):
+    for sample, prompt in enumerate(prompts):
+        response = generate_response_from_api(prompt=prompt)
+        if response is not None:
+            if args.postprocess:
+                generation_from_prompt = [
+                    task.postprocess_generation(response["choices"][i]["message"]["content"], sample+args.limit_start)
+                    for i in range(args.n_samples)
+                ]
+            else:
+                generation_from_prompt = [
+                    response["choices"][i]["message"]["content"] for i in range(args.n_samples)
+                ]
+        else:
+            print(f'Generation found None. Replacing None by empty string')
+            generation_from_prompt = [''] * args.n_samples
+        yield generation_from_prompt    
+
+
+def parallel_generations_from_api(task_name, prompts, n_tasks, args):
     if args.load_generations_path:
         # load generated code
         with open(args.load_generations_path) as fp:
             generations = json.load(fp)
         return generations[:n_tasks]
-
-    # Set up all the generation settings
-    gen_kwargs = {
-        "do_sample": args.do_sample,
-        "temperature": args.temperature,
-        "top_p": args.top_p,
-        "top_k": args.top_k,
-        "max_length": args.max_length_generation,
-    }
     
     # Todo: not using any stopping criteria, since it requires tokenizer.
     # For gpt-3.5 we can use tiktoken, however this can be done on the next iterations
     # also not giving passing instruction tokens here.
     
-    n_copies = ceil(args.n_samples / args.batch_size)
-    if not os.path.exists(args.load_generations_path) or not args.save_generations:
-        print("=> Generation file not found. Going for normal generations")
-        generations = [] 
-        
-        for sample, prompt in enumerate(prompts):
-            response = genera
+    task = tasks.get_task(task_name)
+    generations = [] 
     
+    for generation in tqdm(yield_generation_from_prompts(prompts=prompts, task=task, args=args), total=len(prompts)):
+        generations.append(generation)
+        
+    if args.save_generation_path and args.save_generations:
+        with open(args.save_generation_path, "w") as f:
+            json.dump(generations, f)
+        return generations
+
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
     if args.load_generations_path:
