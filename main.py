@@ -210,17 +210,7 @@ def get_gpus_max_memory(max_memory, num_gpus):
     print("Loading model via these GPUs & max memories: ", max_memory)
     return max_memory
 
-
-def main():
-    args = parse_args()
-    transformers.logging.set_verbosity_error()
-    datasets.logging.set_verbosity_error()
-
-    if args.tasks is None:
-        task_names = ALL_TASKS
-    else:
-        task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
-
+def evaluate_huggingface_model_with_accelarator(task_names, args):
     accelerator = Accelerator()
     if accelerator.is_main_process:
         print(f"Selected Tasks: {task_names}")
@@ -357,6 +347,25 @@ def main():
         with open(args.metric_output_path, "w") as f:
             f.write(dumped)
 
+
+def evaluate_api_endpoints(task_names, args):
+    pass
+
+
+def main():
+    args = parse_args()
+    transformers.logging.set_verbosity_error()
+    datasets.logging.set_verbosity_error()
+
+    if args.tasks is None:
+        task_names = ALL_TASKS
+    else:
+        task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
+
+    if args.model_type == 'endpoint':
+        evaluate_api_endpoints(task_names=task_names, args=args)
+    else:
+        evaluate_huggingface_model_with_accelarator(task_names=task_names, args=args)
 
 if __name__ == "__main__":
     main()
