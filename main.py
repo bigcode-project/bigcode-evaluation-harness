@@ -1,3 +1,4 @@
+import os 
 import fnmatch
 import json
 import warnings
@@ -14,7 +15,7 @@ from transformers import (
 )
 
 from bigcode_eval.arguments import EvalArguments
-from bigcode_eval.evaluator import Evaluator
+from bigcode_eval.evaluator import Evaluator, EvaluatorForEndpoint
 from bigcode_eval.tasks import ALL_TASKS
 
 
@@ -41,7 +42,12 @@ def parse_args():
     parser.add_argument(
         "--model",
         default="codeparrot/codeparrot-small",
-        help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
+        help="Model to evaluate, provide a repo name in Hugging Face hub or a local path or any valid OpenAI model name.",
+    )
+    parser.add_argument(
+        "--service",
+        default="huggingface",
+        help='Which service/engine to use for inference. Options: huggingface, openai'
     )
     parser.add_argument(
         "--modeltype",
@@ -336,20 +342,38 @@ def evaluate_huggingface_model_with_accelarator(task_names, args):
                             print(f"references were saved at {args.save_references_path}")
             else:
                 results[task] = evaluator.evaluate(task)
-
-    # Save all args to config
-    results["config"] = vars(args)
-    if not args.generation_only:
-        dumped = json.dumps(results, indent=2)
-        if accelerator.is_main_process:
-            print(dumped)
-
-        with open(args.metric_output_path, "w") as f:
-            f.write(dumped)
+    return results
 
 
 def evaluate_api_endpoints(task_names, args):
-    pass
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    _API_KEY = os.environ['API_KEY']
+    _API_BASE = os.environ['API_BASE'] if not os.environ['API_BASE'].startswith('<') else None
+    _API_ORG = os.environ['API_ORG'] if  not os.environ['API_ORG'].startswith('<') else None
+    
+    evaluator = EvaluatorForEndpoint(
+        api_key=_API_KEY, api_base=_API_BASE, api_organization=_API_ORG
+    )
+    
+    results = {}
+    
+    for task in task_names:
+        generations, references = evaluator.generate_text(task_name=task)
+        if args.generation_only:
+            print("Generation model only.")
+            with open(args.save_generations_path, "w") as fp:
+                json.dump(generations, fp)
+                print(f"generations were saved at {args.save_generations_path}")
+            if args.save_references:
+                with open(args.save_references_path, "w") as fp:
+                    json.dump(references, fp)
+                    print(f"references were saved at {args.save_references_path}")
+        else:
+            results[task] = evaluator.evaluate_task(task_name=task, generations=generations)
+    return results 
+        
 
 
 def main():
@@ -363,9 +387,18 @@ def main():
         task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
 
     if args.model_type == 'endpoint':
-        evaluate_api_endpoints(task_names=task_names, args=args)
+        results = evaluate_api_endpoints(task_names=task_names, args=args)
     else:
-        evaluate_huggingface_model_with_accelarator(task_names=task_names, args=args)
+        results = evaluate_huggingface_model_with_accelarator(task_names=task_names, args=args)
+
+    # Save all args to config
+    results["config"] = vars(args)
+    if not args.generation_only:
+        dumped = json.dumps(results, indent=2)
+        print(dumped)
+
+        with open(args.metric_output_path, "w") as f:
+            f.write(dumped)
 
 if __name__ == "__main__":
     main()
