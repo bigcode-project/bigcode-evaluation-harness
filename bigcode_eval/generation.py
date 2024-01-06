@@ -80,7 +80,9 @@ def yield_generation_from_prompts(prompts, task, args):
         yield generation_from_prompt    
 
 
-def parallel_generations_from_api(task_name, prompts, n_tasks, args):
+def parallel_generations_from_api(task, dataset, prompts, args):
+    n_tasks = args.limit if args.limit else len(dataset)
+    
     if args.load_generations_path:
         # load generated code
         with open(args.load_generations_path) as fp:
@@ -91,7 +93,6 @@ def parallel_generations_from_api(task_name, prompts, n_tasks, args):
     # For gpt-3.5 we can use tiktoken, however this can be done on the next iterations
     # also not giving passing instruction tokens here.
     
-    task = tasks.get_task(task_name)
     generations = [] 
     
     for generation in tqdm(yield_generation_from_prompts(prompts=prompts, task=task, args=args), total=len(prompts)):
