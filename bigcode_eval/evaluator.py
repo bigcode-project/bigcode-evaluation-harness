@@ -5,7 +5,7 @@ import warnings
 from typing import Optional 
 
 from bigcode_eval import tasks
-from bigcode_eval.generation import parallel_generations
+from bigcode_eval.generation import parallel_generations, parallel_generations_from_api
 from bigcode_eval.utils import _make_instruction_prompt
 
 
@@ -71,7 +71,31 @@ class EvaluatorForEndpoint:
             for i in range(self.config.limit_start, self.config.limit_start + n_tasks)
         ]
         return prompts, references
-    
+
+    def generate_text(self, task_name):
+        task = tasks.get_task(task_name, self.args)
+        dataset = task.get_dataset()
+        # if args.limit is None, use all samples
+        n_tasks = self.args.limit if self.args.limit else len(dataset)
+        references = [task.get_reference(dataset[i]) for i in range(self.args.limit_start, self.args.limit_start+n_tasks)]
+
+        if self.args.check_references:
+            if "get_solution" in inspect.signature(task.get_reference).parameters:
+                solutions = [[task.get_reference(dataset[i], get_solution=True)] for i in range(self.args.limit_start, self.args.limit_start+n_tasks)]
+            else:
+                solutions = [[ref] for ref in references]
+            return solutions, references
+        
+        prompts, references = self.fetch_dataset_from_task(task_name=task_name)
+        generations = parallel_generations_from_api(task_name=task, dataset=dataset, prompts=prompts, args=self.args)
+        if len(generations[0]) > self.args.n_samples:
+            generations = [l[: self.args.n_samples] for l in generations]
+            warnings.warn(
+                f"Number of tasks wasn't proportional to number of devices, we removed extra predictions to only keep nsamples={self.args.n_samples}"
+            )
+        
+        return generations, references
+        
     def evaluate_task(self, task_name, generations):
         task = tasks.get_task(task_name, args=self.args)
         _, references = self.fetch_dataset_from_task(task_name=task_name)
@@ -80,6 +104,7 @@ class EvaluatorForEndpoint:
             raise ValueError(_WARNING)
         
         if task.requires_execution and self.args.allow_code_execution:
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
             os.environ["HF_ALLOW_CODE_EVAL"] = "1"
         
         results = task.process_results(generations, references)
