@@ -1,5 +1,7 @@
+import os 
 import json
 from math import ceil
+from tenacity import retry, stop_after_attempt, wait_fixed, RetryError
 
 from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
@@ -38,7 +40,27 @@ class TooLongFunctionCriteria(StoppingCriteria):
         return input_ids.shape[1] > int(self.input_length * self.multiplier)
         
 
-def parallel_generations_from_api(task, dataset, model, n_tasks, args):
+@retry(stop=stop_after_attempt(10), wait=wait_fixed(1))
+def generate_response_from_api(self, prompt: str, args):
+    try:
+        from litellm import completion
+    except ImportError as e:
+        print('generate_response_from_api function requires litellm to be installed.')
+    response = None
+    try:
+        response = completion(
+            model=args.model,
+            temperature=args.temperature, top_p=args.top_p,
+            max_tokens=args.max_length_generations, n=args.n_samples,
+            messages=[{'content': prompt, 'role': 'user'}],
+            request_timeout=60
+        )
+    except Exception as e:
+        print(f"Error encountered: {e}. Retrying ... ")
+        raise RetryError
+    return response 
+
+def parallel_generations_from_api(task, prompts, references, model, n_tasks, args):
     if args.load_generations_path:
         # load generated code
         with open(args.load_generations_path) as fp:
@@ -59,7 +81,12 @@ def parallel_generations_from_api(task, dataset, model, n_tasks, args):
     # also not giving passing instruction tokens here.
     
     n_copies = ceil(args.n_samples / args.batch_size)
-    
+    if not os.path.exists(args.load_generations_path) or not args.save_generations:
+        print("=> Generation file not found. Going for normal generations")
+        generations = [] 
+        
+        for sample, prompt in enumerate(prompts):
+            response = genera
     
 
 def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
