@@ -2,9 +2,12 @@ import inspect
 import json
 import os
 import warnings
+from typing import Optional 
 
 from bigcode_eval import tasks
 from bigcode_eval.generation import parallel_generations
+from bigcode_eval.utils import _make_instruction_prompt
+
 
 _WARNING = """
 ################################################################################
@@ -24,6 +27,50 @@ Once you have read this disclaimer and taken appropriate precautions, set the ar
 ################################################################################\
 """
 
+class EvaluatorForEndpoint:
+    def __init__(self, api_key: str, args, api_base: Optional[str]=None, api_organization: Optional[str]=None):
+        try:
+            import litellm
+        except ImportError as e:
+            print('EvaluationForEndpoint requires package litellm to be installed.')
+            
+        self.args = args
+        litellm.api_key = api_key
+        
+        if api_base:
+            litellm.api_base = api_base
+        
+        if api_organization:
+            litellm.organization = api_organization        
+    
+    def fetch_dataset_from_task(self, task_name: str):
+        task = tasks.get_task(task_name, args=self.args) 
+        dataset = task.get_dataset()
+        n_tasks = self.args.limit if self.args.limit else len(dataset)
+        
+        # Build the prompts
+        prompts = [] 
+        
+        for sample in range(self.args.limit_start, self.args.limit_start + n_tasks):
+            prompt_contents = task.get_prompt(dataset[sample])
+            if isinstance(prompt_contents, str):
+                prompt = self.args.prefix + self.args.prompt + prompt_contents
+            elif isinstance(prompt_contents, dict):
+                if set(prompt_contents.keys()) == {"prefix", "suffix"}:
+                    print("Infilling mode for API is not supported")
+                    continue
+                elif set(prompt_contents.keys()) == {"instruction", "context"}:
+                    prompt = _make_instruction_prompt(**prompt_contents, prefix=self.args.prefix)
+            else:
+                raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
+            prompts.append(prompt)
+
+        # Build the references
+        references = [
+            task.get_reference(dataset[i])
+            for i in range(self.config.limit_start, self.config.limit_start + n_tasks)
+        ]
+    
 
 class Evaluator:
     def __init__(self, accelerator, model, tokenizer, args):
