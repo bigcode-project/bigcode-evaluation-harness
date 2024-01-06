@@ -68,8 +68,8 @@ class TokenizedDataset(IterableDataset):
                     # Instruction-tuning mode
                     instruction.append(True)
                     infill.append(False)
-                    prompt = self._make_instruction_prompt(
-                        **prompt_contents, prefix=self.prefix
+                    prompt = _make_instruction_prompt(
+                        **prompt_contents, prefix=self.prefix, instruction_tokens=self.instruction_tokens
                     )
             else:
                 raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
@@ -151,24 +151,24 @@ class TokenizedDataset(IterableDataset):
         else:
             raise ValueError(f"Infilling not yet supported for: {model_id}")
 
-    def _make_instruction_prompt(self, instruction, context, prefix=""):
-        """Make a prompt for instruction-tuning. Delimit instruction and context with specific tokens if provided."""
-        if not self.instruction_tokens:
-            warnings.warn(
-                "Instruction-tuning tokens are not provided for an instruction-tuning task, we will leave them empty."
-            )
-            user_token, end_token, assistant_token = "", "", "\n"
-        else:
-            user_token, end_token, assistant_token = self.instruction_tokens
-            if not user_token or not assistant_token or not end_token:
-                warnings.warn(
-                    "Instruction-tuning tokens provided but one or more are empty. Ignore warning if this was intended"
-                )
-        prompt = (
-            prefix + user_token + instruction + end_token + assistant_token + context
+def _make_instruction_prompt(instruction, context, prefix="", instruction_tokens=None):
+    """Make a prompt for instruction-tuning. Delimit instruction and context with specific tokens if provided."""
+    if not instruction_tokens:
+        warnings.warn(
+            "Instruction-tuning tokens are not provided for an instruction-tuning task, we will leave them empty."
         )
+        user_token, end_token, assistant_token = "", "", "\n"
+    else:
+        user_token, end_token, assistant_token = instruction_tokens
+        if not user_token or not assistant_token or not end_token:
+            warnings.warn(
+                "Instruction-tuning tokens provided but one or more are empty. Ignore warning if this was intended"
+            )
+    prompt = (
+        prefix + user_token + instruction + end_token + assistant_token + context
+    )
 
-        return prompt
+    return prompt
 
 
 def _parse_infill(code, tokenizer):
@@ -364,3 +364,4 @@ def remove_after_return(code):
             return code[0:start_match]
         end_last_match = end_match
     return code
+ 
