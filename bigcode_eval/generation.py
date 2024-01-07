@@ -51,7 +51,8 @@ def generate_response_from_api(prompt: str, args):
     try:
         response = completion(
             model=args.model,
-            temperature=args.temperature, top_p=args.top_p,
+            temperature= None if not args.do_sample else args.temperature, 
+            top_p=None if not args.do_sample else args.top_p,
             max_tokens=args.max_length_generation, n=args.n_samples,
             messages=[{'content': prompt, 'role': 'user'}],
             request_timeout=60
@@ -59,7 +60,7 @@ def generate_response_from_api(prompt: str, args):
     except Exception as e:
         print(f"Error encountered: {e}. Retrying ... ")
         response = None
-        #raise RetryError
+        raise RetryError
     return response 
 
 def yield_generation_from_prompts(prompts, task, args):
