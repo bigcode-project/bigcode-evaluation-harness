@@ -1,3 +1,4 @@
+import os
 import fnmatch
 import json
 import warnings
@@ -121,6 +122,12 @@ def parse_args():
         help="Optional offset to start from when limiting the number of samples",
     )
     parser.add_argument(
+        "--save_every_k_tasks",
+        type=int,
+        default=-1,
+        help="Optional saving after every k tasks",
+    )
+    parser.add_argument(
         "--postprocess",
         action="store_false",
         help="Postprocess model outputs before execution, always on except during generation tests",
@@ -157,6 +164,12 @@ def parse_args():
         "--save_generations",
         action="store_true",
         help="Whether to save code generations",
+    )
+    parser.add_argument(
+        "--load_generations_intermediate_paths",
+        type=str,
+        nargs="*",
+        help="List of paths for saving the intermediate code generations",
     )
     parser.add_argument(
         "--save_generations_path",
@@ -331,21 +344,42 @@ def main():
 
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
-        for task in task_names:
+        if (
+            args.load_generations_intermediate_paths
+            and len(args.load_generations_intermediate_paths) != len(task_names)
+        ):
+            raise ValueError(
+                "If passing --load_generations_intermediate_paths, \
+                must pass equal number of files as number of tasks"
+            )
+
+        for idx, task in enumerate(task_names):
+            intermediate_generations = None
+            if args.load_generations_intermediate_paths:
+                with open(args.load_generations_intermediate_paths[idx], "r") as f_in:
+                    # intermediate_generations: list[list[str | None]] of len n_tasks
+                    # where list[i] = generated codes or empty
+                    intermediate_generations = json.load(f_in)
+
             if args.generation_only:
                 if accelerator.is_main_process:
                     print("generation mode only")
-                generations, references = evaluator.generate_text(task)
+                generations, references = evaluator.generate_text(
+                    task, intermediate_generations=intermediate_generations
+                )
                 if accelerator.is_main_process:
-                    with open(args.save_generations_path, "w") as fp:
-                        json.dump(generations, fp)
-                        print(f"generations were saved at {args.save_generations_path}")
-                    if args.save_references:
-                        with open(args.save_references_path, "w") as fp:
-                            json.dump(references, fp)
-                            print(f"references were saved at {args.save_references_path}")
+                    save_generations_path = f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
+                    save_references_path = f"references_{task}.json"
+                    evaluator.save_json_files(
+                        generations,
+                        references,
+                        save_generations_path,
+                        save_references_path,
+                    )
             else:
-                results[task] = evaluator.evaluate(task)
+                results[task] = evaluator.evaluate(
+                    task, intermediate_generations=intermediate_generations
+                )
 
     # Save all args to config
     results["config"] = vars(args)
