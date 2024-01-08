@@ -195,6 +195,8 @@ class FunctionGeneration(Task): #task2
         if not cut:
             if '}' in code:
                 code = code[:code.rfind('}')] + '}'
+            else:
+                code = code + "// incomplete generation! \n"
         return code
 
     def postprocess_generation(self, generation, idx):
