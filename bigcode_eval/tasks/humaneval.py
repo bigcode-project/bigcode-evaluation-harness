@@ -49,7 +49,7 @@ class GeneralHumanEval(Task):
 
     def __init__(self, strip_prompt, k=[1, 10, 100], num_workers=16, timeout=3.0):
         super().__init__(
-            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```"],
+            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```", "<file_sep>"],
             requires_execution=True,
         )
         self.strip_prompt = strip_prompt
