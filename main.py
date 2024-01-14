@@ -356,10 +356,14 @@ def main():
         for idx, task in enumerate(task_names):
             intermediate_generations = None
             if args.load_generations_intermediate_paths:
-                with open(args.load_generations_intermediate_paths[idx], "r") as f_in:
-                    # intermediate_generations: list[list[str | None]] of len n_tasks
-                    # where list[i] = generated codes or empty
-                    intermediate_generations = json.load(f_in)
+                try:
+                    with open(args.load_generations_intermediate_paths[idx], "r") as f_in:
+                        # intermediate_generations: list[list[str | None]] of len n_tasks
+                        # where list[i] = generated codes or empty
+                        intermediate_generations = json.load(f_in)
+                except FileNotFoundError:
+                    print(f"Intermediate generations file not found: {args.load_generations_intermediate_paths[idx]}")
+                    pass
 
             if args.generation_only:
                 if accelerator.is_main_process:
@@ -388,8 +392,8 @@ def main():
         if accelerator.is_main_process:
             print(dumped)
 
-        with open(args.metric_output_path, "w") as f:
-            f.write(dumped)
+            with open(args.metric_output_path, "w") as f:
+                f.write(dumped)
 
 
 if __name__ == "__main__":
