@@ -90,7 +90,7 @@ class GeneralMultiPLE(Task):
             GeneralMultiPLE.DATASET_PATH,
             self.DATASET_NAME,
             revision=self.DATASET_REVISION)
-        stop_words = self.dataset["test"][0]["stop_tokens"]
+        stop_words = self.dataset["test"][0]["stop_tokens"] + ["<file_sep>"]
         super().__init__(
             stop_words=stop_words,
             requires_execution=True,

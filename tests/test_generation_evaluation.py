@@ -82,6 +82,7 @@ model, tokenizer, accelerator = setup()
 
 def test_generation():
     args.generation_only = True
+    args.save_every_k_tasks = -1
     evaluator = Evaluator(accelerator, model, tokenizer, args)
     for task in GEN_TASKS:
         print(f"testing task {task}")
@@ -95,6 +96,7 @@ def test_generation():
 def test_evaluation():
     # TODO add scores for each task
     args.n_samples = 2
+    args.save_every_k_tasks = -1
     for task in EVAL_TASKS:
         print(f"testing task {task}")
         # path to generation examples to evaluate
