@@ -110,6 +110,11 @@ def parse_args():
         help="Load model in 4bit",
     )
     parser.add_argument(
+        "--left_padding",
+        action="store_true",
+        help="Force left padding, needed for models like chatglm3-6b",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=None,
@@ -311,14 +316,25 @@ def main():
             model.merge_and_unload()
             print("Merge complete.")
 
-        tokenizer = AutoTokenizer.from_pretrained(
-            args.model,
-            revision=args.revision,
-            trust_remote_code=args.trust_remote_code,
-            use_auth_token=args.use_auth_token,
-            truncation_side="left",
-            padding_side="right",  # padding on the right is needed to cut off padding in `complete_code`
-        )
+        if args.left_padding:
+            # left padding is required for some models like chatglm3-6b
+            tokenizer = AutoTokenizer.from_pretrained(
+                args.model,
+                revision=args.revision,
+                trust_remote_code=args.trust_remote_code,
+                use_auth_token=args.use_auth_token,
+                padding_side="left",  
+            )
+        else:
+            # used by default for most models
+            tokenizer = AutoTokenizer.from_pretrained(
+                args.model,
+                revision=args.revision,
+                trust_remote_code=args.trust_remote_code,
+                use_auth_token=args.use_auth_token,
+                truncation_side="left",
+                padding_side="right",  
+            )
         if not tokenizer.eos_token:
             if tokenizer.bos_token:
                 tokenizer.eos_token = tokenizer.bos_token
