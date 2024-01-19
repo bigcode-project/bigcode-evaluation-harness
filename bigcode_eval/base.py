@@ -28,7 +28,8 @@ class Task(ABC):
             self.dataset = load_dataset(path=self.DATASET_PATH, name=self.DATASET_NAME)
         except Exception as e:
             warn(
-                f"Loading the dataset failed with {str(e)}. This task will use a locally downloaded dataset, not from the HF hub."
+                f"Loading the dataset failed with {str(e)}. This task will use a locally downloaded dataset, not from the HF hub. \
+                This is expected behavior for the DS-1000 benchmark but not for other benchmarks!"
             )
 
     @abstractmethod
@@ -92,4 +93,3 @@ class Task(ABC):
             if stop_index != -1 and stop_index < min_stop_index:
                 min_stop_index = stop_index
         return decoded_string[:min_stop_index]
-
