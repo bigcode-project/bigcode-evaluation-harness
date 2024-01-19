@@ -45,6 +45,7 @@ def update_args(args):
     args.limit_start = 0
     args.batch_size = 1
     args.max_length_generation = 300
+    args.left_padding = False
     args.do_sample = False
     args.top_p = 0
     args.n_samples = 1
