@@ -7,6 +7,8 @@ by adding more automatically generated test cases to each problem.
 Homepage: https://github.com/evalplus/evalplus
 """
 
+from warnings import warn
+
 from bigcode_eval.tasks.humaneval import GeneralHumanEval
 
 _CITATION = """
@@ -26,6 +28,14 @@ class GeneralHumanEvalPlus(GeneralHumanEval):
     """
 
     DATASET_PATH = "evalplus/humanevalplus"
+
+    def __init__(self, strip_prompt, k=[1, 10, 100], num_workers=16, timeout=10.0):
+        if timeout < 10.0:
+            warn(
+                "It is suggested to have a longer timeout as HumanEval+ has lots of tests. "
+                f"The current timeout is {timeout}s while the suggested timeout is 10s."
+            )
+        super().__init__(strip_prompt, k, num_workers, timeout)
 
 
 def create_task(strip_prompt):
