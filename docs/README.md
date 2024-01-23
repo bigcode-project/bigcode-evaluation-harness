@@ -49,6 +49,22 @@ accelerate launch  main.py \
 
 If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `limit` argument to $n$. 
 
+### HumanEval+
+[HumanEval+](https://huggingface.co/datasets/evalplus/humanevalplus): HumanEval with additional unit tests (80x of the original HumanEval) for each of the 164 problems.
+
+The generation and evaluation follows the same approach as [HumanEval](#humaneval). One only needs to change the task name to `humanevalplus` to run the evaluation on HumanEval+, such as:
+
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks humanevalplus \
+  --temperature 0.2 \
+  --n_samples 200 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+
 
 ### HumanEvalPack
 
