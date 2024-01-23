@@ -1,5 +1,4 @@
 import json
-import os
 from math import ceil
 
 from typing import List, Optional
@@ -66,6 +65,7 @@ def parallel_generations(
     if base_url := args.base_url:
         assert "/v1" in base_url, "Only OpenAI compatible APIs are supported"
         import asyncio
+        import os
         from openai import AsyncOpenAI
         from tqdm.asyncio import tqdm
 
