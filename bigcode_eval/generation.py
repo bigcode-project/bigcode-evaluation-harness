@@ -1,4 +1,5 @@
 import json
+import os
 from math import ceil
 
 from typing import List, Optional
@@ -61,6 +62,27 @@ def parallel_generations(
                     f"generations loaded, {n_tasks} selected from {len(generations)} with {len(generations[0])} candidates"
                 )
         return generations[:n_tasks]
+
+    if base_url := args.base_url:
+        assert "/v1" in base_url, "Only OpenAI compatible APIs are supported"
+        import asyncio
+        from openai import AsyncOpenAI
+        from tqdm.asyncio import tqdm
+
+        api_key = os.getenv("OPENAI_API_KEY", "api_key")
+        client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        prompts = [task.get_prompt(doc) for doc in dataset]
+        awaitables = [client.completions.create(
+            model=args.model,
+            prompt=prompt, 
+            max_tokens=args.max_length_generation,
+            temperature=args.temperature,
+            top_p=args.top_p
+        ) for prompt in prompts]
+        responses = asyncio.run(tqdm.gather(*awaitables))
+        generations = [response.choices[0].text for response in responses]
+        generations = [[task.postprocess_generation(generation, i)] for i, generation in enumerate(generations)]
+        return generations
 
     set_seed(args.seed, device_specific=True)
 
