@@ -206,6 +206,27 @@ accelerate launch  main.py \
 
 Low temperatures generally work better for small $k$ in pass@k.
 
+### MBPP+
+[MBPP+](https://huggingface.co/datasets/evalplus/mbppplus): MBPP with additional unit tests (35x of the original MBPP) for each of the 164 problems.
+
+The generation and evaluation follows the same approach as [MBPP](#mbpp). One only needs to change the task name to `mbppplus` to run the evaluation on MBPP+, such as:
+
+> [!Note]
+> Note MBPP+ only includes **399** tasks which are a subset of the original MBPP dataset (~1000 tasks). 
+> The subset is selected from the sanitized MBPP (a subset of ~427 manually examined tasks by the original MBPP authors)
+> and EvalPlus further removes low-quality and ill-formed one for benchmark quality control to get MBPP+.
+
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks mbppplus \
+  --temperature 0.1 \
+  --n_samples 15 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+
 ### DS-1000
 [DS-1000](https://ds1000-code-gen.github.io/): Code generation benchmark with 1000 data science questions spanning seven Python libraries that (1) reflects diverse, realistic, and practical use cases, (2) has a reliable metric, (3) defends against memorization by perturbing questions.
 

@@ -3,8 +3,8 @@ from pprint import pprint
 
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
                concode, ds1000, gsm, humaneval, humanevalplus, humanevalpack,
-               instruct_humaneval, instruct_wizard_humaneval, mbpp, multiple,
-               parity, python_bugs, quixbugs, recode, santacoder_fim)
+               instruct_humaneval, instruct_wizard_humaneval, mbpp, mbppplus,
+               multiple, parity, python_bugs, quixbugs, recode, santacoder_fim)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
@@ -19,6 +19,7 @@ TASK_REGISTRY = {
     **humanevalplus.create_all_tasks(),
     **humanevalpack.create_all_tasks(),
     "mbpp": mbpp.MBPP,
+    "mbppplus": mbppplus.MBPPPlus,
     "parity": parity.Parity,
     "python_bugs": python_bugs.PythonBugs,
     "quixbugs": quixbugs.QuixBugs,
