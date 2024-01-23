@@ -167,6 +167,7 @@ class Gsm8k(Task):
         output = generation.split("# solution in Python:", NUM_SHOTS + 1)[-1].strip()
         if "Q:" in output:
             output = output.split("Q:")[0]
+        output = self._stop_at_stop_token(output, self.stop_words)
         output += "\n" + self.POST_SCRIPT
         return output
 
