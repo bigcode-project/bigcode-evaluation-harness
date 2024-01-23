@@ -75,13 +75,13 @@ def parallel_generations(
         awaitables = [client.completions.create(
             model=args.model,
             prompt=prompt, 
+            n=args.batch_size,
             max_tokens=args.max_length_generation,
             temperature=args.temperature,
             top_p=args.top_p
         ) for prompt in prompts]
         responses = asyncio.run(tqdm.gather(*awaitables))
-        generations = [response.choices[0].text for response in responses]
-        generations = [[task.postprocess_generation(generation, i)] for i, generation in enumerate(generations)]
+        generations = [[task.postprocess_generation(choice.text, i) for choice in response.choices] for i, response in enumerate(responses)]
         return generations
 
     set_seed(args.seed, device_specific=True)
