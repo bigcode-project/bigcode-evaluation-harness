@@ -216,7 +216,7 @@ The generation and evaluation follows the same approach as [MBPP](#mbpp). One on
 > The subset is selected from the sanitized MBPP (a subset of ~427 manually examined tasks by the original MBPP authors)
 > and EvalPlus further removes low-quality and ill-formed one for benchmark quality control to get MBPP+.
 
-```python
+```bash
 accelerate launch  main.py \
   --model <MODEL_NAME> \
   --max_length_generation <MAX_LENGTH> \
@@ -225,6 +225,16 @@ accelerate launch  main.py \
   --n_samples 15 \
   --batch_size 10 \
   --allow_code_execution
+```
+
+By setting `MBBPPLUS_USE_MBPP_TESTS=1` when running MBPP+, one can run the 399 MBPP+ tasks (a subset of the 500 MBPP evaluation tasks) with the original MBPP base tests:
+
+```bash
+MBBPPLUS_USE_MBPP_TESTS=1 accelerate launch main.py \
+  --tasks mbppplus \
+  --allow_code_execution \
+  --load_generations_path generations_mbppplus.json \
+  --model <MODEL_NAME>
 ```
 
 ### DS-1000
