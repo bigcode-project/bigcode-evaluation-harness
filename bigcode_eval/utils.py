@@ -1,6 +1,9 @@
+import json
 import math
+import re
 import warnings
 from collections import defaultdict
+from typing import List, Optional
 
 import torch
 from torch.utils.data import IterableDataset
@@ -49,7 +52,7 @@ class TokenizedDataset(IterableDataset):
         prompts_encoder = []
         infill = []
         instruction = []
-        for sample in range(self.limit_start, self.limit_start+self.n_tasks):
+        for sample in range(self.limit_start, self.limit_start + self.n_tasks):
             prompt_contents = self.task.get_prompt(self.dataset[sample])
             if isinstance(prompt_contents, str):
                 # Normal code completion mode
@@ -111,8 +114,6 @@ class TokenizedDataset(IterableDataset):
                 return_token_type_ids=return_token_type_ids,
             )
 
-
-
         if self.n_copies == 1 and self.n_tasks % self.num_devices != 0:
             self.n_copies = 2
             warnings.warn(
@@ -127,7 +128,9 @@ class TokenizedDataset(IterableDataset):
                         "ids_encoder": outputs_encoder.input_ids[sample],
                         "task_id": sample,
                         "input_len": outputs.attention_mask[sample].sum(),
-                        "input_len_encoder": outputs_encoder.attention_mask[sample].sum(),
+                        "input_len_encoder": outputs_encoder.attention_mask[
+                            sample
+                        ].sum(),
                     }
                 else:
                     yield {
@@ -231,6 +234,9 @@ def complete_code(
     instruction_tokens=None,
     postprocess=True,
     is_wrapped=False,
+    save_every_k_tasks: int = -1,
+    intermediate_generations: Optional[List[Optional[List[Optional[str]]]]] = None,
+    intermediate_save_generations_path: Optional[str] = None,
     **gen_kwargs,
 ):
     """Generate multiple codes for each task in the dataset using multiple GPUs with accelerate.
@@ -238,7 +244,10 @@ def complete_code(
     [p_0_0, p_0_1, ..., p_0_nc-1, p_1_0, ..., p_nt-1_nc-1] where nc is the number of copies of the prompt,
     and nt is the number of tasks. nc is such that num_samples(for each task)= nc * batch_size
     """
-
+    # keep track of the list of generated codes
+    # where len(code_gens) = n_tasks and len(code_gens[0]) = number of generated code samples
+    code_gens: List[List[Optional[str]]] = [[] for _ in range(n_tasks)]
+    generations = [] if not intermediate_generations else intermediate_generations
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(
         enumerate(dataloader),
@@ -251,13 +260,15 @@ def complete_code(
                 # Set the start_length after which to check for stopping to be the longest input ignoring padding
                 max_len = batch["input_len"].max().item()
                 if "ids_encoder" in batch:
-                    max_len += 1 # Add 1 for decoder_start_token_id
+                    max_len += 1  # Add 1 for decoder_start_token_id
                 gen_kwargs["stopping_criteria"][0].start_length = max_len
             if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
                 idx = 1 if task.stop_words else 0
-                gen_kwargs["stopping_criteria"][idx].input_length = batch["input_len"].max().item()                
-            
-            inputs = batch["ids"][:, : batch["input_len"]]
+                gen_kwargs["stopping_criteria"][idx].input_length = (
+                    batch["input_len"].max().item()
+                )
+
+            inputs = batch["ids"][:, : batch["input_len"]] if tokenizer.padding_side == "right" else batch["ids"]
             if "ids_encoder" in batch:
                 if is_wrapped:
                     generated_tokens = accelerator.unwrap_model(model).generate(
@@ -306,7 +317,55 @@ def complete_code(
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
 
-    code_gens = [[] for _ in range(n_tasks)]
+            if save_every_k_tasks >= 1 and (step + 1) % save_every_k_tasks == 0:
+                if not intermediate_save_generations_path:
+                    raise ValueError(
+                        "intermediate_save_generations_path cannot be empty!"
+                    )
+
+                code_gens = update_code_gens(
+                    task,
+                    tokenizer,
+                    limit_start,
+                    prefix,
+                    instruction_tokens,
+                    postprocess,
+                    code_gens,
+                    gen_token_dict,
+                )
+                with open(intermediate_save_generations_path, "w") as fp:
+                    json.dump(generations + code_gens, fp)
+                    print(
+                        f"intermediate generations were saved at {intermediate_save_generations_path}"
+                    )
+                # reset gen_token_dict - prevent redundant decoding
+                gen_token_dict = defaultdict(list)
+
+    code_gens = update_code_gens(
+        task,
+        tokenizer,
+        limit_start,
+        prefix,
+        instruction_tokens,
+        postprocess,
+        code_gens,
+        gen_token_dict,
+    )
+
+    generations.extend(code_gens)
+    return generations
+
+
+def update_code_gens(
+    task,
+    tokenizer,
+    limit_start,
+    prefix,
+    instruction_tokens,
+    postprocess,
+    code_gens,
+    gen_token_dict,
+):  
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
             if INFILL_MODE or tokenizer.eos_token in task.stop_words:
@@ -315,10 +374,17 @@ def complete_code(
                 # Treat eos token as a regular stop word not removing it from the output
                 # If it's removed it may have the effect of removing it in the middle of a
                 # longer generation in case a batch size > 1 is used, which will result in
-                # a wrong generation as it won't be used for splitting lateron 
+                # a wrong generation as it won't be used for splitting lateron
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                 )
+                try:
+                    # some tokenizers add a multi-token prefix to the generation (e.g ChatGLM)
+                    tokenizer_prefix = tokenizer.decode(tokenizer.get_prefix_tokens())
+                    if gen_code.startswith(f"{tokenizer_prefix}"):
+                        gen_code = gen_code[len(tokenizer_prefix):].lstrip()
+                except:
+                    pass
                 if INFILL_MODE:
                     gen_code = _parse_infill(gen_code, tokenizer)
                 if INSTRUCTION_MODE:
@@ -338,11 +404,7 @@ def complete_code(
                     "model output is not postprocessed, this might lower evaluation scores"
                 )
                 code_gens[sample].append(gen_code)
-
     return code_gens
-
-
-import re
 
 
 def remove_after_return(code):
@@ -361,6 +423,6 @@ def remove_after_return(code):
             and start_match < len(code)
             and code[start_match].strip() != ""
         ):
-            return code[0:start_match]
+            return code[0: start_match]
         end_last_match = end_match
     return code

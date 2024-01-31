@@ -1,6 +1,8 @@
 import json
 from math import ceil
 
+from typing import List, Optional
+
 from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
@@ -37,7 +39,19 @@ class TooLongFunctionCriteria(StoppingCriteria):
         return input_ids.shape[1] > int(self.input_length * self.multiplier)
         
 
-def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, args):
+def parallel_generations(
+        task,
+        dataset,
+        accelerator,
+        model,
+        tokenizer,
+        n_tasks,
+        args,
+        curr_sample_idx: int = 0,
+        save_every_k_tasks: int = -1,
+        intermediate_generations: Optional[List[Optional[List[Optional[str]]]]] = None,
+        intermediate_save_generations_path: Optional[str] = None,
+):
     if args.load_generations_path:
         # load generated code
         with open(args.load_generations_path) as fp:
@@ -100,7 +114,7 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         tokenizer,
         num_devices=accelerator.state.num_processes,
         max_length=args.max_length_generation,
-        limit_start=args.limit_start,
+        limit_start=args.limit_start + curr_sample_idx,
         n_tasks=n_tasks,
         n_copies=n_copies,
         prefix=args.prefix,
@@ -131,12 +145,15 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         tokenizer,
         ds_loader,
         n_tasks=n_tasks,
-        limit_start=args.limit_start,
+        limit_start=args.limit_start + curr_sample_idx,
         batch_size=args.batch_size,
         prefix=args.prefix,
         instruction_tokens=instruction_tokens,
         postprocess=args.postprocess,
         is_wrapped=is_loaded_in_8bit or is_loaded_in_4bit,
+        save_every_k_tasks=save_every_k_tasks,
+        intermediate_generations=intermediate_generations,
+        intermediate_save_generations_path=intermediate_save_generations_path,
         **gen_kwargs,
     )
     return generations

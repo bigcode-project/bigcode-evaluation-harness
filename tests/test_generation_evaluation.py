@@ -31,6 +31,7 @@ def update_args(args):
     args.save_generations = False
     args.save_generations_path = ""
     args.save_references = False
+    args.save_references_path = ""
     args.metric_output_path = TMPDIR
     args.load_generations_path = None
     args.generation_only = False
@@ -44,6 +45,7 @@ def update_args(args):
     args.limit_start = 0
     args.batch_size = 1
     args.max_length_generation = 300
+    args.left_padding = False
     args.do_sample = False
     args.top_p = 0
     args.n_samples = 1
@@ -81,6 +83,7 @@ model, tokenizer, accelerator = setup()
 
 def test_generation():
     args.generation_only = True
+    args.save_every_k_tasks = -1
     evaluator = Evaluator(accelerator, model, tokenizer, args)
     for task in GEN_TASKS:
         print(f"testing task {task}")
@@ -94,6 +97,7 @@ def test_generation():
 def test_evaluation():
     # TODO add scores for each task
     args.n_samples = 2
+    args.save_every_k_tasks = -1
     for task in EVAL_TASKS:
         print(f"testing task {task}")
         # path to generation examples to evaluate
