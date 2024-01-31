@@ -307,9 +307,7 @@ def main():
             # reload the state dict for the model now that architecture matches expected
             reload_model_state(model, args.model, original_sd)
             model.to(model.device)
-            #for n, m in model.named_parameters():
-            #    print(n, torch.nonzero(m).size(0)/torch.numel(m))
-            #exit()
+            
             # HOTFIX. assign proper device ids to quantwrapper again
             # print("Starting")
             #for layer in model.model.layers:
