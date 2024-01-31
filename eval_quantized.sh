@@ -1,6 +1,6 @@
 
 #accelerate launch  main.py \
-python  main.py \
+python  ~/src/bigcode-evaluation-harness/main.py \
   --model ${1} \
   --tasks humaneval \
   --max_length_generation 512 \
@@ -11,7 +11,7 @@ python  main.py \
   --batch_size 32 \
   --allow_code_execution \
   --save_generations \
-  --precision bf16 \
+  --precision fp16 \
+  --modeltype='nm' \
   --metric_output_path ${1}/evaluation_results.json
-  #--modeltype='nm' \
-  #--limit 10
+  #--limit 50 \

@@ -20,7 +20,8 @@ from bigcode_eval.tasks import ALL_TASKS
 
 import sparseml.core.session as session_manager
 from sparseml.core.framework import Framework
-from sparseml.transformers.sparsification.obcq.export import load_task_model, _reload_model_state
+from sparseml.transformers.sparsification.obcq.export import load_task_model
+from sparseml.pytorch.model_load.helpers import reload_model_state
 
 class MultiChoice:
     def __init__(self, choices):
@@ -304,15 +305,19 @@ def main():
             )
 
             # reload the state dict for the model now that architecture matches expected
-            _reload_model_state(model, args.model, original_sd)
-            # model.to(model.device)
+            reload_model_state(model, args.model, original_sd)
+            model.to(model.device)
+            #for n, m in model.named_parameters():
+            #    print(n, torch.nonzero(m).size(0)/torch.numel(m))
+            #exit()
             # HOTFIX. assign proper device ids to quantwrapper again
             # print("Starting")
-            for layer in model.model.layers:
-                # assuming each layer is contained in a single GPU, different layers maybe in different GPUs
-                # hack to enable quantwrapper(.module) to have all class members on one device.
-                layer.to(layer.self_attn.q_proj.module.weight.device)
-            model.lm_head.to(model.lm_head.module.weight.device)
+            #for layer in model.model.layers:
+            #    # assuming each layer is contained in a single GPU, different layers maybe in different GPUs
+            #    # hack to enable quantwrapper(.module) to have all class members on one device.
+            #    print(layer.self_attn.q_proj)
+            #    layer.to(layer.self_attn.q_proj.module.weight.device)
+            #model.lm_head.to(model.lm_head.module.weight.device)
         else:
             raise ValueError(
                 f"Non valid modeltype {args.modeltype}, choose from: causal, seq2seq"
