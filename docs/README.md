@@ -49,6 +49,22 @@ accelerate launch  main.py \
 
 If you want to evaluate only on the first $n$ samples instead of all the test dataset, set `limit` argument to $n$. 
 
+### HumanEval+
+[HumanEval+](https://huggingface.co/datasets/evalplus/humanevalplus): HumanEval with additional unit tests (80x of the original HumanEval) for each of the 164 problems.
+
+The generation and evaluation follows the same approach as [HumanEval](#humaneval). One only needs to change the task name to `humanevalplus` to run the evaluation on HumanEval+, such as:
+
+```python
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks humanevalplus \
+  --temperature 0.2 \
+  --n_samples 200 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+
 
 ### HumanEvalPack
 
@@ -189,6 +205,37 @@ accelerate launch  main.py \
 ```
 
 Low temperatures generally work better for small $k$ in pass@k.
+
+### MBPP+
+[MBPP+](https://huggingface.co/datasets/evalplus/mbppplus): MBPP with additional unit tests (35x of the original MBPP) for each of the 164 problems.
+
+The generation and evaluation follows the same approach as [MBPP](#mbpp). One only needs to change the task name to `mbppplus` to run the evaluation on MBPP+, such as:
+
+> [!Note]
+> Note MBPP+ only includes **399** tasks which are a subset of the original MBPP dataset (~1000 tasks). 
+> The subset is selected from the sanitized MBPP (a subset of ~427 manually examined tasks by the original MBPP authors)
+> and EvalPlus further removes low-quality and ill-formed one for benchmark quality control to get MBPP+.
+
+```bash
+accelerate launch  main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation <MAX_LENGTH> \
+  --tasks mbppplus \
+  --temperature 0.1 \
+  --n_samples 15 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+
+By setting `MBBPPLUS_USE_MBPP_TESTS=1` when running MBPP+, one can run the 399 MBPP+ tasks (a subset of the 500 MBPP evaluation tasks) with the original MBPP base tests:
+
+```bash
+MBBPPLUS_USE_MBPP_TESTS=1 accelerate launch main.py \
+  --tasks mbppplus \
+  --allow_code_execution \
+  --load_generations_path generations_mbppplus.json \
+  --model <MODEL_NAME>
+```
 
 ### DS-1000
 [DS-1000](https://ds1000-code-gen.github.io/): Code generation benchmark with 1000 data science questions spanning seven Python libraries that (1) reflects diverse, realistic, and practical use cases, (2) has a reliable metric, (3) defends against memorization by perturbing questions.

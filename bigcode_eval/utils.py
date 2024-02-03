@@ -268,7 +268,7 @@ def complete_code(
                     batch["input_len"].max().item()
                 )
 
-            inputs = batch["ids"][:, : batch["input_len"]]
+            inputs = batch["ids"][:, : batch["input_len"]] if tokenizer.padding_side == "right" else batch["ids"]
             if "ids_encoder" in batch:
                 if is_wrapped:
                     generated_tokens = accelerator.unwrap_model(model).generate(
@@ -365,7 +365,7 @@ def update_code_gens(
     postprocess,
     code_gens,
     gen_token_dict,
-):
+):  
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
             if INFILL_MODE or tokenizer.eos_token in task.stop_words:
@@ -378,6 +378,13 @@ def update_code_gens(
                 gen_code = tokenizer.decode(
                     s, skip_special_tokens=False, clean_up_tokenization_spaces=False
                 )
+                try:
+                    # some tokenizers add a multi-token prefix to the generation (e.g ChatGLM)
+                    tokenizer_prefix = tokenizer.decode(tokenizer.get_prefix_tokens())
+                    if gen_code.startswith(f"{tokenizer_prefix}"):
+                        gen_code = gen_code[len(tokenizer_prefix):].lstrip()
+                except:
+                    pass
                 if INFILL_MODE:
                     gen_code = _parse_infill(gen_code, tokenizer)
                 if INSTRUCTION_MODE:
