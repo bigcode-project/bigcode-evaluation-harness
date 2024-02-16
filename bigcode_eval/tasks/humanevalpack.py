@@ -225,6 +225,12 @@ class HumanEvalPack(Task):
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{inp}\n\n### Response:\n{prompt_base}'
         elif self.prompt == "codellama":
             prompt = f"[INST] {inp.strip()} [/INST] {prompt_base}"
+        elif self.prompt in ["tulu", "gritlm"]:
+            prompt = f"<|user|>\n{inp}\n<|assistant|>\n{prompt_base}"
+        elif self.prompt == "zephyr":
+            prompt = f"<|user|>\n{inp}</s>\n<|assistant|>\n{prompt_base}"
+        elif self.prompt == "yi":
+            prompt = f"<|im_start|>user\n{inp}<|im_end|>\n<|im_start|>assistant\n{prompt_base}"
         else:
             raise ValueError(f"The --prompt argument {self.prompt} wasn't provided or isn't supported")
         # Strip off the final \n to make the tokens more natural
