@@ -224,10 +224,10 @@ class HumanEvalPack(Task):
             # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/humaneval_gen.py#L37
             prompt = f'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{inp}\n\n### Response:\n{prompt_base}'
         elif self.prompt == "codellama":
-            # https://huggingface.co/codellama             
+            # https://hf.co/codellama             
             prompt = f"[INST] {inp.strip()} [/INST] {prompt_base}"
         elif self.prompt in ["tulu", "gritlm"]:
-            # https://huggingface.co/GritLM/GritLM-7B
+            # https://hf.co/GritLM/GritLM-7B
             prompt = f"<|user|>\n{inp}\n<|assistant|>\n{prompt_base}"
         elif self.prompt == "zephyr":
             # https://hf.co/HuggingFaceH4/zephyr-7b-beta
@@ -235,6 +235,8 @@ class HumanEvalPack(Task):
         elif self.prompt == "yi":
             # https://hf.co/01-ai/Yi-34B-Chat     
             prompt = f"<|im_start|>user\n{inp}<|im_end|>\n<|im_start|>assistant\n{prompt_base}"
+        elif self.prompt == "codellama-70b":
+            prompt = f"Source: user\n\n {inp.strip()} Source: assistant\nDestination: user \n\n{prompt_base}"
         else:
             raise ValueError(f"The --prompt argument {self.prompt} wasn't provided or isn't supported")
         # Strip off the final \n to make the tokens more natural
