@@ -1,0 +1,5 @@
+[
+    ["\ndef transform(dataframe):\n    l = [5.0 for _ in range(len(dataframe))]\n    l[-3:] = [7.0, 7.0, 7.0]\n    dataframe['f3'] = l\n    return dataframe\n            "],
+    ["\ndef transform(dataframe):\n    dataframe['f3'] = dataframe['f1'] * dataframe['f2']\n    return dataframe\n    "],
+    ["\ndef transform(dataframe):\n    return dataframe\n            "]
+]

@@ -53,7 +53,9 @@ def check_correctness(check_program, timeout, task_id, completion_id):
     )
 
 
-def unsafe_execute(check_program, result, timeout):
+def unsafe_execute(check_program, result, timeout, exec_globals=None):
+    if exec_globals is None:
+        exec_globals = {}
 
     with create_tempdir():
 
@@ -66,11 +68,10 @@ def unsafe_execute(check_program, result, timeout):
         chdir = os.chdir
 
         # Disable functionalities that can make destructive changes to the test.
-        reliability_guard()
+        # reliability_guard()
 
         # Run program.
         try:
-            exec_globals = {}
             with swallow_io():
                 with time_limit(timeout):
                     exec(check_program, exec_globals)
