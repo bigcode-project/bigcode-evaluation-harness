@@ -58,7 +58,7 @@ class GeneralAsleepKeyboard(Task):
     DATASET_PATH = "moyix/asleep_keyboard"
     DATASET_NAME = "DoW"
 
-    def __init__(self, prompt="octocoder", use_fim=False, gh_stars=None):
+    def __init__(self, prompt="", use_fim=False, gh_stars=None):
         self.use_fim = use_fim
         self.prompt = prompt
         if gh_stars is not None:
