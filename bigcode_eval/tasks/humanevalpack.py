@@ -176,7 +176,9 @@ class HumanEvalPack(Task):
         elif self.prompt == "diff":
             stop_words = ["<commit_before>", "<commit_msg>", "<commit_after>"]
         elif self.prompt == "diff-carper":
-            stop_words = ["<BEF>", "<MSG>", "<DFF>", "\ No newline at end of file"]            
+            stop_words = ["<BEF>", "<MSG>", "<DFF>", "\ No newline at end of file"]          
+        elif self.prompt == "issue":  
+            stop_words.append("```")
         stop_words.append("<|endoftext|>")
         self.with_docs = with_docs
         super().__init__(stop_words=stop_words, requires_execution=True)
@@ -516,6 +518,8 @@ class HumanEvalFixBase(HumanEvalPackGenerative):
         elif self.prompt == "diff-carper":
             prompt = f"<NME> {self.get_filename_with_extension(input_file=doc['entry_point'])}\n"
             prompt += f"<BEF> {context}\n<MSG> {instruction}\n<DFF>"
+        elif self.prompt == "issue":
+            prompt = f"<issue_start>username_0: {instruction}\n\n```{context}```\nUpvotes: 100<issue_comment>username_1: Sure, here is the fixed code.\n\n```{prompt_base}"
         else:
             prompt = super().get_prompt(prompt_base, instruction, context)
         return prompt.strip()
