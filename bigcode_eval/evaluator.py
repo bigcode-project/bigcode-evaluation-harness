@@ -2,12 +2,15 @@ import inspect
 import json
 import os
 import warnings
+from typing import Optional 
 
 from typing import List
 
 
 from bigcode_eval import tasks
-from bigcode_eval.generation import parallel_generations
+from bigcode_eval.generation import parallel_generations, parallel_generations_from_api
+from bigcode_eval.utils import _make_instruction_prompt
+
 
 _WARNING = """
 ################################################################################
@@ -26,6 +29,95 @@ Once you have read this disclaimer and taken appropriate precautions, set the ar
 "allow_code_execution" to True.
 ################################################################################\
 """
+
+class EvaluatorForEndpoint:
+    def __init__(self, api_key: str, args, api_base: Optional[str]=None, api_organization: Optional[str]=None):
+        try:
+            import litellm
+        except ImportError as e:
+            print('EvaluationForEndpoint requires package litellm to be installed.')
+            
+        self.args = args
+        litellm.api_key = api_key
+        
+        if api_base:
+            litellm.api_base = api_base
+        
+        if api_organization:
+            litellm.organization = api_organization        
+    
+    def fetch_dataset_from_task(self, task_name: str):
+        task = tasks.get_task(task_name, args=self.args) 
+        dataset = task.get_dataset()
+        n_tasks = self.args.limit if self.args.limit else len(dataset)
+        
+        # Build the prompts
+        prompts = [] 
+        
+        for sample in range(self.args.limit_start, self.args.limit_start + n_tasks):
+            prompt_contents = task.get_prompt(dataset[sample])
+            if isinstance(prompt_contents, str):
+                prompt = self.args.prefix + self.args.prompt + prompt_contents
+            elif isinstance(prompt_contents, dict):
+                if set(prompt_contents.keys()) == {"prefix", "suffix"}:
+                    print("Infilling mode for API is not supported")
+                    continue
+                elif set(prompt_contents.keys()) == {"instruction", "context"}:
+                    prompt = _make_instruction_prompt(**prompt_contents, prefix=self.args.prefix)
+            else:
+                raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
+            prompts.append(prompt)
+
+        # Build the references
+        references = [
+            task.get_reference(dataset[i])
+            for i in range(self.args.limit_start, self.args.limit_start + n_tasks)
+        ]
+        return prompts, references
+
+    def generate_text(self, task_name):
+        task = tasks.get_task(task_name, self.args)
+        dataset = task.get_dataset()
+        # if args.limit is None, use all samples
+        n_tasks = self.args.limit if self.args.limit else len(dataset)
+        references = [task.get_reference(dataset[i]) for i in range(self.args.limit_start, self.args.limit_start+n_tasks)]
+
+        if self.args.check_references:
+            if "get_solution" in inspect.signature(task.get_reference).parameters:
+                solutions = [[task.get_reference(dataset[i], get_solution=True)] for i in range(self.args.limit_start, self.args.limit_start+n_tasks)]
+            else:
+                solutions = [[ref] for ref in references]
+            return solutions, references
+        
+        prompts, references = self.fetch_dataset_from_task(task_name=task_name)
+        generations = parallel_generations_from_api(task=task, dataset=dataset, prompts=prompts, args=self.args)
+        if len(generations[0]) > self.args.n_samples:
+            generations = [l[: self.args.n_samples] for l in generations]
+            warnings.warn(
+                f"Number of tasks wasn't proportional to number of devices, we removed extra predictions to only keep nsamples={self.args.n_samples}"
+            )
+        
+        return generations, references
+        
+    def evaluate_task(self, task_name, generations):
+        task = tasks.get_task(task_name, args=self.args)
+        _, references = self.fetch_dataset_from_task(task_name=task_name)
+        
+        if task.requires_execution and not self.args.allow_code_execution:
+            raise ValueError(_WARNING)
+        
+        if task.requires_execution and self.args.allow_code_execution:
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
+            os.environ["HF_ALLOW_CODE_EVAL"] = "1"
+        
+        results = task.process_results(generations, references)
+        results['config'] = vars(self.args)
+        
+        if self.args.metric_output_path:
+            with open(self.args.metric_output_path, "w") as f:
+                json.dump(results, f)
+        return results 
+    
 
 class Evaluator:
     def __init__(self, accelerator, model, tokenizer, args):

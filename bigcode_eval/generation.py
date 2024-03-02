@@ -1,5 +1,8 @@
+import os 
 import json
 from math import ceil
+from tqdm.auto import tqdm 
+from tenacity import retry, stop_after_attempt, wait_fixed, RetryError
 
 from typing import List, Optional
 
@@ -8,6 +11,7 @@ from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
 
 from bigcode_eval.utils import TokenizedDataset, complete_code
+from bigcode_eval import tasks 
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
@@ -38,6 +42,7 @@ class TooLongFunctionCriteria(StoppingCriteria):
         """Returns true if generated sequence is too long."""
         return input_ids.shape[1] > int(self.input_length * self.multiplier)
         
+
 
 def parallel_generations(
         task,
@@ -157,3 +162,133 @@ def parallel_generations(
         **gen_kwargs,
     )
     return generations
+
+
+@retry(stop=stop_after_attempt(10), wait=wait_fixed(1))
+def generate_response_from_api(prompt: str, args):
+    try:
+        from litellm import completion
+    except ImportError as e:
+        print('generate_response_from_api function requires litellm to be installed.')
+    response = None
+    try:
+        response = completion(
+            model=args.model,
+            temperature= None if not args.do_sample else args.temperature, 
+            top_p=None if not args.do_sample else args.top_p,
+            max_tokens=args.max_length_generation, n=args.n_samples,
+            messages=[{'content': prompt, 'role': 'user'}],
+            request_timeout=60
+        )
+    except Exception as e:
+        print(f"Error encountered: {e}. Retrying ... ")
+        response = None
+        raise RetryError
+    return response 
+
+def yield_generation_from_prompts(prompts, task, args):
+    for sample, prompt in enumerate(prompts):
+        response = generate_response_from_api(prompt=prompt, args=args)
+        if response is not None:
+            if args.postprocess:
+                generation_from_prompt = [
+                    task.postprocess_generation(response["choices"][i]["message"]["content"], sample+args.limit_start)
+                    for i in range(args.n_samples)
+                ]
+            else:
+                generation_from_prompt = [
+                    response["choices"][i]["message"]["content"] for i in range(args.n_samples)
+                ]
+        else:
+            print(f'Generation found None. Replacing None by empty string')
+            generation_from_prompt = [''] * args.n_samples
+        yield generation_from_prompt    
+
+
+def parallel_generations_from_api(task, dataset, prompts, args):
+    n_tasks = args.limit if args.limit else len(dataset)
+    
+    if args.load_generations_path:
+        # load generated code
+        with open(args.load_generations_path) as fp:
+            generations = json.load(fp)
+        return generations[:n_tasks]
+    
+    # Todo: not using any stopping criteria, since it requires tokenizer.
+    # For gpt-3.5 we can use tiktoken, however this can be done on the next iterations
+    # also not giving passing instruction tokens here.
+    
+    generations = [] 
+    
+    for generation in tqdm(yield_generation_from_prompts(prompts=prompts, task=task, args=args), total=len(prompts)):
+        generations.append(generation)
+        
+    if args.save_generations_path and args.save_generations:
+        with open(args.save_generations_path, "w") as f:
+            json.dump(generations, f)
+        return generations
+
+
+@retry(stop=stop_after_attempt(10), wait=wait_fixed(1))
+def generate_response_from_api(prompt: str, args):
+    try:
+        from litellm import completion
+    except ImportError as e:
+        print('generate_response_from_api function requires litellm to be installed.')
+    response = None
+    try:
+        response = completion(
+            model=args.model,
+            temperature= None if not args.do_sample else args.temperature, 
+            top_p=None if not args.do_sample else args.top_p,
+            max_tokens=args.max_length_generation, n=args.n_samples,
+            messages=[{'content': prompt, 'role': 'user'}],
+            request_timeout=60
+        )
+    except Exception as e:
+        print(f"Error encountered: {e}. Retrying ... ")
+        response = None
+        raise RetryError
+    return response 
+
+def yield_generation_from_prompts(prompts, task, args):
+    for sample, prompt in enumerate(prompts):
+        response = generate_response_from_api(prompt=prompt, args=args)
+        if response is not None:
+            if args.postprocess:
+                generation_from_prompt = [
+                    task.postprocess_generation(response["choices"][i]["message"]["content"], sample+args.limit_start)
+                    for i in range(args.n_samples)
+                ]
+            else:
+                generation_from_prompt = [
+                    response["choices"][i]["message"]["content"] for i in range(args.n_samples)
+                ]
+        else:
+            print(f'Generation found None. Replacing None by empty string')
+            generation_from_prompt = [''] * args.n_samples
+        yield generation_from_prompt    
+
+
+def parallel_generations_from_api(task, dataset, prompts, args):
+    n_tasks = args.limit if args.limit else len(dataset)
+    
+    if args.load_generations_path:
+        # load generated code
+        with open(args.load_generations_path) as fp:
+            generations = json.load(fp)
+        return generations[:n_tasks]
+    
+    # Todo: not using any stopping criteria, since it requires tokenizer.
+    # For gpt-3.5 we can use tiktoken, however this can be done on the next iterations
+    # also not giving passing instruction tokens here.
+    
+    generations = [] 
+    
+    for generation in tqdm(yield_generation_from_prompts(prompts=prompts, task=task, args=args), total=len(prompts)):
+        generations.append(generation)
+        
+    if args.save_generations_path and args.save_generations:
+        with open(args.save_generations_path, "w") as f:
+            json.dump(generations, f)
+        return generations
