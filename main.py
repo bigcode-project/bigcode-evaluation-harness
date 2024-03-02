@@ -2,6 +2,7 @@ import os
 import fnmatch
 import json
 import warnings
+from argparse import Namespace
 
 import datasets
 import torch
@@ -39,6 +40,11 @@ class MultiChoice:
 def parse_args():
     parser = HfArgumentParser(EvalArguments)
 
+    parser.add_argument(
+        "--base_url",
+        default=None,
+        help="Base URL to use for an OpenAI compatible API, must end in `/v1`. You can provide your API key using the OPENAI_API_KEY environment variable. If you don't, we assume you're hosting your own OpenAI compatible API.",
+    )
     parser.add_argument(
         "--model",
         default="codeparrot/codeparrot-small",
@@ -229,28 +235,17 @@ def get_gpus_max_memory(max_memory, num_gpus):
     return max_memory
 
 
-def main():
-    args = parse_args()
-    transformers.logging.set_verbosity_error()
-    datasets.logging.set_verbosity_error()
-
-    if args.tasks is None:
-        task_names = ALL_TASKS
-    else:
-        task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
-
-    accelerator = Accelerator()
-    if accelerator.is_main_process:
-        print(f"Selected Tasks: {task_names}")
-
-    results = {}
+def get_evaluator(accelerator: Accelerator, args: Namespace):
     if args.load_generations_path:
         # here we don't generate code but only evaluate previously computed generations
         if accelerator.is_main_process:
             print("evaluation only mode")
-        evaluator = Evaluator(accelerator, None, None, args)
-        for task in task_names:
-            results[task] = evaluator.evaluate(task)
+        return Evaluator(accelerator, None, None, args)
+    elif args.base_url:
+        # here we generate code using an OpenaI compatible API
+        if accelerator.is_main_process:
+            print("OpenAI compatible API generation mode")
+        return Evaluator(accelerator, args.model, None, args)
     else:
         # here we generate code and save it (evaluation is optional but True by default)
         dict_precisions = {
@@ -358,44 +353,65 @@ def main():
             tokenizer.bos_token_id = 1
             print("Changing bos_token to <s>")
 
-        evaluator = Evaluator(accelerator, model, tokenizer, args)
+        return Evaluator(accelerator, model, tokenizer, args)
 
-        if (
-            args.load_generations_intermediate_paths
-            and len(args.load_generations_intermediate_paths) != len(task_names)
-        ):
-            raise ValueError(
-                "If passing --load_generations_intermediate_paths, \
-                must pass equal number of files as number of tasks"
+
+def get_results(task_names: list[str], evaluator: Evaluator, accelerator: Accelerator, args: Namespace):
+    results = {}
+    if (
+        args.load_generations_intermediate_paths
+        and len(args.load_generations_intermediate_paths) != len(task_names)
+    ):
+        raise ValueError(
+            "If passing --load_generations_intermediate_paths, \
+            must pass equal number of files as number of tasks"
+        )
+
+    for idx, task in enumerate(task_names):
+        intermediate_generations = None
+        if args.load_generations_intermediate_paths:
+            with open(args.load_generations_intermediate_paths[idx], "r") as f_in:
+                # intermediate_generations: list[list[str | None]] of len n_tasks
+                # where list[i] = generated codes or empty
+                intermediate_generations = json.load(f_in)
+
+        if args.generation_only:
+            if accelerator.is_main_process:
+                print("generation only mode")
+            generations, references = evaluator.generate_text(
+                task, intermediate_generations=intermediate_generations
             )
-
-        for idx, task in enumerate(task_names):
-            intermediate_generations = None
-            if args.load_generations_intermediate_paths:
-                with open(args.load_generations_intermediate_paths[idx], "r") as f_in:
-                    # intermediate_generations: list[list[str | None]] of len n_tasks
-                    # where list[i] = generated codes or empty
-                    intermediate_generations = json.load(f_in)
-
-            if args.generation_only:
-                if accelerator.is_main_process:
-                    print("generation mode only")
-                generations, references = evaluator.generate_text(
-                    task, intermediate_generations=intermediate_generations
+            if accelerator.is_main_process:
+                save_generations_path = f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
+                save_references_path = f"references_{task}.json"
+                evaluator.save_json_files(
+                    generations,
+                    references,
+                    save_generations_path,
+                    save_references_path,
                 )
-                if accelerator.is_main_process:
-                    save_generations_path = f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
-                    save_references_path = f"references_{task}.json"
-                    evaluator.save_json_files(
-                        generations,
-                        references,
-                        save_generations_path,
-                        save_references_path,
-                    )
-            else:
-                results[task] = evaluator.evaluate(
-                    task, intermediate_generations=intermediate_generations
-                )
+        else:
+            results[task] = evaluator.evaluate(
+                task, intermediate_generations=intermediate_generations
+            )
+    return results
+
+def main():
+    args = parse_args()
+    transformers.logging.set_verbosity_error()
+    datasets.logging.set_verbosity_error()
+
+    if args.tasks is None:
+        task_names = ALL_TASKS
+    else:
+        task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
+
+    accelerator = Accelerator()
+    if accelerator.is_main_process:
+        print(f"Selected Tasks: {task_names}")
+
+    evaluator = get_evaluator(accelerator, args)
+    results = get_results(task_names, evaluator, accelerator, args)
 
     # Save all args to config
     results["config"] = vars(args)
