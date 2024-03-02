@@ -58,6 +58,7 @@ for lang in "${langs[@]}"; do
             --trust_remote_code \
             --use_auth_token \
             --generation_only \
+            --save_generations \
             --save_generations_path $generations_path
     echo "Task $task done"
 done
