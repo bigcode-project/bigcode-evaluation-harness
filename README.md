@@ -39,6 +39,7 @@ Below are the features and tasks of this framework:
         - `StarCoderFIM`: which uses the default FIM tokens `"<fim_prefix>", "<fim_middle>", "<fim_suffix>"`, and
         - `SantaCoderFIM`: which uses SantaCoder FIM tokens `"<fim-prefix>", "<fim-middle>", "<fim-suffix>"`
     - [Mercury](https://huggingface.co/datasets/Elfsong/Mercury) for evaluating computational efficiency of **Python** code generation.
+    - Shadereval for **GLSL** code understanding ([task1](https://huggingface.co/spaces/Vipitis/ShaderEval)) and generation ([task2](https://huggingface.co/spaces/Vipitis/shadermatch))
 
 More details about each task can be found in  the documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md).
 ## Setup

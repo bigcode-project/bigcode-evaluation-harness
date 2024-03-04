@@ -426,6 +426,46 @@ accelerate launch main.py  \
     --metric_output_path <MODEL_NAME>.json
 ```
 
+### Shadereval 
+[Shadereval](tbd.) explores "creative" code generation. Fragment shaders are sourced from Shadertoy.com and curated into the [Shadertoys](https://huggingface.co/datasets/Vipitis/Shadertoys) dataset. The task specific datasets are build from the Shadertoys dataset and therefore share a common train/test split.
+
+Task-1: **ReturnCompletion** provides a function header and body, so the model generates a matching return statement. Generations are evaluated by `exact-match` therefore does not require code execution. The original publication uses greedy decoding and only 300 samples.
+
+```bash
+accelerate launch main.py \ 
+  --model <MODEL_NAME> \ 
+  --tasks shadereval-1 \ 
+  --n_samples 300 \
+  --do_sample False \
+```
+
+Task-2: **FunctionGeneration** parses comments directly before or after the function header as model input. The model is expected to generate a complete function that is syntactially sound. Generated functions are inserted in the original shader program for evaluation. A custom metric is hosted in the [demo space](https://huggingface.co/spaces/Vipitis/shadermatch) which render frames to compare. This requires an additional dependency [wgpu-shadertoy](https://github.com/pygfx/shadertoy). It's recommended to generate generations first and then evaluate them later.
+The reference uses greedy decoding and fp16 for the first 300 examples.
+
+```bash
+accelerate launch main.py \ 
+  --model <MODEL_NAME> \ 
+  --tasks shadereval-2 \ 
+  --generation_only \ 
+  --save_generations_path "saved_generations.json" \ 
+  --allow_code_execution \ 
+  --limit 300 \ 
+  --do_sample False \ --precision fp16 \ 
+```
+
+To evaluate later run the following command:
+
+```bash
+accelerate launch main.py \ 
+  --model <MODEL_NAME> \ 
+  --tasks shadereval-2 \ 
+  --load_generations_path "saved_generations.json" \ 
+  --allow_code_execution \ 
+  --limit 300 \ 
+  --metric_output_path "eval_results.json" \ 
+  --precision fp16
+```
+
 ## Code generation benchmarks without unit tests
 
 For these tasks, we do single generations and compare the generated code against reference solutions and compute BLEU score. For the following tasks, we use a two-shot setting where we include 2 inputs and their solutions in the prompt, all preceded by an instruction such as: ` "Answer the following instructions in a one line SQL query:\n"`. The solutions consist of one line so we stop the generation when a new line is generated. 3 languages are present: Python, SQL and Java.
