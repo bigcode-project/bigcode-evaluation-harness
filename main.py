@@ -20,7 +20,6 @@ from bigcode_eval.tasks import ALL_TASKS
 
 import sparseml.core.session as session_manager
 from sparseml.core.framework import Framework
-from sparseml.transformers.sparsification.obcq.export import load_task_model
 from sparseml.pytorch.model_load.helpers import reload_model_state
 
 class MultiChoice:
@@ -339,6 +338,9 @@ def main():
             #    print(layer.self_attn.q_proj)
             #    layer.to(layer.self_attn.q_proj.module.weight.device)
             #model.lm_head.to(model.lm_head.module.weight.device)
+        elif args.modeltype == "gptq":
+            from auto_gptq import AutoGPTQForCausalLM
+            model = AutoGPTQForCausalLM.from_quantized(args.model, device_map='auto')
         else:
             raise ValueError(
                 f"Non valid modeltype {args.modeltype}, choose from: causal, seq2seq"
