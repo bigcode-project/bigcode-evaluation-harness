@@ -239,6 +239,8 @@ class HumanEvalPack(Task):
             prompt = f"<|im_start|>user\n{inp}<|im_end|>\n<|im_start|>assistant\n{prompt_base}"
         elif self.prompt == "codellama-70b":
             prompt = f"Source: user\n\n {inp.strip()} Source: assistant\nDestination: user \n\n{prompt_base}"
+        elif self.prompt == "aurora-m":
+            prompt = f'### Instruction:\n{inp}\n### Response:\n{prompt_base}'
         else:
             raise ValueError(f"The --prompt argument {self.prompt} wasn't provided or isn't supported")
         # Strip off the final \n to make the tokens more natural
