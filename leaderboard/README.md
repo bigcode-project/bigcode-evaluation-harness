@@ -21,6 +21,7 @@ Follow the setup instructions in the evaluation harness [README](https://github.
 
 Create two folders `generations_$model` and `metrics_$model` where you will save the generated code and the metrics respectively for your model `$model`.
 ```bash
+model=YOUR_MODEL
 cd bigcode-evaluation-harness
 mkdir generations_$model
 mkdir metrics_$model
@@ -58,6 +59,7 @@ for lang in "${langs[@]}"; do
             --trust_remote_code \
             --use_auth_token \
             --generation_only \
+            --save_generations \
             --save_generations_path $generations_path
     echo "Task $task done"
 done
@@ -111,7 +113,7 @@ for lang in "${langs[@]}"; do
         task=multiple-$lang
     fi
 
-    gen_suffix=generations_$task\_$model.json
+    gen_suffix=generations_$task\_$model\_$task.json
     metric_suffix=metrics_$task\_$model.json
     echo "Evaluation of $model on $task benchmark, data in $generations_path/$gen_suffix"
 
