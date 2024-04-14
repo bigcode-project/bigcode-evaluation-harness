@@ -31,7 +31,7 @@ class Mercury(Task):
 
     def __init__(self, prompt):
         super().__init__(
-            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```", "<file_sep>"],
+            stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```", "<file_sep>", "<｜end▁of▁sentence｜>"],
             requires_execution=True,
         )
         self.prompt = prompt
@@ -58,8 +58,8 @@ class Mercury(Task):
         """
         prompt = self.get_prompt(self.get_dataset()[idx])
         generation = generation[len(prompt):]
-        print(generation)
-        return self._stop_at_stop_token(generation, self.stop_words)
+        generation = self._stop_at_stop_token(generation, self.stop_words)
+        return generation
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,

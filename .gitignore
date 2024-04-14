@@ -168,3 +168,4 @@ evaluation*.json
 generations*.json
 
 playground/
+mecury_eval.sh
