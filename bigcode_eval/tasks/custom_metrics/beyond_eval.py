@@ -300,16 +300,14 @@ class Sandbox(object):
         return results
 
 
-def estimate_at_k(num_samples, num_correct, k):
-    """Estimates beyond@k of each problem and returns them in an array."""
-    
-    def cf(n, k):
-        return math.gamma(n+1) / (math.gamma(k+1) * (math.gamma(n-k+1)))
+def estimate_pass_at_k(num_samples, num_correct, k):
+    """Estimates pass@k of each problem and returns them in an array."""
 
     def estimator(n: int, c: int, k: int) -> float:
+        """Calculates 1 - comb(n - c, k) / comb(n, k)."""
         if n - c < k:
             return 1.0
-        return 1 - cf(n-c, k) / cf(n, k)
+        return 1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1))
 
     if isinstance(num_samples, int):
         num_samples_it = itertools.repeat(num_samples, len(num_correct))
@@ -318,6 +316,17 @@ def estimate_at_k(num_samples, num_correct, k):
         num_samples_it = iter(num_samples)
 
     return np.array([estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)])
+
+def estimate_beyond_at_k(runtimes, k):
+    """Estimates pass@k of each problem and returns them in an array."""
+
+    def estimator(runtimes: list, k: int) -> float:
+        """Calculates 1 - comb(n - c, k) / comb(n, k)."""
+        print(runtimes)
+        print("============")
+        return sum(runtimes[:k])/len(runtimes)
+
+    return np.array([estimator(r, k) for r in runtimes])
 
 def compute_beyond_eval(generations_list, reference_list, timeout=30):
     sandbox = Sandbox()
@@ -353,7 +362,8 @@ def compute_beyond_eval(generations_list, reference_list, timeout=30):
         max_runtime = max(runtimes)
         
         # Evaluate generated solutions
-        t_c, p_c, b_c = 0, 0, 0
+        t_c, p_c = 0, 0
+        b_l = list()
         difficulty = instance['difficulty']
         
         for index, solution in enumerate(generations):                   
@@ -373,29 +383,30 @@ def compute_beyond_eval(generations_list, reference_list, timeout=30):
             # Calculate Beyond
             if result['result'] == "passed":
                 runtime = result['runtime']
-                runtime = min(runtime, max_runtime)
-                runtime = max(runtime, min_runtime)
-                b_c += (max_runtime - runtime) / (max_runtime - min_runtime)          
                 p_c += 1
             else:
                 runtime = float('inf')
+                
+            runtime = min(runtime, max_runtime)
+            runtime = max(runtime, min_runtime)
+            b_l += [(max_runtime - runtime) / (max_runtime - min_runtime)]  
         
         scores[difficulty]['total_c'] += [t_c]
         scores[difficulty]['correct_c'] += [p_c]
-        scores[difficulty]['beyond_c'] += [b_c]
+        scores[difficulty]['beyond_c'] += [b_l]
         
         scores['Average']['total_c'] += [t_c]
         scores['Average']['correct_c'] += [p_c]
-        scores['Average']['beyond_c'] += [b_c]
+        scores['Average']['beyond_c'] += [b_l]
     
     results = dict()
     for difficulty in ['Easy', "Medium", "Hard", "Average"]:
         total = np.array(scores[difficulty]['total_c'])
         correct = np.array(scores[difficulty]['correct_c'])
-        beyond = np.array(scores[difficulty]['beyond_c'])
+        beyond = scores[difficulty]['beyond_c']
         
-        pass_at_k = {f"{difficulty}_pass@{k}": estimate_at_k(total, correct, k).mean() for k in [1,3,5] if (total >= k).all()}
-        beyond_at_k = {f"{difficulty}_beyond@{k}": estimate_at_k(total, beyond, k).mean() for k in [1,3,5] if (total >= k).all()}
+        pass_at_k = {f"{difficulty}_pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in [1,3,5] if (total >= k).all()}
+        beyond_at_k = {f"{difficulty}_beyond@{k}": estimate_beyond_at_k(beyond, k).mean() for k in [1,3,5] if (total >= k).all()}
         
         results.update(pass_at_k)
         results.update(beyond_at_k)
