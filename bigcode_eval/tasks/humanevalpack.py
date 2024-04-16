@@ -228,15 +228,19 @@ class HumanEvalPack(Task):
         elif self.prompt == "codellama":
             # https://hf.co/codellama             
             prompt = f"[INST] {inp.strip()} [/INST] {prompt_base}"
+        elif  self.prompt == "deepseek":
+            prompt = f"You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer\n### Instruction:\n{inp.strip()}\n### Response:\n{prompt_base}"
         elif self.prompt in ["tulu", "gritlm"]:
             # https://hf.co/GritLM/GritLM-7B
             prompt = f"<|user|>\n{inp}\n<|assistant|>\n{prompt_base}"
         elif self.prompt == "zephyr":
             # https://hf.co/HuggingFaceH4/zephyr-7b-beta
             prompt = f"<|user|>\n{inp}</s>\n<|assistant|>\n{prompt_base}"
-        elif self.prompt == "yi":
+        elif self.prompt in ["yi", "starchat2", "codeqwen"]:
             # https://hf.co/01-ai/Yi-34B-Chat     
             prompt = f"<|im_start|>user\n{inp}<|im_end|>\n<|im_start|>assistant\n{prompt_base}"
+        elif self.prompt == "codegemma":
+            prompt = f"<start_of_turn>user\n{inp}<end_of_turn>\n<start_of_turn>model\n{prompt_base}"
         elif self.prompt == "codellama-70b":
             prompt = f"Source: user\n\n {inp.strip()} Source: assistant\nDestination: user \n\n{prompt_base}"
         elif self.prompt == "aurora-m":
