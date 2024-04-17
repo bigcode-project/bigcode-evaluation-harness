@@ -30,7 +30,8 @@ mkdir metrics_$model
 To run the evaluation, we first generate the code solutions for the target tasks on GPUs, then execute the code on a docker container (only cpus are needed).
 
 ### 2- Generation
-Below are the instruction for generating the code solutions sequentially or in parallel with slurm. You might need to reduce the batch size for some models or change the precision based on your device.
+Below are the instruction for generating the code solutions sequentially or in parallel with slurm. 
+You might need to reduce the batch size for some models, change the precision based on your device or change max_length to 1024 for some tasks based on your tokeniser.
 ```bash
 # after activating env and setting up accelerate...
 langs=(py js java cpp swift php d jl lua r rkt rs)
