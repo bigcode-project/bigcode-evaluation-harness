@@ -120,7 +120,7 @@ class TokenizedDataset(IterableDataset):
                 "n_copies (n_samples/batch_size) was changed from 1 to 2 because n_tasks isn't proportional to num devices"
             )
 
-        for sample in range(self.n_tasks):
+        for sample in tqdm(range(self.n_tasks), desc="Task Encoding"):
             for _ in range(self.n_copies):
                 if self.has_encoder:
                     yield {
@@ -220,7 +220,6 @@ def _parse_instruction(code, instruction_tokens):
         shift = len("```python")
     return code[idx + shift :]
 
-
 def complete_code(
     task,
     accelerator,
@@ -249,11 +248,13 @@ def complete_code(
     code_gens: List[List[Optional[str]]] = [[] for _ in range(n_tasks)]
     generations = [] if not intermediate_generations else intermediate_generations
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
+    
     for step, batch in tqdm(
         enumerate(dataloader),
         total=math.ceil(
             n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
         ),
+        desc="batch generation",
     ):
         with torch.no_grad():
             if task.stop_words:

@@ -37,7 +37,6 @@ class TooLongFunctionCriteria(StoppingCriteria):
     def __call__(self, input_ids, scores, **kwargs):
         """Returns true if generated sequence is too long."""
         return input_ids.shape[1] > int(self.input_length * self.multiplier)
-        
 
 def parallel_generations(
         task,
@@ -108,6 +107,7 @@ def parallel_generations(
         print(f"number of problems for this task is {n_tasks}")
     n_copies = ceil(args.n_samples / args.batch_size)
 
+    print("TokenizedDataset...")
     ds_tokenized = TokenizedDataset(
         task,
         dataset,
@@ -137,7 +137,8 @@ def parallel_generations(
     else:
         # model.to() is not supported for 8bit and 4bit models
         model, ds_loader = accelerator.prepare(model, ds_loader)
-
+    
+    print("complete_code...")
     generations = complete_code(
         task,
         accelerator,
@@ -156,4 +157,5 @@ def parallel_generations(
         intermediate_save_generations_path=intermediate_save_generations_path,
         **gen_kwargs,
     )
+
     return generations

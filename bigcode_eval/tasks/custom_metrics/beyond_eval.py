@@ -291,14 +291,12 @@ class Sandbox(object):
                 args = (sample,)
                 future = executor.submit(Sandbox.run_sample, *args)
                 futures.append(future)
-                n_samples += 1
             
             for future in tqdm(as_completed(futures), total=len(futures), desc='Reading futures'):
                 result = future.result()
                 results.append(result)
         
         return results
-
 
 def estimate_pass_at_k(num_samples, num_correct, k):
     """Estimates pass@k of each problem and returns them in an array."""
@@ -317,18 +315,10 @@ def estimate_pass_at_k(num_samples, num_correct, k):
 
     return np.array([estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)])
 
-def estimate_beyond_at_k(runtimes, k):
-    """Estimates pass@k of each problem and returns them in an array."""
+def estimate_beyond_at_k(beyonds, k):
+    return sum([sum(b[:k]) / k for b in beyonds]) / len(beyonds)
 
-    def estimator(runtimes: list, k: int) -> float:
-        """Calculates 1 - comb(n - c, k) / comb(n, k)."""
-        print(runtimes)
-        print("============")
-        return sum(runtimes[:k])/len(runtimes)
-
-    return np.array([estimator(r, k) for r in runtimes])
-
-def compute_beyond_eval(generations_list, reference_list, timeout=30):
+def compute_beyond_eval(generations_list, reference_list, timeout=10):
     sandbox = Sandbox()
     
     scores = {
@@ -338,10 +328,10 @@ def compute_beyond_eval(generations_list, reference_list, timeout=30):
         "Average": dict(total_c=list(), correct_c=list(), beyond_c=list()),
     }
     
-    for generations, instance in tqdm(zip(generations_list, reference_list), total=len(generations_list)):
+    for generations, instance in tqdm(zip(generations_list, reference_list), total=len(generations_list), desc='compute_beyond_eval'):
         # Construct runtime distribution from sample solutions
         runtimes = list()
-        for index, solution in enumerate(instance['solutions']):
+        for index, solution in tqdm(enumerate(instance['solutions']), desc="Construct runtime distribution from sample solutions"):
             sample = {
 				"solution": solution['solution'],
 				"convert_offline": instance['convert_offline'],
@@ -366,9 +356,9 @@ def compute_beyond_eval(generations_list, reference_list, timeout=30):
         b_l = list()
         difficulty = instance['difficulty']
         
-        for index, solution in enumerate(generations):                   
+        for index, solution in tqdm(enumerate(generations), desc="generation execution", total=len(generations)):                   
             sample = {
-                "solution": instance['prompt'] + solution,
+                "solution": solution,
                 "convert_offline": instance['convert_offline'],
                 "evaluate_offline": instance['evaluate_offline'],
                 "entry_point": instance['entry_point'],
@@ -376,13 +366,14 @@ def compute_beyond_eval(generations_list, reference_list, timeout=30):
                 "solution_index": index,
                 "timeout": timeout,
             }
-
-            result = sandbox.run_sample(sample)
+            
+            results = [sandbox.run_sample(sample) for _ in range(3)]
+            print(results[0])
             t_c += 1
             
             # Calculate Beyond
-            if result['result'] == "passed":
-                runtime = result['runtime']
+            if results[0]['result'] == "passed":
+                runtime = sum([r['runtime'] for r in results]) / len(results)
                 p_c += 1
             else:
                 runtime = float('inf')
@@ -398,6 +389,11 @@ def compute_beyond_eval(generations_list, reference_list, timeout=30):
         scores['Average']['total_c'] += [t_c]
         scores['Average']['correct_c'] += [p_c]
         scores['Average']['beyond_c'] += [b_l]
+        
+        print(f'total: {t_c}')
+        print(f'correct: {p_c}')
+        print(f'beyond: {b_l}')
+        print("-" * 60)
     
     results = dict()
     for difficulty in ['Easy', "Medium", "Hard", "Average"]:
@@ -405,8 +401,8 @@ def compute_beyond_eval(generations_list, reference_list, timeout=30):
         correct = np.array(scores[difficulty]['correct_c'])
         beyond = scores[difficulty]['beyond_c']
         
-        pass_at_k = {f"{difficulty}_pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in [1,3,5] if (total >= k).all()}
-        beyond_at_k = {f"{difficulty}_beyond@{k}": estimate_beyond_at_k(beyond, k).mean() for k in [1,3,5] if (total >= k).all()}
+        pass_at_k = {f"{difficulty}_pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in [1,3,5,10,15,20,30,50,100] if (total >= k).all()}
+        beyond_at_k = {f"{difficulty}_beyond@{k}": estimate_beyond_at_k(beyond, k) for k in [1,3,5,10,15,20,30,50,100] if (total >= k).all()}
         
         results.update(pass_at_k)
         results.update(beyond_at_k)
