@@ -22,7 +22,7 @@ accelerate  launch --main_process_port 30002  main.py  \
     --save_generations  \
     --metric_output_path starcoder2-7b-mercury-result.json
 
-accelerate  launch --main_process_port 30005  main.py  \
+accelerate  launch --main_process_port 30002  main.py  \
     --model /home/mingzhe/Projects/Mercury/checkpoints/bigcode/starcoder2-3b-sft-final_checkpoint  \
     --load_in_4bit   \
     --max_length_generation 2048   \

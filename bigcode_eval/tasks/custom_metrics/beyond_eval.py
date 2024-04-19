@@ -328,6 +328,12 @@ def compute_beyond_eval(generations_list, reference_list, timeout=10):
         "Average": dict(total_c=list(), correct_c=list(), beyond_c=list()),
     }
     
+    errors = {
+        "Easy": dict(failed_load=0, failed_eval=0, failed_cases=0, failed_timeout=0, failed_error=0, passed=0),
+        "Medium": dict(failed_load=0, failed_eval=0, failed_cases=0, failed_timeout=0, failed_error=0, passed=0),
+        "Hard": dict(failed_load=0, failed_eval=0, failed_cases=0, failed_timeout=0, failed_error=0, passed=0),
+    }
+    
     for generations, instance in tqdm(zip(generations_list, reference_list), total=len(generations_list), desc='compute_beyond_eval'):
         # Construct runtime distribution from sample solutions
         runtimes = list()
@@ -377,6 +383,9 @@ def compute_beyond_eval(generations_list, reference_list, timeout=10):
                 p_c += 1
             else:
                 runtime = float('inf')
+            
+            # Statistic Errors
+            errors[difficulty][results[0]['result']] += 1
                 
             runtime = min(runtime, max_runtime)
             runtime = max(runtime, min_runtime)
@@ -390,10 +399,10 @@ def compute_beyond_eval(generations_list, reference_list, timeout=10):
         scores['Average']['correct_c'] += [p_c]
         scores['Average']['beyond_c'] += [b_l]
         
-        print(f'total: {t_c}')
-        print(f'correct: {p_c}')
-        print(f'beyond: {b_l}')
-        print("-" * 60)
+        # print(f'total: {t_c}')
+        # print(f'correct: {p_c}')
+        # print(f'beyond: {b_l}')
+        # print("-" * 60)
     
     results = dict()
     for difficulty in ['Easy', "Medium", "Hard", "Average"]:
@@ -406,6 +415,8 @@ def compute_beyond_eval(generations_list, reference_list, timeout=10):
         
         results.update(pass_at_k)
         results.update(beyond_at_k)
+    
+    results.update(errors)
 
     return results
 
