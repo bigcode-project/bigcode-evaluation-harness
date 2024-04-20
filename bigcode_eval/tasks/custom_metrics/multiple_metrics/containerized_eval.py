@@ -36,6 +36,7 @@ EVALUATORS = {
     "jl": (eval_julia.eval_script, ".jl"),
     "ts": (eval_ts.eval_script, ".ts"),
     "go": (eval_go.eval_script, ".go"),
+    "go_test.go": (eval_go.eval_script, "_test.go"),
     "pl": (eval_pl.eval_script, ".pl"),
     "sh": (eval_sh.eval_script, ".sh"),
     "scala": (eval_scala.eval_script, ".scala"),

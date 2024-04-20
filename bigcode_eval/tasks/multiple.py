@@ -147,7 +147,7 @@ class GeneralMultiPLE(Task):
         """
         # get prompts and problem names
         prompts_names = [
-            {"prompt": doc["prompt"], "name": doc["name"]}
+            {"prompt": doc["prompt"], "name": doc["name"], "lang": doc["language"]}
             for i, doc in enumerate(self.get_dataset())
             if i < len(generations)
         ]
@@ -159,7 +159,7 @@ class GeneralMultiPLE(Task):
         ):
             problem = {
                 "name": prompt_name["name"],
-                "language": self.language,
+                "language": prompt_name["lang"],
                 "prompt": prompt_name["prompt"],
                 "completions": generation,
                 "tests": reference,
