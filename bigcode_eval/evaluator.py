@@ -104,6 +104,7 @@ class Evaluator:
             if self.allow_code_execution and task.requires_execution:
                 os.environ["HF_ALLOW_CODE_EVAL"] = "1"
             print("Evaluating generations...")
+            del self.model
             results = task.process_results(generations, references)
             return results
 
