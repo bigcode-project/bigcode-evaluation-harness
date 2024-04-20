@@ -329,9 +329,9 @@ def compute_beyond_eval(generations_list, reference_list, timeout=10):
     }
     
     errors = {
-        "Easy": dict(failed_load=0, failed_eval=0, failed_cases=0, failed_timeout=0, failed_error=0, passed=0),
-        "Medium": dict(failed_load=0, failed_eval=0, failed_cases=0, failed_timeout=0, failed_error=0, passed=0),
-        "Hard": dict(failed_load=0, failed_eval=0, failed_cases=0, failed_timeout=0, failed_error=0, passed=0),
+        "Easy": {"failed@load": 0,"failed@eval": 0,'failed@cases': 0,"failed@timeout": 0,"failed@error": 0,"passed":0},
+        "Medium": {"failed@load": 0,"failed@eval": 0,"failed@cases": 0,"failed@timeout": 0,"failed@error": 0,"passed":0},
+        "Hard": {"failed@load": 0,"failed@eval": 0,"failed@cases": 0,"failed@timeout": 0,"failed@error": 0,"passed":0},
     }
     
     for generations, instance in tqdm(zip(generations_list, reference_list), total=len(generations_list), desc='compute_beyond_eval'):

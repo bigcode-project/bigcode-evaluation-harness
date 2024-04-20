@@ -121,10 +121,14 @@ def parallel_generations(
         has_encoder=args.modeltype == "seq2seq",
         instruction_tokens=instruction_tokens,
     )
+    print("TokenizedDataset Finished.")
 
+    print("DataLoader Loading...")
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
+    print("DataLoader Loaded.")
 
+    print("Accelerator preparing...")
     is_loaded_in_8bit = getattr(model, "is_loaded_in_8bit", False)
     is_loaded_in_4bit = getattr(model, "is_loaded_in_4bit", False)
     if args.max_memory_per_gpu is not None:
@@ -138,7 +142,7 @@ def parallel_generations(
         # model.to() is not supported for 8bit and 4bit models
         model, ds_loader = accelerator.prepare(model, ds_loader)
     
-    print("complete_code...")
+    print("Complete_code...")
     generations = complete_code(
         task,
         accelerator,
