@@ -58,7 +58,7 @@ accelerate  launch --main_process_port 30005  main.py  \
     --tasks mercury    \
     --n_samples 5  \
     --temperature 0.2  \
-    --batch_size 10   \
+    --batch_size 1   \
     --allow_code_execution  \
     --save_generations  \
     --metric_output_path deepseek-coder-6.7b-base-mercury-result.json
@@ -137,7 +137,7 @@ accelerate  launch --main_process_port 30011  main.py  \
     --tasks mercury    \
     --n_samples 5  \
     --temperature 0.2  \
-    --batch_size 5   \
+    --batch_size 10   \
     --allow_code_execution  \
     --save_generations  \
     --metric_output_path starcoder2-3b-SFT-mercury-result.json
@@ -228,7 +228,48 @@ accelerate  launch --main_process_port 30018  main.py  \
     --tasks mercury    \
     --n_samples 5  \
     --temperature 0.2  \
-    --batch_size 1   \
+    --batch_size 5   \
     --allow_code_execution  \
     --save_generations  \
     --metric_output_path codeLlama-13b-hf-SFT-mercury-result.json
+
+# deepseek-ai/deepseek-coder-33b-base SFT
+accelerate  launch --main_process_port 30019  main.py  \
+    --model /home/mingzhe/Projects/Mercury/checkpoints/deepseek-ai/deepseek-coder-33b-base-sft-final_checkpoint   \
+    --load_in_4bit   \
+    --max_length_generation 2048   \
+    --tasks mercury    \
+    --n_samples 5  \
+    --temperature 0.2  \
+    --batch_size 1   \
+    --allow_code_execution  \
+    --save_generations  \
+    --metric_output_path deepseek-coder-33b-base-SFT-mercury-result.json
+
+# codellama/CodeLlama-34b-hf SFT
+accelerate  launch --main_process_port 30020  main.py  \
+    --model /home/mingzhe/Projects/Mercury/checkpoints/codellama/CodeLlama-34b-hf-sft-final_checkpoint   \
+    --load_in_4bit   \
+    --max_length_generation 2048   \
+    --tasks mercury    \
+    --n_samples 5  \
+    --temperature 0.2  \
+    --batch_size 1   \
+    --allow_code_execution  \
+    --save_generations  \
+    --metric_output_path codeLlama-34b-hf-SFT-mercury-result.json
+
+
+
+# deepseek-ai/deepseek-coder-6.7b-base DPO
+accelerate  launch --main_process_port 30025  main.py  \
+    --model /home/mingzhe/Projects/Mercury/checkpoints/deepseek-ai/deepseek-coder-6.7b-base-dpo-final_checkpoint   \
+    --load_in_4bit   \
+    --max_length_generation 2048   \
+    --tasks mercury    \
+    --n_samples 5  \
+    --temperature 0.2  \
+    --batch_size 1   \
+    --allow_code_execution  \
+    --save_generations  \
+    --metric_output_path deepseek-coder-6.7b-base-DPO-mercury-result.json
