@@ -4,7 +4,8 @@ from pprint import pprint
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
                concode, ds1000, gsm, humaneval, humanevalplus, humanevalpack,
                instruct_humaneval, instruct_wizard_humaneval, mbpp, mbppplus,
-               multiple, parity, python_bugs, quixbugs, recode, santacoder_fim)
+               multiple, parity, python_bugs, quixbugs, recode, santacoder_fim,
+               studenteval)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
@@ -28,6 +29,7 @@ TASK_REGISTRY = {
     **instruct_humaneval.create_all_tasks(),
     **recode.create_all_tasks(),
     **santacoder_fim.create_all_tasks(),
+    "studenteval": studenteval.StudentEval,
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))
