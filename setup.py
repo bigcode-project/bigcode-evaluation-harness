@@ -29,7 +29,7 @@ ds1000_requirements = [
 
 setup(
     name="bigcode_eval",
-    python_requires='>=3.8',
+    python_requires='>=3.7',
     description="A framework for the evaluation of autoregressive code generation language models.",
     long_description=readme,
     license="Apache 2.0",
