@@ -18,9 +18,12 @@ from bigcode_eval.arguments import EvalArguments
 from bigcode_eval.evaluator import Evaluator
 from bigcode_eval.tasks import ALL_TASKS
 
-import sparseml.core.session as session_manager
-from sparseml.core.framework import Framework
-from sparseml.pytorch.model_load.helpers import reload_model_state
+try:
+    import sparseml.core.session as session_manager
+    from sparseml.core.framework import Framework
+    from sparseml.pytorch.model_load.helpers import reload_model_state
+except:
+    print("SparseML not found. proceeding without it")
 
 class MultiChoice:
     def __init__(self, choices):
@@ -341,6 +344,7 @@ def main():
         elif args.modeltype == "gptq":
             from auto_gptq import AutoGPTQForCausalLM
             model = AutoGPTQForCausalLM.from_quantized(args.model, device_map='auto')
+            #model = AutoGPTQForCausalLM.from_quantized(args.model, use_marlin=True, device_map='auto')
         else:
             raise ValueError(
                 f"Non valid modeltype {args.modeltype}, choose from: causal, seq2seq"

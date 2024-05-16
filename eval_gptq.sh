@@ -1,6 +1,6 @@
 
 #accelerate launch  main.py \
-python  main.py \
+CUDA_VISIBLE_DEVICES=4,5 python  main.py \
   --model ${1} \
   --tasks humaneval \
   --max_length_generation 512 \
@@ -13,5 +13,5 @@ python  main.py \
   --save_generations \
   --precision fp16 \
   --metric_output_path ${1}/evaluation_gptq.json \
-  --modeltype='gptq'
-  # --limit 10
+  --modeltype='gptq' \
+  --limit 10

@@ -1,6 +1,6 @@
 
 #accelerate launch  main.py \
-python  main.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python  main.py \
   --model ${1} \
   --tasks humaneval \
   --max_length_generation 512 \
