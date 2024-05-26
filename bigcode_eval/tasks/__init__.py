@@ -4,7 +4,8 @@ from pprint import pprint
 from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
                concode, ds1000, gsm, humaneval, humanevalplus, humanevalpack,
                instruct_humaneval, instruct_wizard_humaneval, mbpp, mbppplus,
-               multiple, parity, python_bugs, quixbugs, recode, santacoder_fim, mercury)
+               multiple, parity, python_bugs, quixbugs, recode, santacoder_fim, 
+               mercury)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
