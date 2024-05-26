@@ -15,7 +15,7 @@ from bigcode_eval.tasks.custom_metrics.beyond_eval import compute_beyond_eval
 _CITATION = """
 @article{du2024mercury,
   title={Mercury: An Efficiency Benchmark for LLM Code Synthesis},
-  author={Du, Mingzhe and Luu, Anh Tuan and Ji, Bin and Ng, See-Kiong},
+  author={Du, Mingzhe and Luu, Anh Tuan and Ji, Bin and Qian, Liu and Ng, See-Kiong},
   journal={arXiv preprint arXiv:2402.07844},
   year={2024}
 }
@@ -31,7 +31,6 @@ class Mercury(Task):
 
     def __init__(self, prompt):
         super().__init__(
-            # stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```", "<file_sep>", "<｜end▁of▁sentence｜>"],
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```", "<file_sep>", "<｜end▁of▁sentence｜>", "\n###", "\n\n\n\n\n", "<|endoftext|>"],
             requires_execution=True,
         )

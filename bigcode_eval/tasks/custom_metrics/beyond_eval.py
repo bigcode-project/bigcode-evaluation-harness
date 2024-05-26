@@ -1,7 +1,24 @@
 # coding: utf-8
 
-# The Beyond metric estimates the beyond@k metric for code synthesis efficiency.
+# The Beyond metric estimates the Beyond@k metric for code synthesis efficiency.
+# The sandbox is inspired by OpenAI's release
+# https://github.com/openai/human-eval/blob/master/human_eval/execution.py
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Optional, Dict, Any, List
+from multiprocessing import Manager, Process
+from tqdm import tqdm
+import numpy as np
+import faulthandler
+import contextlib
+import itertools
+import platform
+import tempfile
+import signal
+import json
+import time
+import os
+import io
 CITATION = """
 @article{du2024mercury,
     title={Mercury: An Efficiency Benchmark for LLM Code Synthesis},
@@ -10,23 +27,6 @@ CITATION = """
     year={2024}
 }
 """
-
-import io
-import os
-import time
-import math
-import json
-import signal
-import tempfile
-import platform
-import itertools
-import contextlib
-import faulthandler
-import numpy as np
-from tqdm import tqdm
-from multiprocessing import Manager, Process
-from typing import Optional, Dict, Any, List
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # Timeout Exception
@@ -38,7 +38,7 @@ class TimeoutException(Exception):
 class RedirectStdin(contextlib._RedirectStream):
     """Context manager for temporarily receiving stdin from another source."""
     _stream = 'stdin'
-    
+
 # WriteOnly IO
 class WriteOnlyStringIO(io.StringIO):
     """ StringIO that throws an exception when it's read from """
@@ -55,7 +55,8 @@ class WriteOnlyStringIO(io.StringIO):
     def readable(self, *args, **kwargs):
         """ Returns True if the IO object can be read. """
         return False
-    
+
+
 class Sandbox(object):
     @staticmethod
     @contextlib.contextmanager
@@ -104,18 +105,23 @@ class Sandbox(object):
     @staticmethod
     def reliability_guard(maximum_memory_bytes: Optional[int] = None):
         """
-        This disables various destructive functions and prevents the generated code from interfering with the test (e.g. fork bomb, killing other processes, removing filesystem files, etc.)
+        This disables various destructive functions and prevents the generated code from interfering with the test 
+        (e.g. fork bomb, killing other processes, removing filesystem files, etc.)
 
-        WARNING
-        This function is NOT a security sandbox. Untrusted code, including, model-generated code, should not be blindly executed outside of one. See the Codex paper for more information about OpenAI's code sandbox, and proceed with caution.
+        ## WARNING ##
+        This function is NOT a security sandbox. Untrusted code, including, model-generated code, should not be blindly executed outside of one. 
+        See the Codex paper for more information about OpenAI's code sandbox, and proceed with caution.
         """
 
         if maximum_memory_bytes is not None:
             import resource
-            resource.setrlimit(resource.RLIMIT_AS, (maximum_memory_bytes, maximum_memory_bytes))
-            resource.setrlimit(resource.RLIMIT_DATA, (maximum_memory_bytes, maximum_memory_bytes))
+            resource.setrlimit(resource.RLIMIT_AS,
+                               (maximum_memory_bytes, maximum_memory_bytes))
+            resource.setrlimit(resource.RLIMIT_DATA,
+                               (maximum_memory_bytes, maximum_memory_bytes))
             if platform.uname().system != 'Darwin':
-                resource.setrlimit(resource.RLIMIT_STACK, (maximum_memory_bytes, maximum_memory_bytes))
+                resource.setrlimit(resource.RLIMIT_STACK,
+                                   (maximum_memory_bytes, maximum_memory_bytes))
 
         faulthandler.disable()
 
@@ -170,7 +176,7 @@ class Sandbox(object):
         sys.modules['resource'] = None
         sys.modules['psutil'] = None
         sys.modules['tkinter'] = None
-             
+
     @staticmethod
     def unsafe_execute(sample, result):
         with Sandbox.create_tempdir():
@@ -210,53 +216,62 @@ class Sandbox(object):
                 exec("from collections import deque, defaultdict, OrderedDict", namespace)
                 exec("from typing import List, Optional, Tuple", namespace)
                 exec("from functools import lru_cache, cache", namespace)
-                
+
                 exec("class ListNode(object):\n\tdef __init__(self, val=0, next=None):\n\t\tself.val = val\n\t\tself.next = next", namespace)
                 exec("class TreeNode(object):\n\tdef __init__(self, val=0, left=None, right=None):\n\t\tself.val = val\n\t\tself.left = left\n\t\tself.right = right", namespace)
-                
+
                 exec("def print(*args):pass", namespace)
-                
+
                 total, passed = 0, 0
                 runtime = 0
                 with Sandbox.swallow_io():
-                    with Sandbox.time_limit(sample['timeout']):                        
+                    with Sandbox.time_limit(sample['timeout']):
                         try:
                             exec(sample['solution'], namespace)
                             exec(f"solution=Solution()", namespace)
                             exec(sample['convert_offline'], namespace)
                             exec(sample['evaluate_offline'], namespace)
                         except Exception as e:
-                            result.append({"status": "failed@load", "runtime": runtime, "error": e})
-                            
+                            result.append(
+                                {"status": "failed@load", "runtime": runtime, "error": e})
+
                         try:
                             start_time = time.time()
                             for test_case in sample['test_cases']:
                                 namespace['inputs'] = test_case['input']
                                 namespace['expected'] = test_case['expected']
-                                exec("inputs, expected = convert_offline((inputs, expected))", namespace)
-                                exec(f"outputs = solution.{sample['entry_point']}(*inputs)", namespace)
-                                exec(f"passed = evaluate_offline(inputs, outputs, expected)", namespace)
+                                exec(
+                                    "inputs, expected = convert_offline((inputs, expected))", namespace)
+                                exec(
+                                    f"outputs = solution.{sample['entry_point']}(*inputs)", namespace)
+                                exec(
+                                    f"passed = evaluate_offline(inputs, outputs, expected)", namespace)
                                 total += 1
                                 passed += (1 if namespace['passed'] else 0)
                             end_time = time.time()
                             runtime = end_time-start_time
                         except Exception as e:
-                            result.append({"status": "failed@eval", "runtime": runtime, "error": e})
-                
+                            result.append(
+                                {"status": "failed@eval", "runtime": runtime, "error": e})
+
                 if total == passed:
-                    result.append({"status": "passed", "runtime": runtime, "error": "None"})
+                    result.append(
+                        {"status": "passed", "runtime": runtime, "error": "None"})
                 else:
-                    result.append({"status": "failed@cases", "runtime": runtime, "error": "case error"})
+                    result.append({"status": "failed@cases",
+                                  "runtime": runtime, "error": "case error"})
             except TimeoutException:
-                result.append({"status": "failed@timeout", "runtime": runtime, "error": "execution time out"})
+                result.append(
+                    {"status": "failed@timeout", "runtime": runtime, "error": "execution time out"})
             except BaseException as e:
-                result.append({"status": "failed@error", "runtime": runtime, "error": e})
+                result.append({"status": "failed@error",
+                              "runtime": runtime, "error": e})
 
             # Needed for cleaning up.
             shutil.rmtree = rmtree
             os.rmdir = rmdir
             os.chdir = chdir
-    
+
     @staticmethod
     def run_sample(sample) -> Dict:
         """
@@ -273,12 +288,13 @@ class Sandbox(object):
                 p.kill()
 
             if not result:
-                result.append({"status": "failed@timeout", "runtime": sample['timeout'], "error": "sandbox time out"})
-            
+                result.append(
+                    {"status": "failed@timeout", "runtime": sample['timeout'], "error": "sandbox time out"})
+
             return dict(
-                result=result[0]['status'], 
-                runtime=result[0]['runtime'], 
-                index=sample['solution_index'], 
+                result=result[0]['status'],
+                runtime=result[0]['runtime'],
+                index=sample['solution_index'],
                 error=result[0]['error'],
             )
 
@@ -286,17 +302,18 @@ class Sandbox(object):
     def run_samples(samples, n_workers=4):
         with ThreadPoolExecutor(max_workers=n_workers) as executor:
             futures, results = list(), list()
-                
+
             for sample in samples:
                 args = (sample,)
                 future = executor.submit(Sandbox.run_sample, *args)
                 futures.append(future)
-            
+
             for future in tqdm(as_completed(futures), total=len(futures), desc='Reading futures'):
                 result = future.result()
                 results.append(result)
-        
+
         return results
+
 
 def estimate_pass_at_k(num_samples, num_correct, k):
     """Estimates pass@k of each problem and returns them in an array."""
@@ -315,54 +332,56 @@ def estimate_pass_at_k(num_samples, num_correct, k):
 
     return np.array([estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)])
 
+
 def estimate_beyond_at_k(beyonds, k):
     return sum([sum(b[:k]) / k for b in beyonds]) / len(beyonds)
 
+
 def compute_beyond_eval(generations_list, reference_list, timeout=10):
     sandbox = Sandbox()
-    
+
     scores = {
         "Easy": dict(total_c=list(), correct_c=list(), beyond_c=list()),
         "Medium": dict(total_c=list(), correct_c=list(), beyond_c=list()),
         "Hard": dict(total_c=list(), correct_c=list(), beyond_c=list()),
         "Average": dict(total_c=list(), correct_c=list(), beyond_c=list()),
     }
-    
+
     errors = {
-        "Easy": {"failed@load": 0,"failed@eval": 0,'failed@cases': 0,"failed@timeout": 0,"failed@error": 0,"passed":0},
-        "Medium": {"failed@load": 0,"failed@eval": 0,"failed@cases": 0,"failed@timeout": 0,"failed@error": 0,"passed":0},
-        "Hard": {"failed@load": 0,"failed@eval": 0,"failed@cases": 0,"failed@timeout": 0,"failed@error": 0,"passed":0},
+        "Easy": {"failed@load": 0, "failed@eval": 0, 'failed@cases': 0, "failed@timeout": 0, "failed@error": 0, "passed": 0},
+        "Medium": {"failed@load": 0, "failed@eval": 0, "failed@cases": 0, "failed@timeout": 0, "failed@error": 0, "passed": 0},
+        "Hard": {"failed@load": 0, "failed@eval": 0, "failed@cases": 0, "failed@timeout": 0, "failed@error": 0, "passed": 0},
     }
-    
+
     for generations, instance in tqdm(zip(generations_list, reference_list), total=len(generations_list), desc='compute_beyond_eval'):
         # Construct runtime distribution from sample solutions
         runtimes = list()
         for index, solution in tqdm(enumerate(instance['solutions']), desc="Construct runtime distribution from sample solutions"):
             sample = {
-				"solution": solution['solution'],
-				"convert_offline": instance['convert_offline'],
-				"evaluate_offline": instance['evaluate_offline'],
-				"entry_point": instance['entry_point'],
-				"test_cases": json.loads(instance['test_cases']),
-    			"solution_index": index,
-				"timeout": timeout
-			}
+                "solution": solution['solution'],
+                "convert_offline": instance['convert_offline'],
+                "evaluate_offline": instance['evaluate_offline'],
+                "entry_point": instance['entry_point'],
+                "test_cases": json.loads(instance['test_cases']),
+                "solution_index": index,
+                "timeout": timeout
+            }
             result = sandbox.run_sample(sample)
-            
+
             if result['result'] == "passed":
                 runtimes += [result['runtime']]
-        
+
         # Calculate Range
         runtimes = sorted(runtimes)
         min_runtime = min(runtimes)
         max_runtime = max(runtimes)
-        
+
         # Evaluate generated solutions
         t_c, p_c = 0, 0
         b_l = list()
         difficulty = instance['difficulty']
-        
-        for index, solution in tqdm(enumerate(generations), desc="generation execution", total=len(generations)):                   
+
+        for index, solution in tqdm(enumerate(generations), desc="generation execution", total=len(generations)):
             sample = {
                 "solution": solution,
                 "convert_offline": instance['convert_offline'],
@@ -372,53 +391,52 @@ def compute_beyond_eval(generations_list, reference_list, timeout=10):
                 "solution_index": index,
                 "timeout": timeout,
             }
-            
+
             results = [sandbox.run_sample(sample) for _ in range(3)]
             print(results[0])
             t_c += 1
-            
+
             # Calculate Beyond
             if results[0]['result'] == "passed":
                 runtime = sum([r['runtime'] for r in results]) / len(results)
                 p_c += 1
             else:
                 runtime = float('inf')
-            
+
             # Statistic Errors
             errors[difficulty][results[0]['result']] += 1
-                
+
             runtime = min(runtime, max_runtime)
             runtime = max(runtime, min_runtime)
-            b_l += [(max_runtime - runtime) / (max_runtime - min_runtime)]  
-        
+            b_l += [(max_runtime - runtime) / (max_runtime - min_runtime)]
+
         scores[difficulty]['total_c'] += [t_c]
         scores[difficulty]['correct_c'] += [p_c]
         scores[difficulty]['beyond_c'] += [b_l]
-        
+
         scores['Average']['total_c'] += [t_c]
         scores['Average']['correct_c'] += [p_c]
         scores['Average']['beyond_c'] += [b_l]
-        
+
         # print(f'total: {t_c}')
         # print(f'correct: {p_c}')
         # print(f'beyond: {b_l}')
         # print("-" * 60)
-    
+
     results = dict()
     for difficulty in ['Easy', "Medium", "Hard", "Average"]:
         total = np.array(scores[difficulty]['total_c'])
         correct = np.array(scores[difficulty]['correct_c'])
         beyond = scores[difficulty]['beyond_c']
-        
-        pass_at_k = {f"{difficulty}_pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in [1,3,5,10,15,20,30,50,100] if (total >= k).all()}
-        beyond_at_k = {f"{difficulty}_beyond@{k}": estimate_beyond_at_k(beyond, k) for k in [1,3,5,10,15,20,30,50,100] if (total >= k).all()}
-        
+
+        pass_at_k = {f"{difficulty}_pass@{k}": estimate_pass_at_k(total, correct, k).mean(
+        ) for k in [1, 3, 5, 10, 15, 20, 30, 50, 100] if (total >= k).all()}
+        beyond_at_k = {f"{difficulty}_beyond@{k}": estimate_beyond_at_k(
+            beyond, k) for k in [1, 3, 5, 10, 15, 20, 30, 50, 100] if (total >= k).all()}
+
         results.update(pass_at_k)
         results.update(beyond_at_k)
-    
+
     results.update(errors)
 
     return results
-
-
-
