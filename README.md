@@ -38,6 +38,7 @@ Below are the features and tasks of this framework:
     - [SantaCoder-FIM](https://huggingface.co/datasets/bigcode/santacoder-fim-task) for evaluating FIM on **Python** code using Exact Match. Further details are described in [SantaCoder](https://arxiv.org/abs/2301.03988). Includes two tasks:
         - `StarCoderFIM`: which uses the default FIM tokens `"<fim_prefix>", "<fim_middle>", "<fim_suffix>"`, and
         - `SantaCoderFIM`: which uses SantaCoder FIM tokens `"<fim-prefix>", "<fim-middle>", "<fim-suffix>"`
+    - [Mercury](https://huggingface.co/datasets/Elfsong/Mercury) for evaluating computational efficiency of **Python** code generation.
 
 More details about each task can be found in  the documentation in [`docs/README.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/README.md).
 ## Setup
