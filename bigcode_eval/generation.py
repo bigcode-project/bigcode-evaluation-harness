@@ -38,6 +38,7 @@ class TooLongFunctionCriteria(StoppingCriteria):
         """Returns true if generated sequence is too long."""
         return input_ids.shape[1] > int(self.input_length * self.multiplier)
 
+
 def parallel_generations(
         task,
         dataset,
