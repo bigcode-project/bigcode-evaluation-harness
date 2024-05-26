@@ -382,6 +382,27 @@ accelerate launch  main.py \
   --allow_code_execution
 ```
 
+### StudentEval
+
+[StudentEval](https://huggingface.co/datasets/wellesley-easel/StudentEval) is a 
+dataset of 1,749 prompts for 48 problems, authored by 80 students who have only
+completed a one-semester Python programming class. Unlike many other benchmarks, 
+it has multiple prompts per problem and multiple attempts by the same
+participant. Each problem is accompanied by a set of instructor-written test 
+cases.
+
+```python
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation 512 \
+  --tasks studenteval \
+  --temperature 0.2 \
+  --top_p 0.95 \
+  --do_sample True \
+  --n_samples 20 \
+  --batch_size 20 \
+  --allow_code_execution
+```
 
 ## Code generation benchmarks without unit tests
 

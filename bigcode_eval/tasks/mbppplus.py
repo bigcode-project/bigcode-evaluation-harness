@@ -4,7 +4,7 @@ https://openreview.net/forum?id=1qvx610Cu7
 The MBPP+ dataset is created by the EvalPlus framework which extends the original MBPP dataset
 by adding more automatically generated test cases to each problem. Note MBPP+ only includes 399
 tasks which are a subset of the original MBPP dataset. The subset is selected from the sanitized
-MBPP (a subset of manually examined tasks by the original MBPP authors) and EvalPlus further 
+MBPP (a subset of manually examined tasks by the original MBPP authors) and EvalPlus further
 removes low-quality and ill-formed tasks for benchmark quality control.
 
 Homepage: https://github.com/evalplus/evalplus
@@ -56,9 +56,6 @@ class MBPPPlus(MBPP):
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
         dataset = self.dataset["test"]
-        assert (
-            len(dataset) == 399
-        ), "MBPP+ only has 399 problems. Please retry by deleting its old cache"
         return dataset
 
     def process_results(self, generations, references):
