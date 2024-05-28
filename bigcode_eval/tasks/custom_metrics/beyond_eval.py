@@ -5,8 +5,8 @@
 # https://github.com/openai/human-eval/blob/master/human_eval/execution.py
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional, Dict, Any, List
 from multiprocessing import Manager, Process
+from typing import Optional, Dict
 from tqdm import tqdm
 import numpy as np
 import faulthandler
@@ -19,6 +19,7 @@ import json
 import time
 import os
 import io
+
 CITATION = """
 @article{du2024mercury,
     title={Mercury: An Efficiency Benchmark for LLM Code Synthesis},
@@ -27,7 +28,6 @@ CITATION = """
     year={2024}
 }
 """
-
 
 # Timeout Exception
 class TimeoutException(Exception):
@@ -55,7 +55,6 @@ class WriteOnlyStringIO(io.StringIO):
     def readable(self, *args, **kwargs):
         """ Returns True if the IO object can be read. """
         return False
-
 
 class Sandbox(object):
     @staticmethod
@@ -392,8 +391,7 @@ def compute_beyond_eval(generations_list, reference_list, timeout=10):
                 "timeout": timeout,
             }
 
-            results = [sandbox.run_sample(sample) for _ in range(3)]
-            print(results[0])
+            results = [sandbox.run_sample(sample) for _ in range(5)]
             t_c += 1
 
             # Calculate Beyond
@@ -417,11 +415,6 @@ def compute_beyond_eval(generations_list, reference_list, timeout=10):
         scores['Average']['total_c'] += [t_c]
         scores['Average']['correct_c'] += [p_c]
         scores['Average']['beyond_c'] += [b_l]
-
-        # print(f'total: {t_c}')
-        # print(f'correct: {p_c}')
-        # print(f'beyond: {b_l}')
-        # print("-" * 60)
 
     results = dict()
     for difficulty in ['Easy', "Medium", "Hard", "Average"]:
