@@ -42,7 +42,7 @@ class Evaluator:
 
     def generate_text(self, task_name, intermediate_generations=None):
         task = tasks.get_task(task_name, self.args)
-        dataset = task.get_dataset()
+        dataset = task.get_dataset(self.args)
         # if args.limit is None, use all samples
         # if args.limit is used, make sure args.limit_start + args.limit <= len(dataset)
         n_tasks = min(self.args.limit, len(dataset) - self.args.limit_start) if self.args.limit else len(dataset)

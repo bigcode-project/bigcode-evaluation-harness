@@ -210,6 +210,23 @@ def parse_args():
         action="store_true",
         help="Don't run generation but benchmark groundtruth (useful for debugging)",
     )
+    parser.add_argument(
+        "--one_shot",
+        action="store_true",
+        help="Turn on one_shot prompting for Nuggets evaluation",
+    )
+    parser.add_argument(
+        "--prompt_quality",
+        type=int,
+        choices=[0,1,2],
+        default=0,
+        help="Choose whether to use the bad (0), decent (1), or correct (2) solution for the one shot task",
+    )
+    parser.add_argument(
+        "--add_context",
+        action="store_true",
+        help="Turn on to use the prompt template with added context",
+    )
     return parser.parse_args()
 
 

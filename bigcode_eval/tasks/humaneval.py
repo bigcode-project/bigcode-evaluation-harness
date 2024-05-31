@@ -57,16 +57,63 @@ class GeneralHumanEval(Task):
         self.num_workers = num_workers
         self.timeout = timeout
 
-    def get_dataset(self):
+        # Used for Nuggets experiments
+        self.one_shot = False
+        self.prompt_quality = None
+        self.add_context = False
+        self.args = None
+        self.doc = None
+
+    def get_dataset(self, args):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
+        self.one_shot = args.one_shot
+        self.prompt_quality = args.prompt_quality
+        self.add_context = args.add_context
+        self.args = args
         return self.dataset["test"]
 
-    def get_prompt(self, doc):
-        """Builds the prompt for the LM to generate from."""
+    def get_start_context(self):
+        return "Implement answers to the following questions:\nQUESTION:\n"
+
+    def get_one_shot_example(self):
+
+        # For now, hard-coding the one shot example to be the last task in the HumanEval dataset
+        # Also hard-coding the three sample solutions (good, decent, and bad) here
+        final_sample = self.dataset["test"][-1]
+        correct_sol = final_sample["canonical_solution"]
+        really_bad_sol = "    cat: cat cat\n    dog dog dog;\n    return [giraffe if giraffe for giraffe in giraffe]"
+        decent_sol = "    lower = 2\n    upper = 8\n    return [i if i % 2 = 0 for i in range(lower, upper)]"
+        
+        # Create a list of all the different task answers possible for various experiments
+        example_task_answers = [really_bad_sol, decent_sol, correct_sol]
+
+        # If add_context is set, add additional context to the prompt. 
+        if self.add_context:
+            return final_sample["prompt"] + "\nANSWER:\n" + example_task_answers[self.prompt_quality] + "\n" + "QUESTION:\n"
+        else:
+            return final_sample["prompt"] + "\n" + example_task_answers[self.prompt_quality] + "\n"
+
+    def get_base_prompt(self, doc):
+        # Strip prompt if required
         if self.strip_prompt:
             return doc["prompt"].strip()
         else:
             return doc["prompt"]
+
+    def get_prompt(self, doc):
+        """Builds the prompt for the LM to generate from."""
+        self.doc = doc
+        prompt = self.get_base_prompt(doc)
+
+        # Cases: one shot with context, one shot without context, zero shot
+        start_context = self.get_start_context()
+        if self.one_shot and self.add_context:
+            return start_context + self.get_one_shot_example() + prompt + "\nANSWER:\n"
+        elif self.one_shot:
+            return self.get_one_shot_example() + prompt
+        else:
+            return prompt
+
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -83,9 +130,14 @@ class GeneralHumanEval(Task):
             index of doc in the dataset to which the generation belongs
             (not used for Humaneval-Task)
         """
+        # Want to remove one shot example and any context when post processing
         prompt = self.get_prompt(self.dataset["test"][idx])
+        
         generation = generation[len(prompt) :]
-        return prompt + self._stop_at_stop_token(generation, self.stop_words)
+
+        base_prompt = self.get_base_prompt(self.doc)
+
+        return base_prompt + self._stop_at_stop_token(generation, self.stop_words)
 
     def process_results(self, generations, references):
         """Takes the list of LM generations and evaluates them against ground truth references,
