@@ -352,7 +352,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
         :param references: list(str)
             list of str containing refrences
         """
-        code_metric = load("Muennighoff/code_eval_octopack")
+        code_metric = load("jiiiiin/code_eval_octopack")
         timeout = LANGUAGE_TO_TIMEOUT[self.DATASET_NAME]
         num_workers = LANGUAGE_TO_NUM_WORKERS[self.DATASET_NAME]
         language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
