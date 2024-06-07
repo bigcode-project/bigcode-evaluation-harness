@@ -297,11 +297,18 @@ def complete_code(
                         **gen_kwargs,
                     )
                 else:
-                    generated_tokens = model.generate(
-                        input_ids=inputs,
-                        num_return_sequences=batch_size,
-                        **gen_kwargs,
-                    )
+                    # In transformers (>= 4.40.2), if the length of input_ids == max_length, a ValueError is thrown.
+                    # We want to ignore this error in order to reproduce old results with mbpp.
+                    try:
+                        generated_tokens = model.generate(
+                            input_ids=inputs,
+                            num_return_sequences=batch_size,
+                            **gen_kwargs,
+                        )
+                    except ValueError:
+                        # When the length of input_ids == max_length, the generation is the same as the input
+                        generated_tokens = inputs
+
             # each task is generated batch_size times
             generated_tasks = batch["task_id"].repeat(batch_size)
             generated_tokens = accelerator.pad_across_processes(
