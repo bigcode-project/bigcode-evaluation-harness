@@ -308,6 +308,7 @@ def complete_code(
                     except ValueError as e:
                         # When the length of input_ids == max_length, the generation is the same as the input
                         if str(e).startswith(f"Input length of input_ids is {inputs.shape[1]}, but `max_length` is set to {gen_kwargs['max_length']}"):
+                            warnings.warn(f"An error with the following message was thrown: {e}. Returning the input as the generation.")
                             generated_tokens = inputs
                         else:
                             raise e
