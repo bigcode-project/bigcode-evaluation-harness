@@ -305,9 +305,12 @@ def complete_code(
                             num_return_sequences=batch_size,
                             **gen_kwargs,
                         )
-                    except ValueError:
+                    except ValueError as e:
                         # When the length of input_ids == max_length, the generation is the same as the input
-                        generated_tokens = inputs
+                        if str(e).startswith(f"Input length of input_ids is {inputs.shape[1]}, but `max_length` is set to {gen_kwargs['max_length']}"):
+                            generated_tokens = inputs
+                        else:
+                            raise e
 
             # each task is generated batch_size times
             generated_tasks = batch["task_id"].repeat(batch_size)
