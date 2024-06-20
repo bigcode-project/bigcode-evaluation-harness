@@ -19,9 +19,7 @@ from bigcode_eval.evaluator import Evaluator
 from bigcode_eval.tasks import ALL_TASKS
 
 try:
-    import sparseml.core.session as session_manager
-    from sparseml.core.framework import Framework
-    from sparseml.pytorch.model_load.helpers import reload_model_state
+    from sparseml.transformers.utils.sparse_model import SparseAutoModel
 except:
     print("SparseML not found. proceeding without it")
 
@@ -310,37 +308,13 @@ def main():
                 **model_kwargs,
             )
         elif args.modeltype == "nm":
-            model = AutoModelForCausalLM.from_pretrained(
-                args.model,
-                local_files_only=True,
+            recipe_file = os.path.join(args.model, 'recipe.yaml')
+            model = SparseAutoModel.text_generation_from_pretrained(
+                model_name_or_path=args.model,
+                recipe=recipe_file,
                 **model_kwargs,
             )
-
-            # model.train()
-            original_sd = model.state_dict()
-
-            recipe_file = os.path.join(args.model, 'recipe.yaml')
-            assert(os.path.exists(recipe_file))
-            session_manager.create_session()
-            session_manager.pre_initialize_structure(
-                model=model,
-                recipe=recipe_file,
-                framework=Framework.pytorch,
-                device=model.device
-            )
-
-            # reload the state dict for the model now that architecture matches expected
-            reload_model_state(model, args.model, original_sd)
-            model.to(model.device)
-            
-            # HOTFIX. assign proper device ids to quantwrapper again
-            # print("Starting")
-            #for layer in model.model.layers:
-            #    # assuming each layer is contained in a single GPU, different layers maybe in different GPUs
-            #    # hack to enable quantwrapper(.module) to have all class members on one device.
-            #    print(layer.self_attn.q_proj)
-            #    layer.to(layer.self_attn.q_proj.module.weight.device)
-            #model.lm_head.to(model.lm_head.module.weight.device)
+            #model.to(model.device)
         elif args.modeltype == "gptq":
             from auto_gptq import AutoGPTQForCausalLM
             model = AutoGPTQForCausalLM.from_quantized(args.model, device_map='auto')
