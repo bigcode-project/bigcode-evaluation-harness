@@ -281,11 +281,11 @@ def complete_code(
                     )
                 else:
                     generated_tokens = model.generate(
-                        decoder_input_ids=inputs,
+                        # decoder_input_ids=inputs,
                         input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
                         num_return_sequences=batch_size,
-                        decoder_start_token_id=tokenizer.pad_token_id,
-                        eos_token_id=tokenizer.eos_token_id,
+                        # decoder_start_token_id=tokenizer.pad_token_id,
+                        # eos_token_id=tokenizer.eos_token_id,
                         **gen_kwargs,
                     )
             else:
