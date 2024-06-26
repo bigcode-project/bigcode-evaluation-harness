@@ -62,6 +62,31 @@ def parallel_generations(
                 )
         return generations[:n_tasks]
 
+    if base_url := args.base_url:
+        assert "/v1" in base_url, "Only OpenAI compatible APIs are supported"
+        import asyncio
+        import os
+        from openai import AsyncOpenAI
+        from tqdm.asyncio import tqdm
+
+        api_key = os.getenv("OPENAI_API_KEY", "api_key")
+        client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        prompts = [task.get_prompt(doc) for doc in dataset]
+        awaitables = [client.completions.create(
+            model=args.model,
+            prompt=prompt, 
+            n=args.batch_size,
+            max_tokens=args.max_length_generation,
+            temperature=args.temperature,
+            top_p=args.top_p
+        ) for prompt in prompts]
+        responses = asyncio.run(tqdm.gather(*awaitables))
+        generations = []
+        for i, (prompt, response) in enumerate(zip(prompts, responses)):
+            texts = [prompt + choice.text for choice in response.choices]
+            generations.append([task.postprocess_generation(text, i) for text in texts])
+        return generations
+
     set_seed(args.seed, device_specific=True)
 
     # Setup generation settings
