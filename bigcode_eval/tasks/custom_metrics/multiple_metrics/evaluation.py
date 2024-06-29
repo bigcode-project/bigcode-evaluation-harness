@@ -45,7 +45,7 @@ def cached_eval_script(problem, index) -> dict:
         result_dict = eval_string_script(problem["language"], program)
         for k in result_dict.keys():
             result_yaml[k] = result_dict[k]
-            result_yaml["timestamp"] = int(time.time())
+        result_yaml["timestamp"] = int(time.time())
         return result_yaml
 
 
