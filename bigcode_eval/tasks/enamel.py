@@ -7,11 +7,6 @@ Python code compared with expert-written reference solutions under 142 HumanEval
 Homepage: https://github.com/q-rz/enamel
 """
 
-from warnings import warn
-import numpy as np
-from bigcode_eval.tasks.humaneval import GeneralHumanEval
-from bigcode_eval.custom_metrics.enamel_eval import 
-
 _CITATION = """
 @article{qiu2024enamel,
   title={How efficient is {LLM}-generated code? A rigorous \& high-standard benchmark},
@@ -20,6 +15,12 @@ _CITATION = """
   year={2024}
 }
 """
+
+
+from warnings import warn
+import numpy as np
+from bigcode_eval.tasks.humaneval import GeneralHumanEval
+from bigcode_eval.custom_metrics.enamel_eval import evaluate_all, might_catch_timeout_signal
 
 
 class GeneralENAMEL(GeneralHumanEval):
@@ -31,10 +32,10 @@ class GeneralENAMEL(GeneralHumanEval):
     DATASET_NAME = "ENAMEL_HumanEval"
 
     def __init__(self, subset, # list of problem IDs
-        hardness=[0., 3., 3., 4.], memory_giga=4., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
-        strip_prompt=True, k=[1, 10, 100], num_workers=16,
+        hardness=[0., 3., 3., 4.], n_reps = 6, memory_giga=4., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
+        strip_prompt=True, k=[1, 10, 100],
     ):
-        super().__init__(strip_prompt=strip_prompt, k=k, num_workers=num_workers, timeout=None) # each problem has a different time limit
+        super().__init__(strip_prompt=strip_prompt, k=k, num_workers=1, timeout=None) # each problem has a different time limit
         if isinstance(subset, list):
             self.subset = subset
         else:
@@ -42,6 +43,7 @@ class GeneralENAMEL(GeneralHumanEval):
             self.subset = self.DATASET_SUBSETS[subset]
         self.dataset[self.__name__] = self.dataset["ENAMEL_HumanEval"].iloc[np.array(self.subset), :] # TODO
         self.hardness = hardness
+        self.n_reps = n_reps
         self.memory_giga = memory_giga
         self.timeout_factor = timeout_factor
         self.tolerence_sec = tolerence_sec
@@ -60,7 +62,7 @@ class GeneralENAMEL(GeneralHumanEval):
             sample from the test dataset
         :return: str
         """
-        return ""
+        return "" # TODO: include tests
 
     def postprocess_generation(self, generation, idx):
         """
@@ -73,22 +75,24 @@ class GeneralENAMEL(GeneralHumanEval):
         """
         prompt = self.get_prompt(self.get_dataset()[idx])
         generation = self._stop_at_stop_token(generation, self.stop_words)
+        if (not self.warned_dead_loop) and might_catch_timeout_signal(generation):
+            warn(might_catch_timeout_signal.WARNING)
         return prompt + "\n    pass\n" + generation # this should work no matter generation contains prompt or not
 
     def process_results(self, generations, references):
-        # TODO: define how the evaluation score is computed from list of \
-        # generations and reference solutions
         """
         Takes the list of LM generations and evaluates them against ground truth references,
         returning the metric for the generations as in {"metric_name": result}.
-        We encourage to directly load the metric from `evaluate` library to keep the code concise.
         :param generations: list(list(str))
             list of lists containing generations
         :param references: list(str)
             list of str containing refrences
         :return: dict[str: float]
         """
-        return {}
+        return evaluate_all(
+            generations, references, k=self.k, hardness=self.hardness, n_reps=self.n_reps,
+            memory_giga=self.memory_giga, timeout_factor=self.timeout_factor, tolerence_sec=self.tolerence_sec,
+        )
 
 
 def create_task(name, subset):
