@@ -94,7 +94,7 @@ class GeneralENAMEL(GeneralHumanEval):
 
 
 def create_task(subset):
-    class ENAMEL(GeneralEnamel):
+    class ENAMEL(GeneralENAMEL):
         __name__ = subset
         __qualname__ = subset
         def __init__(self, *args, **kwargs):
