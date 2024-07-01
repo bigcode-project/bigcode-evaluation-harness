@@ -8,7 +8,9 @@ Homepage: https://github.com/q-rz/enamel
 """
 
 from warnings import warn
+import numpy as np
 from bigcode_eval.tasks.humaneval import GeneralHumanEval
+from bigcode_eval.custom_metrics.enamel_eval import 
 
 _CITATION = """
 @article{qiu2024enamel,
@@ -27,14 +29,8 @@ class GeneralENAMEL(GeneralHumanEval):
 
     DATASET_PATH = "q-rz/enamel"
     DATASET_NAME = "ENAMEL_HumanEval"
-    DATASET_SUBSETS = {
-        "ENAMEL": sorted(set(range(164)) - {2, 23, 41, 45, 53, 60, 71, 92, 97, 99, 102, 123, 124, 135, 137, 138, 144, 148, 156, 157, 159, 160}),
-        "ENAMEL_Algo": [10, 18, 36, 39, 40, 43, 46, 49, 55, 59, 63, 76, 83, 96, 107, 109, 114, 129, 147, 154],
-        "ENAMEL_Impl": [1, 5, 8, 9, 11, 12, 15, 16, 17, 19, 21, 22, 24, 25, 26, 27, 31, 33, 37, 38, 44, 48, 49, 50, 51, 52, 56, 57, 58, 59, 61, 64, 66, 69, 70, 72, 73, 74, 75, 78, 80, 82, 85, 87, 89, 91, 93, 94, 95, 96, 98, 100, 104, 105, 108, 110, 111, 112, 113, 116, 117, 118, 121, 122, 125, 127, 128, 131, 140, 142, 143, 150, 152, 155, 161],
-    }
 
-    def __init__(self,
-        subset, # list of problem IDs, or one of the predefined subsets
+    def __init__(self, subset, # list of problem IDs
         hardness=[0., 3., 3., 4.], memory_giga=4., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
         strip_prompt=True, k=[1, 10, 100], num_workers=16,
     ):
@@ -44,29 +40,29 @@ class GeneralENAMEL(GeneralHumanEval):
         else:
             assert subset in self.DATASET_SUBSETS, f"unknown subset {repr(subset)}"
             self.subset = self.DATASET_SUBSETS[subset]
+        self.dataset[self.__name__] = self.dataset["ENAMEL_HumanEval"].iloc[np.array(self.subset), :] # TODO
         self.hardness = hardness
         self.memory_giga = memory_giga
         self.timeout_factor = timeout_factor
         self.tolerence_sec = tolerence_sec
         self.tests_path = tests_path
-        # TODO: load dataset and tests
+        # TODO: load tests from tests_path
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        return self.dataset["ENAMEL_HumanEval"].iloc[np.array(self.subset), :]
+        return self.dataset[self.__name__]
 
     def get_reference(self, doc):
         # TODO: get the reference solution from a sample `doc` from the dataset
         """
         Builds the reference solution for the doc (sample from the test dataset).
-        :param doc: dict[str: str]
+        :param doc: dict{str: str}
             sample from the test dataset
         :return: str
         """
         return ""
 
     def postprocess_generation(self, generation, idx):
-        # TODO: define the postprocessing for the LM generation
         """
         Defines the postprocessing for a LM generation.
         :param generation: str
@@ -75,7 +71,9 @@ class GeneralENAMEL(GeneralHumanEval):
             index of doc in the dataset to which the generation belongs
         :return: str
         """
-        return ""
+        prompt = self.get_prompt(self.get_dataset()[idx])
+        generation = self._stop_at_stop_token(generation, self.stop_words)
+        return prompt + "\n    pass\n" + generation # this should work no matter generation contains prompt or not
 
     def process_results(self, generations, references):
         # TODO: define how the evaluation score is computed from list of \
@@ -93,12 +91,13 @@ class GeneralENAMEL(GeneralHumanEval):
         return {}
 
 
-def create_task(subset):
+def create_task(name, subset):
     class ENAMEL(GeneralENAMEL):
-        __name__ = subset
-        __qualname__ = subset
+        __name__ = name
+        __qualname__ = name
+        SUBSET = subset
         def __init__(self, *args, **kwargs):
-            super().__init__(subset = subset, *args, **kwargs)
+            super().__init__(subset=self.SUBSET, *args, **kwargs)
     return ENAMEL
 
 def create_all_tasks():
@@ -106,7 +105,7 @@ def create_all_tasks():
     :return: {task_name: task}
     """
     return {
-        "enamel": create_task(subset = "ENAMEL"),
-        "enamel-algo": create_task(subset = "ENAMEL_Algo"),
-        "enamel-impl": create_task(subset = "ENAMEL_Impl"),
+        "enamel": create_task(name="ENAMEL", subset=sorted(set(range(164)) - {2, 23, 41, 45, 53, 60, 71, 92, 97, 99, 102, 123, 124, 135, 137, 138, 144, 148, 156, 157, 159, 160})),
+        "enamel-algo": create_task(name="ENAMEL_Algo", subset=[10, 18, 36, 39, 40, 43, 46, 49, 55, 59, 63, 76, 83, 96, 107, 109, 114, 129, 147, 154]),
+        "enamel-impl": create_task(name="ENAMEL_Impl", subset=[1, 5, 8, 9, 11, 12, 15, 16, 17, 19, 21, 22, 24, 25, 26, 27, 31, 33, 37, 38, 44, 48, 49, 50, 51, 52, 56, 57, 58, 59, 61, 64, 66, 69, 70, 72, 73, 74, 75, 78, 80, 82, 85, 87, 89, 91, 93, 94, 95, 96, 98, 100, 104, 105, 108, 110, 111, 112, 113, 116, 117, 118, 121, 122, 125, 127, 128, 131, 140, 142, 143, 150, 152, 155, 161]),
     }
