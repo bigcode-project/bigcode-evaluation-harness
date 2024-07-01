@@ -1,8 +1,8 @@
 """How efficient is LLM-generated code? A rigorous & high-standard benchmark
 https://arxiv.org/pdf/2406.06647
 
-ENAMEL is a rigorous & high-standard benchmark for evaluating the efficiency of generated code
-compared with **expert-written** reference solutions under 142 HumanEval problems
+ENAMEL is a rigorous & high-standard benchmark for evaluating the efficiency of generated
+Python code compared with expert-written reference solutions under 142 HumanEval problems
 
 Homepage: https://github.com/q-rz/enamel
 """
