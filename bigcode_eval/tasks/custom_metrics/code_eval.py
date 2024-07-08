@@ -126,15 +126,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE."""
 
-def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, timeout=3.0):
+def compute_code_eval(predictions, references, k=[1, 3, 5], num_workers=4, timeout=3.0):
     """Returns the scores"""
 
     if os.getenv("HF_ALLOW_CODE_EVAL", 0) != "1":
         raise ValueError(_WARNING)
-
+    eval_results = []
+    inter_results = dict()
     if os.name == "nt":
         raise NotImplementedError("This metric is currently not supported on Windows.")
-
+    print("here")
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
         futures = []
         completion_id = Counter()
@@ -143,6 +144,7 @@ def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, ti
 
         for task_id, (candidates, test_case) in enumerate(zip(predictions, references)):
             for candidate in candidates:
+                inter_results[task_id] = [(candidate, test_case)]
                 test_program = candidate + "\n" + test_case
                 args = (test_program, timeout, task_id, completion_id[task_id])
                 future = executor.submit(check_correctness, *args)
@@ -154,12 +156,28 @@ def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, ti
             result = future.result()
             results[result["task_id"]].append((result["completion_id"], result))
 
+    print("printing inter_results")
+    for k,v in inter_results.items():
+        print(k, v[0][0], v[0][1])
+    print("done printing inter_results")
     total, correct = [], []
     for result in results.values():
+        print("in code_eval result is :{}".format(result))
         result.sort()
         passed = [r[1]["passed"] for r in result]
         total.append(len(passed))
         correct.append(sum(passed))
+        if len(result) > 1:
+            #multiple completions
+            for res in result:
+                eval_results.append((task_id, inter_results[task_id][0][0], inter_results[task_id][0][1],
+                                     res[0][1]['result'], res[0][1]['completion_id']))
+
+
+        else:
+            #single completion
+            eval_results.append((task_id, inter_results[task_id][0][0], inter_results[task_id][0][1],
+                                 result[0][1]['result'], result[0][1]['completion_id']))
     total = np.array(total)
     correct = np.array(correct)
 
@@ -168,6 +186,9 @@ def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, ti
         ks = [ks]
     pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
 
+    print("final eval_results:")
+    for r in eval_results:
+        print(r)
     return pass_at_k, results
 
 
@@ -187,3 +208,6 @@ def estimate_pass_at_k(num_samples, num_correct, k):
         num_samples_it = iter(num_samples)
 
     return np.array([estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)])
+
+
+# compute_code_eval(predictions=pred, references=ref, k=[1], num_workers=1)

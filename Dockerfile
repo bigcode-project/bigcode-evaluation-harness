@@ -6,7 +6,7 @@ COPY . /app
 
 WORKDIR /app
 
-RUN test -f /app/generations.json && rm /app/generations.json || true
+#RUN test -f /app/generations.json && rm /app/generations.json || true
 
 RUN pip3 install .
 

@@ -12,7 +12,7 @@ from tqdm import tqdm
 INFILL_MODE = False
 INSTRUCTION_MODE = False
 
-
+FINAL_PROMPTS = []
 class TokenizedDataset(IterableDataset):
     """Tokenize and preprocess the dataset
     Multiple copies of the same prompt are sent sequentially. See compute_code for more details.
@@ -49,6 +49,7 @@ class TokenizedDataset(IterableDataset):
 
     def __iter__(self):
         prompts = []
+        self.prompts_final =[]
         prompts_encoder = []
         infill = []
         instruction = []
@@ -131,12 +132,15 @@ class TokenizedDataset(IterableDataset):
                         "input_len_encoder": outputs_encoder.attention_mask[
                             sample
                         ].sum(),
+
+                        "prompt": prompts,
                     }
                 else:
                     yield {
                         "ids": outputs.input_ids[sample],
                         "task_id": sample,
                         "input_len": outputs.attention_mask[sample].sum(),
+                        "prompt": prompts,
                     }
 
     def _make_infill_prompt(self, prefix, suffix, preprefix=""):
@@ -173,6 +177,9 @@ class TokenizedDataset(IterableDataset):
 
         return prompt
 
+
+def get_final_prompts():
+        return FINAL_PROMPTS
 
 def _parse_infill(code, tokenizer):
     """Reorder infill code and remove remaining special tokens."""
@@ -247,6 +254,7 @@ def complete_code(
     # keep track of the list of generated codes
     # where len(code_gens) = n_tasks and len(code_gens[0]) = number of generated code samples
     code_gens: List[List[Optional[str]]] = [[] for _ in range(n_tasks)]
+
     generations = [] if not intermediate_generations else intermediate_generations
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(

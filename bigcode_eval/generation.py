@@ -7,7 +7,7 @@ from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
 
-from bigcode_eval.utils import TokenizedDataset, complete_code
+from bigcode_eval.utils import TokenizedDataset, complete_code, get_final_prompts
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
@@ -63,6 +63,9 @@ def parallel_generations(
         return generations[:n_tasks]
 
     set_seed(args.seed, device_specific=True)
+    prompts = [batch["prompt"] for batch in ds_tokenized]
+    for prompt in prompts:
+        print("prompt is :{}".format(prompt))
 
     # Setup generation settings
     gen_kwargs = {
@@ -156,4 +159,4 @@ def parallel_generations(
         intermediate_save_generations_path=intermediate_save_generations_path,
         **gen_kwargs,
     )
-    return generations
+    return generations, prompts
