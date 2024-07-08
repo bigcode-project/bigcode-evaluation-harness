@@ -126,7 +126,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE."""
 
-def compute_code_eval(predictions, references, k=[1, 3, 5], num_workers=4, timeout=3.0):
+def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, timeout=3.0):
     """Returns the scores"""
 
     if os.getenv("HF_ALLOW_CODE_EVAL", 0) != "1":
@@ -156,13 +156,13 @@ def compute_code_eval(predictions, references, k=[1, 3, 5], num_workers=4, timeo
             result = future.result()
             results[result["task_id"]].append((result["completion_id"], result))
 
-    print("printing inter_results")
-    for k,v in inter_results.items():
-        print(k, v[0][0], v[0][1])
-    print("done printing inter_results")
+    # print("printing inter_results")
+    # for k,v in inter_results.items():
+    #     print(k, v[0][0], v[0][1])
+    # print("done printing inter_results")
     total, correct = [], []
     for result in results.values():
-        print("in code_eval result is :{}".format(result))
+        # print("in code_eval result is :{}".format(result))
         result.sort()
         passed = [r[1]["passed"] for r in result]
         total.append(len(passed))
