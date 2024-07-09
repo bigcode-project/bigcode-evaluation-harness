@@ -123,6 +123,35 @@ def parallel_generations(
         has_encoder=args.modeltype == "seq2seq",
         instruction_tokens=instruction_tokens,
     )
+    # below is to generate the prompts without changing the
+    # iterator for TokenizedDataset above
+    from utils import _make_instruction_prompt,_make_infill_prompt
+
+    limit_start = args.limit_start if args.limit_start else 0
+    prompts = []
+    for sample in range(limit_start, limit_start + n_tasks):
+        prompt_contents = task.get_prompt(dataset[sample])
+        if isinstance(prompt_contents, str):
+            # Normal code completion mode
+            prompt = args.prefix + prompt_contents
+        elif isinstance(prompt_contents, dict):
+            if set(prompt_contents.keys()) == {"prefix", "suffix"}:
+                # Infilling mode
+                prompt = _make_infill_prompt(tokenizer,
+                    **prompt_contents, preprefix=args.prefix
+                )
+            elif set(prompt_contents.keys()) == {"instruction", "context"}:
+                # Instruction-tuning mode
+                prompt = _make_instruction_prompt(instruction_tokens
+                    **prompt_contents, prefix=args.prefix
+                )
+        else:
+            raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
+        prompts.append(prompt)
+        print("final prompts is")
+        for p in prompts:
+            print(p)
+            print('\n')
 
     # prompts = [batch["prompt"] for batch in ds_tokenized]
     # for prompt in prompts:

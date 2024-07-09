@@ -12,7 +12,9 @@ from tqdm import tqdm
 INFILL_MODE = False
 INSTRUCTION_MODE = False
 
-FINAL_PROMPTS = []
+
+def has_special_tokens(tokenizer):
+    pass
 class TokenizedDataset(IterableDataset):
     """Tokenize and preprocess the dataset
     Multiple copies of the same prompt are sent sequentially. See compute_code for more details.
@@ -178,8 +180,46 @@ class TokenizedDataset(IterableDataset):
         return prompt
 
 
-def get_final_prompts():
-        return FINAL_PROMPTS
+
+
+
+#same code as above methods from TokenizedDataset class
+def _make_instruction_prompt(instruction_tokens, instruction, context, prefix=""):
+    """Make a prompt for instruction-tuning. Delimit instruction and context with specific tokens if provided."""
+    if not instruction_tokens:
+        warnings.warn(
+            "Instruction-tuning tokens are not provided for an instruction-tuning task, we will leave them empty."
+        )
+        user_token, end_token, assistant_token = "", "", "\n"
+    else:
+        user_token, end_token, assistant_token = instruction_tokens
+        if not user_token or not assistant_token or not end_token:
+            warnings.warn(
+                "Instruction-tuning tokens provided but one or more are empty. Ignore warning if this was intended"
+            )
+    prompt = (
+            prefix + user_token + instruction + end_token + assistant_token + context
+    )
+
+    return prompt
+
+
+def _make_infill_prompt(tokenizer, prefix, suffix, preprefix=""):
+    """Make a prompt for infilling.
+       Currently supported only for official InCoder and SantaCoder implementations.
+       """
+    model_id = tokenizer.name_or_path
+    if model_id in ["facebook/incoder-1B", "facebook/incoder-6B"]:
+        tokenizer.add_special_tokens({"pad_token": "<pad>"})
+        return f"{preprefix}{prefix}<|mask:0|>{suffix}<|mask:0|>"
+    elif model_id in ["bigcode/santacoder"]:
+        return f"<fim-prefix>{preprefix}{prefix}<fim-suffix>{suffix}<fim-middle>"
+    elif model_id in ["bigcode/starcoder", "bigcode/starcoderbase"]:
+        return f"<fim_prefix>{preprefix}{prefix}<fim_suffix>{suffix}<fim_middle>"
+    else:
+        raise ValueError(f"Infilling not yet supported for: {model_id}")
+
+
 
 def _parse_infill(code, tokenizer):
     """Reorder infill code and remove remaining special tokens."""
@@ -446,3 +486,5 @@ def remove_after_return(code):
             return code[0: start_match]
         end_last_match = end_match
     return code
+
+
