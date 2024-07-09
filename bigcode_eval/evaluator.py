@@ -66,7 +66,7 @@ class Evaluator:
         intermediate_save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}_intermediate.json"
         curr_sample_idx = len(curr_generations)
 
-        generations, prompts = parallel_generations(
+        generations = parallel_generations(
             task,
             dataset,
             self.accelerator,
@@ -80,6 +80,7 @@ class Evaluator:
             intermediate_save_generations_path=intermediate_save_generations_path,
         )
         #todo change this to be returbed by above method
+        prompts=[]
         print("prompt length is {}", len(prompts))
 
         if len(generations[0]) > self.args.n_samples:

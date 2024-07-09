@@ -109,6 +109,9 @@ def parallel_generations(
         print(f"number of problems for this task is {n_tasks}")
     n_copies = ceil(args.n_samples / args.batch_size)
 
+    for sample in range(self.limit_start, self.limit_start + self.n_tasks):
+        prompt_contents = self.task.get_prompt(self.dataset[sample])
+
     ds_tokenized = TokenizedDataset(
         task,
         dataset,
@@ -123,10 +126,10 @@ def parallel_generations(
         instruction_tokens=instruction_tokens,
     )
 
-    prompts = [batch["prompt"] for batch in ds_tokenized]
-    for prompt in prompts:
-        print("prompt is :{}".format(prompt))
-        print('\n')
+    # prompts = [batch["prompt"] for batch in ds_tokenized]
+    # for prompt in prompts:
+    #     print("prompt is :{}".format(prompt))
+    #     print('\n')
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
@@ -162,4 +165,4 @@ def parallel_generations(
         intermediate_save_generations_path=intermediate_save_generations_path,
         **gen_kwargs,
     )
-    return generations, prompts
+    return generations

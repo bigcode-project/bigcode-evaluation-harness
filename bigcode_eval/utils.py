@@ -133,14 +133,14 @@ class TokenizedDataset(IterableDataset):
                             sample
                         ].sum(),
 
-                        "prompt": prompts,
+
                     }
                 else:
                     yield {
                         "ids": outputs.input_ids[sample],
                         "task_id": sample,
                         "input_len": outputs.attention_mask[sample].sum(),
-                        "prompt": prompts,
+
                     }
 
     def _make_infill_prompt(self, prefix, suffix, preprefix=""):
@@ -277,6 +277,7 @@ def complete_code(
                 )
 
             inputs = batch["ids"][:, : batch["input_len"]] if tokenizer.padding_side == "right" else batch["ids"]
+
             if "ids_encoder" in batch:
                 if is_wrapped:
                     generated_tokens = accelerator.unwrap_model(model).generate(
