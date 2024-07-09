@@ -109,8 +109,6 @@ def parallel_generations(
         print(f"number of problems for this task is {n_tasks}")
     n_copies = ceil(args.n_samples / args.batch_size)
 
-    for sample in range(self.limit_start, self.limit_start + self.n_tasks):
-        prompt_contents = self.task.get_prompt(self.dataset[sample])
 
     ds_tokenized = TokenizedDataset(
         task,
