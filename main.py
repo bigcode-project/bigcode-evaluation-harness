@@ -382,7 +382,7 @@ def main():
             if args.generation_only:
                 if accelerator.is_main_process:
                     print("generation mode only")
-                generations, references = evaluator.generate_text(
+                generations, references, prompts = evaluator.generate_text(
                     task, intermediate_generations=intermediate_generations
                 )
                 if accelerator.is_main_process:
