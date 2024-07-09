@@ -148,6 +148,13 @@ def parse_args():
         help="Do code generation but no evaluation",
     )
     parser.add_argument(
+        "--save_prompts",
+        action="store_true",
+        default= True,
+        help="Do save all the generated prompts",
+    )
+
+    parser.add_argument(
         "--load_generations_path",
         type=str,
         default=None,
