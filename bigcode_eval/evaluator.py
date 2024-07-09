@@ -79,9 +79,16 @@ class Evaluator:
             intermediate_generations=curr_generations,
             intermediate_save_generations_path=intermediate_save_generations_path,
         )
-        #todo change this to be returbed by above method
-        prompts=[]
-        print("prompt length is {}", len(prompts))
+
+        if os.stat(self.args.save_prompts_path).st_size == 0:
+            print("prompts files {} seems to be empty", self.args.save_prompts_path)
+            raise ValueError("Results file is empty: {}".format(self.args.save_prompts_path))
+        else:
+            with open(self.args.save_prompts_path) as fp:
+                prompts = json.load(fp)
+                if self.accelerator.is_main_process:
+                    print(f"prompts loaded, {len(prompts)} prompts")
+                    print("prompt length is {}", len(prompts))
 
         if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
@@ -100,7 +107,10 @@ class Evaluator:
         if self.accelerator.is_main_process:
             if not self.args.load_generations_path:
                 save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}.json"
-                self.save_json_files(generations, references, prompts, save_generations_path, f"references_{task_name}.json")
+
+                save_prompts_path = f"{os.path.splitext(self.args.save_prompts_path)[0]}_{task_name}.json"
+                self.save_json_files(generations, references, prompts, save_generations_path,
+                                     f"references_{task_name}.json", save_prompts_path)
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -117,6 +127,7 @@ class Evaluator:
         prompts: List[str],
         save_generations_path: str,
         save_references_path: str,
+        save_prompts_path: str,
     ) -> None:
         with open(save_generations_path, "w") as fp:
             json.dump(prompts, fp)
@@ -129,3 +140,7 @@ class Evaluator:
             with open(save_references_path, "w") as fp:
                 json.dump(references, fp)
                 print(f"references were saved at {save_references_path}")
+        if self.args.save_prompts:
+            with open(save_prompts_path, "w") as fp:
+                json.dump(prompts, fp)
+                print(f"prompts were saved at {save_prompts_path}")

@@ -8,7 +8,8 @@ from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
 
 from bigcode_eval.utils import TokenizedDataset, complete_code
-
+from bigcode_eval.utils import _make_instruction_prompt, _make_infill_prompt
+import os
 
 class EndOfFunctionCriteria(StoppingCriteria):
     """Custom `StoppingCriteria` which checks if all generated functions in the batch are completed."""
@@ -60,6 +61,7 @@ def parallel_generations(
                 print(
                     f"generations loaded, {n_tasks} selected from {len(generations)} with {len(generations[0])} candidates"
                 )
+
         return generations[:n_tasks]
 
     set_seed(args.seed, device_specific=True)
@@ -127,22 +129,18 @@ def parallel_generations(
     # iterator for TokenizedDataset above
     prompts = get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer)
     wrote_prompts = False
-    save_prompt_path = "prompts.json"
-    if not wrote_prompts:
-    #write prompts as list to json file
-
+    save_prompt_path = args.save_prompts_path
+    if not os.path.exists(save_prompt_path):
         with open(save_prompt_path, 'w') as f:
                 json.dump(prompts, f)
-        wrote_prompts = True
-        print("prompts written to prompts.json")
+
+        print("prompts written to {}".format(save_prompt_path))
+        if os.stat(args.save_prompts_path).st_size == 0:
+            print("prompts files {} seems to be empty", args.save_prompts_path)
+            raise ValueError("Results file is empty: {}".format(args.save_prompts_path))
     else:
         print("prompts already written to prompts.json")
 
-
-    # prompts = [batch["prompt"] for batch in ds_tokenized]
-    # for prompt in prompts:
-    #     print("prompt is :{}".format(prompt))
-    #     print('\n')
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
@@ -182,7 +180,19 @@ def parallel_generations(
 
 
 def get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer):
-    from bigcode_eval.utils import _make_instruction_prompt, _make_infill_prompt
+    """
+    Get all prompts for a given task
+    Args:
+        args: args
+        dataset: dataset
+        instruction_tokens: instruction_tokens
+        n_tasks: no of task
+        task: task name
+        tokenizer: tokenizer
+
+    Returns: all the generated prompts that would get sent to the model
+
+    """
     limit_start = args.limit_start if args.limit_start else 0
     prompts = []
     for sample in range(limit_start, limit_start + n_tasks):
@@ -204,4 +214,5 @@ def get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer)
         else:
             raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
         prompts.append(prompt)
+
     return prompts

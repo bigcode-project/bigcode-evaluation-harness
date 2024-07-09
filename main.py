@@ -194,6 +194,12 @@ def parse_args():
         help="Path for saving the references solutions/tests",
     )
     parser.add_argument(
+        "--save_prompts_path",
+        type=str,
+        default="prompts.json",
+        help="Path for saving the generated prompts",
+    )
+    parser.add_argument(
         "--prompt",
         type=str,
         default="prompt",
@@ -388,12 +394,14 @@ def main():
                 if accelerator.is_main_process:
                     save_generations_path = f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
                     save_references_path = f"references_{task}.json"
+                    save_prompts_path = f"{os.path.splitext(args.save_prompts_path)[0]}_{task}.json"
                     evaluator.save_json_files(
                         generations,
                         references,
                         prompts,
                         save_generations_path,
                         save_references_path,
+                        save_prompts_path,
                     )
             else:
                 results[task] = evaluator.evaluate(
