@@ -1,0 +1,12 @@
+--generation
+accelerate launch  main.py     --model /data01/hf_model_files/Meta-Llama-3-8B-Instruct      --tasks humaneval      --max_length_generation 1000    --temperature 0.2    --n_samples 1    --batch_size 1      --trust_remote_code     --generation_only     --save_generations     --save_generations_path Meta-Llama-3-8B-Instruct_generations.json --save_references   --save_references_path Meta-Llama-3-8B-Instruct_references.json  --save_prompts_path Meta-Llama-3-8B-Instruct_prompts.json --limit 3
+--evaluation with prompts and generations into final results
+docker run  -v $(pwd):/app -v $(pwd)/Meta-Llama-3-8B-Instruct_prompts_humaneval.json:/app/Meta-Llama-3-8B-Instruct_prompts_humaneval.json:ro -v $(pwd)/Meta-Llama-3-8B-Instruct_generations_humaneval.json:/app/Meta-Llama-3-8B-Instruct_generations_humaneval.json:ro -it evaluation-harness  python3 main.py \
+    --model meta-llama/Meta-Llama-3-8B-Instruct \
+    --tasks humaneval \
+    --load_generations_path /app/Meta-Llama-3-8B-Instruct_generations_humaneval.json \
+    --load_prompts_path /app/Meta-Llama-3-8B-Instruct_prompts_humaneval.json \
+    --allow_code_execution  \
+    --temperature 0.8 \
+    --n_samples 2 \
+ --limit 1

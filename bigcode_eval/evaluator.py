@@ -79,15 +79,28 @@ class Evaluator:
             intermediate_generations=curr_generations,
             intermediate_save_generations_path=intermediate_save_generations_path,
         )
-        intermediate_save_prompt_path = "prompts_intermediate.json"
-        if os.stat(intermediate_save_prompt_path).st_size == 0:
-            raise ValueError("prompts files {} seems to be empty".format(intermediate_save_prompt_path))
+
+        if self.args.load_prompts_path:
+        #in case of evaluation only, load the prompts from the supplied file path
+            try :
+                with open(self.args.load_prompts_path) as fp:
+                    prompts = json.load(fp)
+                    if self.accelerator.is_main_process:
+                        print(f"prompts loaded, {len(prompts)} prompts")
+            except Exception as e:
+                print(f"Error loading prompts from {self.args.load_prompts_path} : {e}")
+                raise e
         else:
-            with open(intermediate_save_prompt_path) as fp:
-                prompts = json.load(fp)
-                if self.accelerator.is_main_process:
-                    print(f"prompts loaded, {len(prompts)} prompts")
-                    print("prompt length is ", len(prompts))
+            # else load the prompts from the intermediate file created during generations
+            intermediate_save_prompt_path = "prompts_intermediate.json"
+            if os.stat(intermediate_save_prompt_path).st_size == 0:
+                raise ValueError("prompts files {} seems to be empty".format(intermediate_save_prompt_path))
+            else:
+                with open(intermediate_save_prompt_path) as fp:
+                    prompts = json.load(fp)
+                    if self.accelerator.is_main_process:
+                        print(f"prompts loaded, {len(prompts)} prompts")
+                        print("prompt length is ", len(prompts))
 
         if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
@@ -118,6 +131,11 @@ class Evaluator:
                 os.environ["HF_ALLOW_CODE_EVAL"] = "1"
             print("Evaluating generations...")
             results = task.process_results(generations, references)
+
+            print("prompts from generatiolns are: ")
+            for p in prompts:
+                print(p)
+
             return results
 
     def save_json_files(

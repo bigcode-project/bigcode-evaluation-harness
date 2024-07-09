@@ -161,6 +161,12 @@ def parse_args():
         help="Path of file with previously generated solutions, if provided generation is skipped and only evaluation is done",
     )
     parser.add_argument(
+        "--load_prompts_path",
+        type=str,
+        default=None,
+        help="Path of file with previously generated prompts, used during evaluation to compile the final results",
+    )
+    parser.add_argument(
         "--load_data_path",
         type=str,
         default=None,
