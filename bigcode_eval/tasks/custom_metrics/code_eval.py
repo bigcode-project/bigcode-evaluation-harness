@@ -135,7 +135,7 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
     inter_results = dict()
     if os.name == "nt":
         raise NotImplementedError("This metric is currently not supported on Windows.")
-    print("here")
+
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
         futures = []
         completion_id = Counter()
@@ -170,12 +170,15 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
         if len(result) > 1:
             #multiple completions
             for res in result:
+                #res here is of the format : (0, {'task_id': 0, 'passed': True, 'result': 'passed', 'completion_id': 0})
                 eval_results.append((task_id, inter_results[task_id][0][0], inter_results[task_id][0][1],
-                                     res[0][1]['result'], res[0][1]['completion_id']))
+                                     res[1]['result'], res[1]['completion_id']))
 
 
         else:
             #single completion
+            # result here is of the format :
+            # [(0, {'task_id': 0, 'passed': True, 'result': 'passed', 'completion_id': 0})]
             eval_results.append((task_id, inter_results[task_id][0][0], inter_results[task_id][0][1],
                                  result[0][1]['result'], result[0][1]['completion_id']))
     total = np.array(total)
@@ -187,8 +190,20 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
     pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
 
     print("final eval_results:")
-    for r in eval_results:
-        print(r)
+    import json
+    result_path = '/app/bigcode_results.json'
+    print("writing results to {}".format(result_path))
+    with open(result_path, 'w') as f:
+        for data in eval_results:
+            json.dump([{'task_id': data[0]}, {'model_output': data[1]}, {'reference_testdata': data[2]},
+                   {'result': data[3]}, {'attempt': data[4]}], f)
+            f.write('\n') #new line for each json object
+
+
+    with open(result_path, 'r') as f:
+        for line in f:
+            print(line)
+
     return pass_at_k, results
 
 
