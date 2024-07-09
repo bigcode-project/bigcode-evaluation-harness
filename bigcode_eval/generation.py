@@ -128,8 +128,8 @@ def parallel_generations(
     # below is to generate the prompts without changing the
     # iterator for TokenizedDataset above
     prompts = get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer)
-    wrote_prompts = False
-    save_prompt_path = args.save_prompts_path
+
+    save_prompt_path = f"{os.path.splitext(args.save_prompts_path)[0]}_{task}.json"
     if not os.path.exists(save_prompt_path):
         print("writing prompts to {}".format(save_prompt_path))
         with open(save_prompt_path, 'w') as f:

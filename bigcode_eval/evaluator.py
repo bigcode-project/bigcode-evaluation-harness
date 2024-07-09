@@ -109,7 +109,7 @@ class Evaluator:
                 save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}.json"
 
                 save_prompts_path = f"{os.path.splitext(self.args.save_prompts_path)[0]}_{task_name}.json"
-                print("in evaluator.py, save_prompts_path is:{} ", save_prompts_path)
+                print("in evaluator.py, save_prompts_path is: {} ", save_prompts_path)
                 self.save_json_files(generations, references, prompts, save_generations_path,
                                      f"references_{task_name}.json", save_prompts_path)
 
