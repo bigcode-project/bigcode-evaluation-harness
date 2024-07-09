@@ -402,7 +402,6 @@ def main():
                     save_generations_path = f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
                     save_references_path = f"references_{task}.json"
                     save_prompts_path = f"{os.path.splitext(args.save_prompts_path)[0]}_{task}.json"
-                    print(f"Saving prompts to {save_prompts_path}")
                     evaluator.save_json_files(
                         generations,
                         references,
