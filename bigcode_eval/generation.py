@@ -136,9 +136,9 @@ def parallel_generations(
                 json.dump(prompts, f)
 
         print("prompts written to {}".format(save_prompt_path))
-        if os.stat(args.save_prompts_path).st_size == 0:
-            print("prompts files {} seems to be empty", args.save_prompts_path)
-            raise ValueError("Results file is empty: {}".format(args.save_prompts_path))
+        if os.stat(save_prompt_path).st_size == 0:
+            print("prompts files {} seems to be empty", save_prompt_path)
+            raise ValueError("Results file is empty: {}".format(save_prompt_path))
 
 
 
