@@ -391,6 +391,7 @@ def main():
                     evaluator.save_json_files(
                         generations,
                         references,
+                        prompts,
                         save_generations_path,
                         save_references_path,
                     )
