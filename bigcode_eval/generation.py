@@ -129,16 +129,16 @@ def parallel_generations(
     # iterator for TokenizedDataset above
     prompts = get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer)
 
-    save_prompt_path = f"{os.path.splitext(args.save_prompts_path)[0]}_{task}.json"
-    if not os.path.exists(save_prompt_path):
-        print("writing prompts to {}".format(save_prompt_path))
-        with open(save_prompt_path, 'w') as f:
+    intermediate_save_prompt_path = "inter_prompts.json"
+    if not os.path.exists(intermediate_save_prompt_path):
+        print("writing prompts to intermediate file {}".format(intermediate_save_prompt_path))
+        with open(intermediate_save_prompt_path, 'w') as f:
                 json.dump(prompts, f)
 
-        print("prompts written to {}".format(save_prompt_path))
-        if os.stat(save_prompt_path).st_size == 0:
-            print("prompts files {} seems to be empty", save_prompt_path)
-            raise ValueError("Results file is empty: {}".format(save_prompt_path))
+        print("prompts written to intermediate {}".format(intermediate_save_prompt_path))
+        if os.stat(intermediate_save_prompt_path).st_size == 0:
+
+            raise ValueError("intermediate prompts json file {} is empty".format(intermediate_save_prompt_path))
 
 
 

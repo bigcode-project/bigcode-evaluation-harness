@@ -79,12 +79,11 @@ class Evaluator:
             intermediate_generations=curr_generations,
             intermediate_save_generations_path=intermediate_save_generations_path,
         )
-        save_prompt_path = f"{os.path.splitext(self.args.save_prompts_path)[0]}_{task}.json"
-        if os.stat(save_prompt_path).st_size == 0:
-            print("prompts files {} seems to be empty", save_prompt_path)
-            raise ValueError("Results file is empty: {}".format(save_prompt_path))
+        intermediate_save_prompt_path = "inter_prompts.json"
+        if os.stat(intermediate_save_prompt_path).st_size == 0:
+            raise ValueError("prompts files {} seems to be empty".format(intermediate_save_prompt_path))
         else:
-            with open(save_prompt_path) as fp:
+            with open(intermediate_save_prompt_path) as fp:
                 prompts = json.load(fp)
                 if self.accelerator.is_main_process:
                     print(f"prompts loaded, {len(prompts)} prompts")
