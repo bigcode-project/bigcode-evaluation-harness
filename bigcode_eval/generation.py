@@ -125,33 +125,19 @@ def parallel_generations(
     )
     # below is to generate the prompts without changing the
     # iterator for TokenizedDataset above
-    from bigcode_eval.utils import _make_instruction_prompt,_make_infill_prompt
+    prompts = get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer)
+    wrote_prompts = False
+    save_prompt_path = "prompts.json"
+    if not wrote_prompts:
+    #write prompts as list to json file
 
-    limit_start = args.limit_start if args.limit_start else 0
-    prompts = []
-    for sample in range(limit_start, limit_start + n_tasks):
-        prompt_contents = task.get_prompt(dataset[sample])
-        if isinstance(prompt_contents, str):
-            # Normal code completion mode
-            prompt = args.prefix + prompt_contents
-        elif isinstance(prompt_contents, dict):
-            if set(prompt_contents.keys()) == {"prefix", "suffix"}:
-                # Infilling mode
-                prompt = _make_infill_prompt(tokenizer,
-                    **prompt_contents, preprefix=args.prefix
-                )
-            elif set(prompt_contents.keys()) == {"instruction", "context"}:
-                # Instruction-tuning mode
-                prompt = _make_instruction_prompt(instruction_tokens
-                    **prompt_contents, prefix=args.prefix
-                )
-        else:
-            raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
-        prompts.append(prompt)
-        print("final prompts is")
-        for p in prompts:
-            print(p)
-            print('\n')
+        with open(save_prompt_path, 'w') as f:
+                json.dump(prompts, f)
+        wrote_prompts = True
+        print("prompts written to prompts.json")
+    else:
+        print("prompts already written to prompts.json")
+
 
     # prompts = [batch["prompt"] for batch in ds_tokenized]
     # for prompt in prompts:
@@ -193,3 +179,28 @@ def parallel_generations(
         **gen_kwargs,
     )
     return generations
+
+
+def get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer):
+    from bigcode_eval.utils import _make_instruction_prompt, _make_infill_prompt
+    limit_start = args.limit_start if args.limit_start else 0
+    prompts = []
+    for sample in range(limit_start, limit_start + n_tasks):
+        prompt_contents = task.get_prompt(dataset[sample])
+        if isinstance(prompt_contents, str):
+            # Normal code completion mode
+            prompt = args.prefix + prompt_contents
+        elif isinstance(prompt_contents, dict):
+            if set(prompt_contents.keys()) == {"prefix", "suffix"}:
+                # Infilling mode
+                prompt = _make_infill_prompt(tokenizer,
+                                             **prompt_contents, preprefix=args.prefix
+                                             )
+            elif set(prompt_contents.keys()) == {"instruction", "context"}:
+                # Instruction-tuning mode
+                prompt = _make_instruction_prompt(instruction_tokens
+                                                  ** prompt_contents, prefix=args.prefix
+                                                  )
+        else:
+            raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
+    return prompts

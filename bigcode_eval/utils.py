@@ -183,7 +183,8 @@ class TokenizedDataset(IterableDataset):
 
 
 
-#same code as above methods from TokenizedDataset class
+#same code as above methods from TokenizedDataset class. if method from this  class change make sure to
+# update the below method as well
 def _make_instruction_prompt(instruction_tokens, instruction, context, prefix=""):
     """Make a prompt for instruction-tuning. Delimit instruction and context with specific tokens if provided."""
     if not instruction_tokens:
