@@ -203,4 +203,5 @@ def get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer)
                                                   )
         else:
             raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
+        prompts.append(prompt)
     return prompts
