@@ -129,9 +129,7 @@ class Evaluator:
         save_references_path: str,
         save_prompts_path: str,
     ) -> None:
-        with open(save_generations_path, "w") as fp:
-            json.dump(prompts, fp)
-            print(f"promtps were saved at {save_generations_path}")
+
         if self.args.save_generations:
             with open(save_generations_path, "w") as fp:
                 json.dump(generations, fp)

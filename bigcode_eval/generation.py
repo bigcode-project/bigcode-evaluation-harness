@@ -131,6 +131,7 @@ def parallel_generations(
     wrote_prompts = False
     save_prompt_path = args.save_prompts_path
     if not os.path.exists(save_prompt_path):
+        print("writing prompts to {}".format(save_prompt_path))
         with open(save_prompt_path, 'w') as f:
                 json.dump(prompts, f)
 
@@ -138,8 +139,7 @@ def parallel_generations(
         if os.stat(args.save_prompts_path).st_size == 0:
             print("prompts files {} seems to be empty", args.save_prompts_path)
             raise ValueError("Results file is empty: {}".format(args.save_prompts_path))
-    else:
-        print("prompts already written to prompts.json")
+
 
 
     # do not confuse args.batch_size, which is actually the num_return_sequences
