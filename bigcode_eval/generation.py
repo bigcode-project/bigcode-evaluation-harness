@@ -124,8 +124,10 @@ def parallel_generations(
     )
 
     prompts = [batch["prompt"] for batch in ds_tokenized]
-    # for prompt in prompts:
-    #     print("prompt is :{}".format(prompt))
+    for prompt in prompts:
+        print("prompt is :{}".format(prompt))
+        print('\n')
+
     # do not confuse args.batch_size, which is actually the num_return_sequences
     ds_loader = DataLoader(ds_tokenized, batch_size=1)
 
