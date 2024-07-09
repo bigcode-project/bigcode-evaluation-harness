@@ -125,7 +125,7 @@ def parallel_generations(
     )
     # below is to generate the prompts without changing the
     # iterator for TokenizedDataset above
-    from utils import _make_instruction_prompt,_make_infill_prompt
+    from bigcode_eval.utils import _make_instruction_prompt,_make_infill_prompt
 
     limit_start = args.limit_start if args.limit_start else 0
     prompts = []
