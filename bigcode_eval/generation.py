@@ -129,7 +129,7 @@ def parallel_generations(
     # iterator for TokenizedDataset above
     prompts = get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer)
 
-    intermediate_save_prompt_path = "inter_prompts.json"
+    intermediate_save_prompt_path = "prompts_intermediate.json"
     if not os.path.exists(intermediate_save_prompt_path):
         print("writing prompts to intermediate file {}".format(intermediate_save_prompt_path))
         with open(intermediate_save_prompt_path, 'w') as f:

@@ -79,7 +79,7 @@ class Evaluator:
             intermediate_generations=curr_generations,
             intermediate_save_generations_path=intermediate_save_generations_path,
         )
-        intermediate_save_prompt_path = "inter_prompts.json"
+        intermediate_save_prompt_path = "prompts_intermediate.json"
         if os.stat(intermediate_save_prompt_path).st_size == 0:
             raise ValueError("prompts files {} seems to be empty".format(intermediate_save_prompt_path))
         else:
@@ -87,7 +87,7 @@ class Evaluator:
                 prompts = json.load(fp)
                 if self.accelerator.is_main_process:
                     print(f"prompts loaded, {len(prompts)} prompts")
-                    print("prompt length is {}", len(prompts))
+                    print("prompt length is ", len(prompts))
 
         if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
