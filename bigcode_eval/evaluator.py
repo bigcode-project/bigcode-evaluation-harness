@@ -143,24 +143,33 @@ class Evaluator:
                     raise ValueError("results file {} seems to be empty".format(result_path))
 
                 with open(result_path, 'r') as f:
-                    eval_results = [json.loads(line) for line in f]
+                    # eval_results = [json.loads(line) for line in f]
+                    eval_results = json.loads(f.read())
 
                 for result in eval_results:
-                    task_id = result[0]['task_id']
+                    task_id = result['task_id']
                     print("task_id is: ", task_id)
-                    result.insert(1, {'prompt': prompts[task_id]})
-                    final_eval_results.append(result)
+                    result_list = list(result.items())
+                    result_list.insert(1, ('prompt', prompts[task_id]))
+                    result_dict = dict(result_list)
+                    final_eval_results.append(result_dict)
+
+                final_eval_results = sorted(final_eval_results, key=lambda x: x['task_id'])
 
                 final_codeeval_results_path = '/app/final_codeeval_results.json'
                 print("writing results to {}".format(final_codeeval_results_path))
                 with open(final_codeeval_results_path, 'w') as f:
-                    for data in final_eval_results:
-                        json.dump([data], f)
-                        f.write('\n')  # new line for each json object
+                    f.write('[')
+                    for i, data in enumerate(final_eval_results):
+                        json.dump(data, f, indent=2)
+                        if i < len(final_eval_results) - 1:
+                            f.write(',')
+                            f.write('\n')
+                    f.write(']')
 
-                with open(final_codeeval_results_path, 'r') as f:
-                    for line in f:
-                        print(line)
+                # with open(final_codeeval_results_path, 'r') as f:
+                #     for line in f:
+                #         print(line)
 
 
 
@@ -179,13 +188,13 @@ class Evaluator:
 
         if self.args.save_generations:
             with open(save_generations_path, "w") as fp:
-                json.dump(generations, fp)
+                json.dump(generations, fp, indent=2)
                 print(f"generations were saved at {save_generations_path}")
         if self.args.save_references:
             with open(save_references_path, "w") as fp:
-                json.dump(references, fp)
+                json.dump(references, fp, indent=2)
                 print(f"references were saved at {save_references_path}")
         if self.args.save_prompts:
             with open(save_prompts_path, "w") as fp:
-                json.dump(prompts, fp)
+                json.dump(prompts, fp, indent=2)
                 print(f"prompts were saved at {save_prompts_path}")

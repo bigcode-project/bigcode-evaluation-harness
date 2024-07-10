@@ -20,7 +20,7 @@ import itertools
 import os
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+import json
 import numpy as np
 
 from .execute import check_correctness
@@ -125,20 +125,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE."""
-from pydantic import BaseModel
-from typing import List, Dict
 
-class TaskResult(BaseModel):
-    model_output: str
-    reference_testdata: str
-    result: str
-    attempt: int
 
-class Task(BaseModel):
-    task_id: int
-    task_results: List[TaskResult]
-
-def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, timeout=3.0):
+def compute_code_eval(predictions, references, k=[1, 2, 3, 5, 10], num_workers=4, timeout=3.0):
     """Returns the scores"""
 
     if os.getenv("HF_ALLOW_CODE_EVAL", 0) != "1":
@@ -173,22 +162,22 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
             result = future.result()
             results[result["task_id"]].append((result["completion_id"], result))
 
-    print("printing inter_results")
-    print(inter_results)
-    print("---------")
-    for k,v in inter_results.items():
-        print(k,v)
-    print("done printing inter_results")
-
-    print("\nprinting results")
-    print("-------------------------------------------------")
-    for k, v in results.items():
-        print(k, v)
-    print("-----------------done--------------------------------")
+    # print("printing inter_results")
+    # print(inter_results)
+    # print("---------")
+    # for k,v in inter_results.items():
+    #     print(k,v)
+    # print("done printing inter_results")
+    #
+    # print("\nprinting results")
+    # print("-------------------------------------------------")
+    # for k, v in results.items():
+    #     print(k, v)
+    # print("-----------------done--------------------------------")
 
     total, correct = [], []
     for task_id, result in results.items():
-        print("in code_eval result is :{}".format(result))
+        # print("in code_eval result is :{}".format(result))
         result.sort()
         passed = [r[1]["passed"] for r in result]
         total.append(len(passed))
@@ -200,10 +189,16 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
             for res in result:
                 #res here is of the format : (0, {'task_id': 0, 'passed': True, 'result': 'passed', 'completion_id': 0})
                 if res[1]['result']:
-                    result_status = "failed" if "failed" in res[1]['result'] else res[1]['result']
+
+                    if "failed" in res[1]['result']:
+                        result_status = "failed"
+                        failed_reason = res[1]['result']
+                    else:
+                        result_status = res[1]['result']
+                        failed_reason = 'N/A'
 
                 eval_results.append((task_id, inter_results[task_id][0][0], inter_results[task_id][0][1],
-                                     result_status, res[1]['completion_id']))
+                                     result_status, failed_reason, res[1]['completion_id']))
 
         else:
             #single completion
@@ -211,9 +206,15 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
             # [(0, {'task_id': 0, 'passed': True, 'result': 'passed', 'completion_id': 0})]
             print("inter_results[task_id]: {}".format(inter_results[task_id]))
             if result[0][1]['result']:
-                result_status = "failed" if "failed" in result[0][1]['result'] else result[0][1]['result']
+                if "failed" in result[0][1]['result']:
+                    result_status = "failed"
+                    failed_reason = result[0][1]['result']
+                else:
+                    result_status = result[0][1]['result']
+                    failed_reason = "N/A"
+
             eval_results.append((task_id, inter_results[task_id][0][0], inter_results[task_id][0][1],
-                                 result_status, result[0][1]['completion_id']))
+                                 result_status, failed_reason, result[0][1]['completion_id']))
     total = np.array(total)
     correct = np.array(correct)
 
@@ -222,14 +223,31 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
         ks = [ks]
     pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
 
-    import json
     result_path = '/app/codeeval_results.json'
+    eval_results = sorted(eval_results, key=lambda x: x[0])
     print("writing code eval results to {}".format(result_path))
     with open(result_path, 'w') as f:
-        for data in eval_results:
-            json.dump([{'task_id': data[0]}, {'model_output': data[1]}, {'reference_testdata': data[2]},
-                   {'result': data[3]}, {'attempt': data[4]}], f)
-            f.write('\n') #new line for each json object
+        f.write('[')
+        for i, data in enumerate(eval_results):
+            json.dump({
+                'task_id': data[0],
+                'model_output': data[1],
+                'reference_testdata': data[2],
+                'result': data[3],
+                'failed_reason': data[4],
+                'attempt': data[5]
+            }, f, indent=2)
+            if i < len(eval_results) - 1:
+                f.write(',')
+                f.write('\n')
+        f.write(']')
+    # with open(result_path, 'w') as f:
+        # for data in eval_results:
+        #     json.dump([{'task_id': data[0]}, {'model_output': data[1]}, {'reference_testdata': data[2]},
+        #            {'result': data[3]}, {'attempt': data[4]}], f)
+        #     f.write('\n') #new line for each json object
+
+
 
 
     return pass_at_k, results

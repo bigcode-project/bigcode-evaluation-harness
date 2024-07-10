@@ -47,7 +47,7 @@ class GeneralHumanEval(Task):
 
     DATASET_PATH = "openai_humaneval"
 
-    def __init__(self, strip_prompt, k=[1, 10, 100], num_workers=16, timeout=3.0):
+    def __init__(self, strip_prompt, k=[1, 2, 3, 5, 10], num_workers=16, timeout=3.0):
         super().__init__(
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```", "<file_sep>"],
             requires_execution=True,
