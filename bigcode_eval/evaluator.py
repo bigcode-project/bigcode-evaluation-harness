@@ -132,9 +132,38 @@ class Evaluator:
             print("Evaluating generations...")
             results = task.process_results(generations, references)
 
-            print("prompts from generatiolns are: ")
-            for p in prompts:
-                print(p)
+            #check to make sure to compile final results only during evaluation phase and not generation
+            if self.args.load_generations_path and self.args.load_prompts_path:
+                final_eval_results = []
+                if prompts is None or len(prompts) < 1:
+                    raise ValueError("prompts are empty, make sure to provide prompts file during evaluation")
+
+                result_path = '/app/codeeval_results.json' #same as one in code_eval.py
+                if os.stat(result_path).st_size == 0:
+                    raise ValueError("results file {} seems to be empty".format(result_path))
+
+                with open(result_path, 'r') as f:
+                    eval_results = [json.loads(line) for line in f]
+
+                for result in eval_results:
+                    task_id = result[0]['task_id']
+                    print("task_id is: ", task_id)
+                    result.insert(1, {'prompt': prompts[task_id]})
+                    final_eval_results.append(result)
+
+                final_codeeval_results_path = '/app/final_codeeval_results.json'
+                print("writing results to {}".format(final_codeeval_results_path))
+                with open(final_codeeval_results_path, 'w') as f:
+                    for data in final_eval_results:
+                        json.dump([data], f)
+                        f.write('\n')  # new line for each json object
+
+                with open(final_codeeval_results_path, 'r') as f:
+                    for line in f:
+                        print(line)
+
+
+
 
             return results
 

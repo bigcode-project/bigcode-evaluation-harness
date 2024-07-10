@@ -125,6 +125,18 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE."""
+from pydantic import BaseModel
+from typing import List, Dict
+
+class TaskResult(BaseModel):
+    model_output: str
+    reference_testdata: str
+    result: str
+    attempt: int
+
+class Task(BaseModel):
+    task_id: int
+    task_results: List[TaskResult]
 
 def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, timeout=3.0):
     """Returns the scores"""
@@ -144,7 +156,12 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
 
         for task_id, (candidates, test_case) in enumerate(zip(predictions, references)):
             for candidate in candidates:
-                inter_results[task_id] = [(candidate, test_case)]
+
+                if task_id in inter_results:
+                    inter_results[task_id].append((candidate, test_case))
+                else:
+                    inter_results[task_id] = [(candidate, test_case)]
+
                 test_program = candidate + "\n" + test_case
                 args = (test_program, timeout, task_id, completion_id[task_id])
                 future = executor.submit(check_correctness, *args)
@@ -156,31 +173,47 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
             result = future.result()
             results[result["task_id"]].append((result["completion_id"], result))
 
-    # print("printing inter_results")
-    # for k,v in inter_results.items():
-    #     print(k, v[0][0], v[0][1])
-    # print("done printing inter_results")
+    print("printing inter_results")
+    print(inter_results)
+    print("---------")
+    for k,v in inter_results.items():
+        print(k,v)
+    print("done printing inter_results")
+
+    print("\nprinting results")
+    print("-------------------------------------------------")
+    for k, v in results.items():
+        print(k, v)
+    print("-----------------done--------------------------------")
+
     total, correct = [], []
-    for result in results.values():
-        # print("in code_eval result is :{}".format(result))
+    for task_id, result in results.items():
+        print("in code_eval result is :{}".format(result))
         result.sort()
         passed = [r[1]["passed"] for r in result]
         total.append(len(passed))
         correct.append(sum(passed))
+
         if len(result) > 1:
             #multiple completions
+            # task_obj = Task(task_id=)
             for res in result:
                 #res here is of the format : (0, {'task_id': 0, 'passed': True, 'result': 'passed', 'completion_id': 0})
-                eval_results.append((task_id, inter_results[task_id][0][0], inter_results[task_id][0][1],
-                                     res[1]['result'], res[1]['completion_id']))
+                if res[1]['result']:
+                    result_status = "failed" if "failed" in res[1]['result'] else res[1]['result']
 
+                eval_results.append((task_id, inter_results[task_id][0][0], inter_results[task_id][0][1],
+                                     result_status, res[1]['completion_id']))
 
         else:
             #single completion
             # result here is of the format :
             # [(0, {'task_id': 0, 'passed': True, 'result': 'passed', 'completion_id': 0})]
+            print("inter_results[task_id]: {}".format(inter_results[task_id]))
+            if result[0][1]['result']:
+                result_status = "failed" if "failed" in result[0][1]['result'] else result[0][1]['result']
             eval_results.append((task_id, inter_results[task_id][0][0], inter_results[task_id][0][1],
-                                 result[0][1]['result'], result[0][1]['completion_id']))
+                                 result_status, result[0][1]['completion_id']))
     total = np.array(total)
     correct = np.array(correct)
 
@@ -189,20 +222,15 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5], num_workers=4, ti
         ks = [ks]
     pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
 
-    print("final eval_results:")
     import json
-    result_path = '/app/bigcode_results.json'
-    print("writing results to {}".format(result_path))
+    result_path = '/app/codeeval_results.json'
+    print("writing code eval results to {}".format(result_path))
     with open(result_path, 'w') as f:
         for data in eval_results:
             json.dump([{'task_id': data[0]}, {'model_output': data[1]}, {'reference_testdata': data[2]},
                    {'result': data[3]}, {'attempt': data[4]}], f)
             f.write('\n') #new line for each json object
 
-
-    with open(result_path, 'r') as f:
-        for line in f:
-            print(line)
 
     return pass_at_k, results
 
