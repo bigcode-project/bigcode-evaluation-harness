@@ -156,7 +156,7 @@ class Evaluator:
 
                 final_eval_results = sorted(final_eval_results, key=lambda x: x['task_id'])
 
-                final_codeeval_results_path = '/app/final_codeeval_results.json'
+                final_codeeval_results_path = f'/app/{task_name}_final_codeeval_results.json'
                 print("writing results to {}".format(final_codeeval_results_path))
                 with open(final_codeeval_results_path, 'w') as f:
                     f.write('[')

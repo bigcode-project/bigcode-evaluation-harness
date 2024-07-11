@@ -130,15 +130,15 @@ def parallel_generations(
     prompts = get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer)
 
     intermediate_save_prompt_path = "prompts_intermediate.json"
+    should_overwrite = True
     if not os.path.exists(intermediate_save_prompt_path):
-        print("writing prompts to intermediate file {}".format(intermediate_save_prompt_path))
-        with open(intermediate_save_prompt_path, 'w') as f:
-                json.dump(prompts, f)
+        write_prompts_to_file(intermediate_save_prompt_path, prompts)
+    elif should_overwrite == True:
+        print("Overwriting prompts intermediate file {} for the first time".format(intermediate_save_prompt_path))
+        write_prompts_to_file(intermediate_save_prompt_path, prompts)
+        should_overwrite = False
 
-        print("prompts written to intermediate {}".format(intermediate_save_prompt_path))
-        if os.stat(intermediate_save_prompt_path).st_size == 0:
 
-            raise ValueError("intermediate prompts json file {} is empty".format(intermediate_save_prompt_path))
 
 
 
@@ -177,6 +177,15 @@ def parallel_generations(
         **gen_kwargs,
     )
     return generations
+
+
+def write_prompts_to_file(intermediate_save_prompt_path, prompts):
+    print("writing prompts to intermediate file {}".format(intermediate_save_prompt_path))
+    with open(intermediate_save_prompt_path, 'w') as f:
+        json.dump(prompts, f)
+    print("prompts written to intermediate {}".format(intermediate_save_prompt_path))
+    if os.stat(intermediate_save_prompt_path).st_size == 0:
+        raise ValueError("intermediate prompts json file {} is empty".format(intermediate_save_prompt_path))
 
 
 def get_all_prompts(args, dataset, instruction_tokens, n_tasks, task, tokenizer):
