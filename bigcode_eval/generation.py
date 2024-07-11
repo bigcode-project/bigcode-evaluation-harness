@@ -180,7 +180,7 @@ def parallel_generations(
 
 
 def write_prompts_to_file(intermediate_save_prompt_path, prompts):
-    print("writing prompts to intermediate file {}".format(intermediate_save_prompt_path))
+    print("writing {} prompts to intermediate file {}".format(len(prompts),intermediate_save_prompt_path))
     with open(intermediate_save_prompt_path, 'w') as f:
         json.dump(prompts, f)
     print("prompts written to intermediate {}".format(intermediate_save_prompt_path))
