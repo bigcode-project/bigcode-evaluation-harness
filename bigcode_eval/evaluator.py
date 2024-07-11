@@ -148,7 +148,6 @@ class Evaluator:
 
                 for result in eval_results:
                     task_id = result['task_id']
-                    print("task_id is: ", task_id)
                     result_list = list(result.items())
                     result_list.insert(1, ('prompt', prompts[task_id]))
                     result_dict = dict(result_list)
