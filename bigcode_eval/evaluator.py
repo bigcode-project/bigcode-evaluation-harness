@@ -187,7 +187,7 @@ class Evaluator:
 
         if self.args.save_generations:
             with open(save_generations_path, "w") as fp:
-                json.dump(generations, fp, indent=2)
+                json.dump(generations, fp, indent=3)
                 print(f"generations were saved at {save_generations_path}")
         if self.args.save_references:
             with open(save_references_path, "w") as fp:
