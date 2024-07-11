@@ -134,7 +134,7 @@ def parallel_generations(
     if not os.path.exists(intermediate_save_prompt_path):
         write_prompts_to_file(intermediate_save_prompt_path, prompts)
     elif should_overwrite == True:
-        print("Overwriting prompts intermediate file {} for the first time".format(intermediate_save_prompt_path))
+        print("Overwriting prompts intermediate file {} for the first time..this is okay!".format(intermediate_save_prompt_path))
         write_prompts_to_file(intermediate_save_prompt_path, prompts)
         should_overwrite = False
 
@@ -180,7 +180,7 @@ def parallel_generations(
 
 
 def write_prompts_to_file(intermediate_save_prompt_path, prompts):
-    print("writing {} prompts to intermediate file {}".format(len(prompts),intermediate_save_prompt_path))
+    print("writing {} prompts to intermediate file {}..this is okay".format(len(prompts),intermediate_save_prompt_path))
     with open(intermediate_save_prompt_path, 'w') as f:
         json.dump(prompts, f, indent=2)
     print("prompts written to intermediate {}".format(intermediate_save_prompt_path))
