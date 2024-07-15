@@ -139,36 +139,37 @@ class Evaluator:
                     raise ValueError("prompts are empty, make sure to provide prompts file during evaluation")
 
                 result_path = '/app/codeeval_results.json' #same as one in code_eval.py
-                if os.stat(result_path).st_size == 0:
-                    raise ValueError("results file {} seems to be empty".format(result_path))
+                #these tasks have different evaluation methods comparted humaneval*,mbpp*
+                if task_name not in ['apps-introductory', 'studenteval']:
+                    if os.stat(result_path).st_size == 0:
+                        raise ValueError("results file {} seems to be empty".format(result_path))
+                    with open(result_path, 'r') as f:
+                        # eval_results = [json.loads(line) for line in f]
+                        eval_results = json.loads(f.read())
 
-                with open(result_path, 'r') as f:
-                    # eval_results = [json.loads(line) for line in f]
-                    eval_results = json.loads(f.read())
+                    for result in eval_results:
+                        task_id = result['task_id']
+                        result_list = list(result.items())
+                        result_list.insert(1, ('prompt', prompts[task_id]))
+                        result_dict = dict(result_list)
+                        final_eval_results.append(result_dict)
 
-                for result in eval_results:
-                    task_id = result['task_id']
-                    result_list = list(result.items())
-                    result_list.insert(1, ('prompt', prompts[task_id]))
-                    result_dict = dict(result_list)
-                    final_eval_results.append(result_dict)
+                    final_eval_results = sorted(final_eval_results, key=lambda x: x['task_id'])
 
-                final_eval_results = sorted(final_eval_results, key=lambda x: x['task_id'])
+                    final_codeeval_results_path = f'/app/{task_name}_final_codeeval_results.json'
+                    print("writing results to {}".format(final_codeeval_results_path))
+                    with open(final_codeeval_results_path, 'w') as f:
+                        f.write('[')
+                        for i, data in enumerate(final_eval_results):
+                            json.dump(data, f, indent=2)
+                            if i < len(final_eval_results) - 1:
+                                f.write(',')
+                                f.write('\n')
+                        f.write(']')
 
-                final_codeeval_results_path = f'/app/{task_name}_final_codeeval_results.json'
-                print("writing results to {}".format(final_codeeval_results_path))
-                with open(final_codeeval_results_path, 'w') as f:
-                    f.write('[')
-                    for i, data in enumerate(final_eval_results):
-                        json.dump(data, f, indent=2)
-                        if i < len(final_eval_results) - 1:
-                            f.write(',')
-                            f.write('\n')
-                    f.write(']')
-
-                # with open(final_codeeval_results_path, 'r') as f:
-                #     for line in f:
-                #         print(line)
+                    # with open(final_codeeval_results_path, 'r') as f:
+                    #     for line in f:
+                    #         print(line)
 
 
 

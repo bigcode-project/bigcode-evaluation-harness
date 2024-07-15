@@ -22,7 +22,6 @@ _CITATION = """
 }
 """
 
-
 LEVELS = ["introductory", "interview", "competition"]
 
 
@@ -50,7 +49,7 @@ class GeneralAPPS(Task):
     DATASET_PATH = "codeparrot/apps"
     DATASET_NAME = None
 
-    def __init__(self, level, k_list=[1, 10, 100]):
+    def __init__(self, level, k_list=[1, 2, 3, 5, 10, 100]):
         self.DATASET_NAME = level
         super().__init__(
             stop_words=["\nQUESTION", "\n---", "\nANSWER"],
@@ -116,8 +115,9 @@ class GeneralAPPS(Task):
             list of str containing refrences (not needed for APPS Task)
         """
         code_metric = load("codeparrot/apps_metric")
-        if level is None:
-            level = self.DATASET_NAME
+        # todo: fix bug in original code?
+        # if level is None:
+        #     level = self.DATASET_NAME
         results = code_metric.compute(
             predictions=generations, k_list=self.k_list, level=self.DATASET_NAME
         )
