@@ -21,7 +21,7 @@ import pickle
 from warnings import warn
 import numpy as np
 from bigcode_eval.tasks.humaneval import GeneralHumanEval
-from bigcode_eval.custom_metrics.enamel_eval import Unpickler, evaluate_all, might_catch_timeout_signal
+from bigcode_eval.tasks.custom_metrics.enamel_eval import Unpickler, evaluate_all, might_catch_timeout_signal
 
 
 class GeneralENAMEL(GeneralHumanEval):
@@ -30,18 +30,15 @@ class GeneralENAMEL(GeneralHumanEval):
     """
 
     DATASET_PATH = "q-rz/enamel"
-    DATASET_NAME = "ENAMEL_HumanEval"
+    DATASET_NAME = "default"
 
     def __init__(self, subset, # list of problem IDs
         hardness=[0., 3., 3., 4.], n_reps = 6, memory_giga=4., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
         strip_prompt=True, k=[1, 10, 100],
     ):
         super().__init__(strip_prompt=strip_prompt, k=k, num_workers=1, timeout=None) # each problem has a different time limit
-        if isinstance(subset, list):
-            self.subset = subset
-        else:
-            assert subset in self.DATASET_SUBSETS, f"unknown subset {repr(subset)}"
-            self.subset = self.DATASET_SUBSETS[subset]
+        self.subset = subset
+        return # @TODO
         self.dataset[self.__name__] = self.dataset["ENAMEL_HumanEval"].iloc[np.array(self.subset), :] # TODO
         self.hardness = hardness
         self.n_levels = len(self.hardness)
