@@ -71,7 +71,7 @@ TPL_RUN = '''%s
 __t0 = time.time()
 __output = %s(*__input)
 __t1 = time.time()
-''' # % (prompt, solution, entry_point)
+''' # % (prompt, code, entry_point) # this should work no matter code includes prompt or not
 TPL_TEST = '''%s
     pass
 %s

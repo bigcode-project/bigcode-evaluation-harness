@@ -74,12 +74,11 @@ class GeneralENAMEL(GeneralHumanEval):
             index of doc in the dataset to which the generation belongs
         :return: str
         """
-        prompt = self.get_prompt(self.get_dataset()[idx])
         generation = self._stop_at_stop_token(generation, self.stop_words)
         if (not self.warned_dead_loop) and might_catch_timeout_signal(generation):
             warn(might_catch_timeout_signal.WARNING)
             self.warned_dead_loop = True
-        return prompt + "\n    pass\n" + generation # this should work no matter generation contains prompt or not
+        return generation
 
     def process_results(self, generations, references):
         """
