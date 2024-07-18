@@ -3,7 +3,8 @@ import gc
 import pickle
 import time
 
-import os, os.path as osp
+import io
+import os
 import sys
 import resource
 import platform
@@ -229,8 +230,6 @@ def set_time_limit(seconds):
         yield
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
-
-import io
 
 class WriteOnlyStringIO(io.StringIO):
     def read(self, *args, **kwargs):

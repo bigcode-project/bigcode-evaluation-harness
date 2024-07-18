@@ -44,7 +44,8 @@ class GeneralENAMEL(GeneralHumanEval):
             self.subset = self.DATASET_SUBSETS[subset]
         self.dataset[self.__name__] = self.dataset["ENAMEL_HumanEval"].iloc[np.array(self.subset), :] # TODO
         self.hardness = hardness
-        self.n_reps = n_reps
+        self.n_levels = len(self.hardness)
+        self.n_reps = [n_reps if self.hardness[j] else 1 for j in range(self.n_levels)] # no need to repeat if it does not count into the efficiency score
         self.memory_giga = memory_giga
         self.timeout_factor = timeout_factor
         self.tolerence_sec = tolerence_sec
