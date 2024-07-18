@@ -17,10 +17,11 @@ _CITATION = """
 """
 
 
+import pickle
 from warnings import warn
 import numpy as np
 from bigcode_eval.tasks.humaneval import GeneralHumanEval
-from bigcode_eval.custom_metrics.enamel_eval import evaluate_all, might_catch_timeout_signal
+from bigcode_eval.custom_metrics.enamel_eval import Unpickler, evaluate_all, might_catch_timeout_signal
 
 
 class GeneralENAMEL(GeneralHumanEval):
@@ -77,6 +78,7 @@ class GeneralENAMEL(GeneralHumanEval):
         generation = self._stop_at_stop_token(generation, self.stop_words)
         if (not self.warned_dead_loop) and might_catch_timeout_signal(generation):
             warn(might_catch_timeout_signal.WARNING)
+            self.warned_dead_loop = True
         return prompt + "\n    pass\n" + generation # this should work no matter generation contains prompt or not
 
     def process_results(self, generations, references):
