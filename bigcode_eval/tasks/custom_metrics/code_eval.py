@@ -204,7 +204,7 @@ def compute_code_eval(predictions, references, k=[1, 2, 3, 5, 10], num_workers=4
             #single completion
             # result here is of the format :
             # [(0, {'task_id': 0, 'passed': True, 'result': 'passed', 'completion_id': 0})]
-            print("inter_results[task_id]: {}".format(inter_results[task_id]))
+            # print("inter_results[task_id]: {}".format(inter_results[task_id]))
             if result[0][1]['result']:
                 if "failed" in result[0][1]['result']:
                     result_status = "failed"
