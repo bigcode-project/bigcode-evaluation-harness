@@ -121,7 +121,7 @@ class Evaluator:
                 save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}.json"
 
                 save_prompts_path = f"{os.path.splitext(self.args.save_prompts_path)[0]}_{task_name}.json"
-                print("in evaluator.py, save_prompts_path is: {} ", save_prompts_path)
+                # print("in evaluator.py, save_prompts_path is: {} ", save_prompts_path)
                 self.save_json_files(generations, references, prompts, save_generations_path,
                                      f"references_{task_name}.json", save_prompts_path)
 
@@ -156,7 +156,7 @@ class Evaluator:
 
                     final_eval_results = sorted(final_eval_results, key=lambda x: x['task_id'])
 
-                    final_codeeval_results_path = f'/app/{task_name}_final_codeeval_results.json'
+                    final_codeeval_results_path = f'/app/data/{task_name}_final_codeeval_results.json'
                     print("writing results to {}".format(final_codeeval_results_path))
                     with open(final_codeeval_results_path, 'w') as f:
                         f.write('[')
