@@ -62,8 +62,9 @@ class Refs: # references for efficiency evaluation
 class EnamUnpickler(pickle.Unpickler):
     CLS_DICT = {'enam.evaluate.Test': Test, 'enam.evaluate.Refs': Refs}
     def find_class(self, module, name):
-        if module in self.CLS_DICT:
-            return self.CLS_DICT[module]
+        cls_name = f'{module}.{name}'
+        if cls_name in self.CLS_DICT:
+            return self.CLS_DICT[cls_name]
         else:
             return super().find_class(module, name)
 
