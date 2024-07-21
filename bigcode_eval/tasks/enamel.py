@@ -22,7 +22,7 @@ import pickle
 import numpy as np
 from huggingface_hub import hf_hub_download
 from bigcode_eval.tasks.humaneval import GeneralHumanEval
-from bigcode_eval.tasks.custom_metrics.enamel_eval import EnamUnpickler, evaluate_all, might_catch_timeout_signal
+from bigcode_eval.tasks.custom_metrics.enamel_eval import EnamUnpickler, Dict, evaluate_all, might_catch_timeout_signal
 
 
 class GeneralENAMEL(GeneralHumanEval):
@@ -32,44 +32,51 @@ class GeneralENAMEL(GeneralHumanEval):
 
     DATASET_PATH = "q-rz/enamel"
     DATASET_NAME = "default"
-    DATASET_FULL = "ENAMEL_HumanEval"
+    DATASET_ALL = "ENAMEL_HumanEval"
 
     def __init__(self, subset, # list of problem IDs
         hardness=[0., 3., 3., 4.], n_reps = 6, memory_giga=4., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
         strip_prompt=True, k=[1, 10, 100],
     ):
         super().__init__(strip_prompt=strip_prompt, k=k, num_workers=1, timeout=None) # each problem has a different time limit
-        self.subset = subset
-        self.dataset_full = self.dataset[self.DATASET_FULL].to_pandas()
-        self.dataset = self.dataset_full.iloc[np.array(self.subset), :]
+        self.subset = subset if isinstance(subset, list) else list(subset)
+        self.n_probs = len(self.subset)
+        self.dataset = self.dataset[self.DATASET_ALL].to_pandas().iloc[self.subset, :]
         self.hardness = hardness
         self.n_levels = len(self.hardness)
         self.n_reps = [n_reps if self.hardness[j] else 1 for j in range(self.n_levels)] # no need to repeat if it does not count into the efficiency score
         self.memory_giga = memory_giga
         self.timeout_factor = timeout_factor
         self.tolerence_sec = tolerence_sec
+        #warn(f"Problems here have been renumbered 0--{self.n_probs - 1} to compatibilize with `bigcode_eval`")
         if self.DATASET_PATH != 'q-rz/enamel':
             warn(f"Tests are loaded from {self.DATASET_PATH}/{tests_path} by `pickle`. Unpickling files from an unknown provider can be unsafe.")
         self.tests_path = hf_hub_download(repo_id = self.DATASET_PATH, filename = tests_path, repo_type = "dataset")
         with open(self.tests_path, 'rb') as fi:
-            self.tests_full = EnamUnpickler(fi).load()
-        self.tests = [self.tests_full[i] for i in self.subset]
+            tests_all, refs_all = EnamUnpickler(fi).load()
+            self.tests = [tests_all[i] for i in self.subset]
+            self.refs = [refs_all[i] for i in self.subset]
 
     def get_dataset(self):
-        """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        return self.dataset
+        """Returns dataset as an iterable of namedtuple"""
+        return self.dataset.itertuples(index=True)
 
-    #TODO get_prompt
-
-    def get_reference(self, doc):
-        # TODO: get the reference solution from a sample `doc` from the dataset
+    def get_prompt(self, doc):
         """
-        Builds the reference solution for the doc (sample from the test dataset).
-        :param doc: dict{str: str}
-            sample from the test dataset
+        :param doc: namedtuple
+            a row from the dataset
         :return: str
         """
-        return "" # TODO: include tests
+        return super().get_prompt(doc._asdict())
+
+    def get_reference(self, doc):
+        """
+        :param doc: namedtuple
+            a row from the dataset
+        :return: tuple (problem, tests, refs)
+        """
+        i = doc.Index
+        return (doc, self.tests[i], self.refs[i])
 
     def postprocess_generation(self, generation, idx):
         """
@@ -96,8 +103,16 @@ class GeneralENAMEL(GeneralHumanEval):
             list of str containing refrences
         :return: dict[str: float]
         """
+        problems = []
+        tests = []
+        refs = []
+        for problem, tests_i, refs_i in references:
+            problems.append(problem)
+            tests.append(tests_i)
+            refs.append(refs_i)
         return evaluate_all(
-            generations, references, k=self.k, hardness=self.hardness, n_reps=self.n_reps,
+            problems=problems, codes=generations, tests=tests, refs=refs,
+            k=self.k, hardness=self.hardness, n_reps=self.n_reps,
             memory_giga=self.memory_giga, timeout_factor=self.timeout_factor, tolerence_sec=self.tolerence_sec,
         )
 
