@@ -41,7 +41,7 @@ class GeneralENAMEL(GeneralHumanEval):
         super().__init__(strip_prompt=strip_prompt, k=k, num_workers=1, timeout=None) # each problem has a different time limit
         self.subset = subset
         self.dataset_full = self.dataset[self.DATASET_FULL].to_pandas()
-        self.dataset = self.dataset.iloc[np.array(self.subset), :]
+        self.dataset = self.dataset_full.iloc[np.array(self.subset), :]
         self.hardness = hardness
         self.n_levels = len(self.hardness)
         self.n_reps = [n_reps if self.hardness[j] else 1 for j in range(self.n_levels)] # no need to repeat if it does not count into the efficiency score
