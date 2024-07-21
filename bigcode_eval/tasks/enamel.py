@@ -22,7 +22,7 @@ import pickle
 import numpy as np
 from huggingface_hub import hf_hub_download
 from bigcode_eval.tasks.humaneval import GeneralHumanEval
-from bigcode_eval.tasks.custom_metrics.enamel_eval import EnamUnpickler, Dict, evaluate_all, might_catch_timeout_signal
+from bigcode_eval.tasks.custom_metrics.enamel_eval import EnamUnpickler, evaluate_all, might_catch_timeout_signal
 
 
 class GeneralENAMEL(GeneralHumanEval):
