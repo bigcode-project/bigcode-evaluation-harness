@@ -59,7 +59,7 @@ class GeneralENAMEL(GeneralHumanEval):
 
     def get_dataset(self):
         """Returns dataset as an iterable of namedtuple"""
-        return self.dataset.itertuples(index=True)
+        return list(self.dataset.itertuples(index=True))
 
     def get_prompt(self, doc):
         """
