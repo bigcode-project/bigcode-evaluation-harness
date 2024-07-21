@@ -20,6 +20,7 @@ _CITATION = """
 import pickle
 from warnings import warn
 import numpy as np
+from huggingface_hub import hf_hub_download
 from bigcode_eval.tasks.humaneval import GeneralHumanEval
 from bigcode_eval.tasks.custom_metrics.enamel_eval import Unpickler, evaluate_all, might_catch_timeout_signal
 
@@ -31,6 +32,7 @@ class GeneralENAMEL(GeneralHumanEval):
 
     DATASET_PATH = "q-rz/enamel"
     DATASET_NAME = "default"
+    DATASET_FULL = "ENAMEL_HumanEval"
 
     def __init__(self, subset, # list of problem IDs
         hardness=[0., 3., 3., 4.], n_reps = 6, memory_giga=4., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
@@ -38,20 +40,22 @@ class GeneralENAMEL(GeneralHumanEval):
     ):
         super().__init__(strip_prompt=strip_prompt, k=k, num_workers=1, timeout=None) # each problem has a different time limit
         self.subset = subset
-        return # @TODO
-        self.dataset[self.__name__] = self.dataset["ENAMEL_HumanEval"].iloc[np.array(self.subset), :] # TODO
+        self.dataset_full = self.dataset[self.DATASET_FULL].to_pandas()
+        self.dataset = self.dataset.iloc[np.array(self.subset), :]
         self.hardness = hardness
         self.n_levels = len(self.hardness)
         self.n_reps = [n_reps if self.hardness[j] else 1 for j in range(self.n_levels)] # no need to repeat if it does not count into the efficiency score
         self.memory_giga = memory_giga
         self.timeout_factor = timeout_factor
         self.tolerence_sec = tolerence_sec
-        self.tests_path = tests_path
+        self.tests_path = hf_hub_download(repo_id = self.DATASET_PATH, filename = tests_path, repo_type = "dataset")
         # TODO: load tests from tests_path
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        return self.dataset[self.__name__]
+        return self.dataset
+
+    #TODO get_prompt
 
     def get_reference(self, doc):
         # TODO: get the reference solution from a sample `doc` from the dataset
