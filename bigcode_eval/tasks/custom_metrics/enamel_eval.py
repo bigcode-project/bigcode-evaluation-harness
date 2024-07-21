@@ -91,7 +91,7 @@ def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, t
         level_break = False
         for k, test in enumerate(tests_j):
             elapsed = [None for rep in range(n_reps_j)]
-            for rep in range(n_reps):
+            for rep in range(n_reps_j):
                 scope = dict(time = time, input = None, print = None, __input = deepcopy(test.input)) # in case that the code modifies the input
                 try:
                     unsafe_timed_execute(TPL_RUN % (problem.prompt, code, problem.entry_point), scope, memory_bytes, timeout + tolerence_sec)
