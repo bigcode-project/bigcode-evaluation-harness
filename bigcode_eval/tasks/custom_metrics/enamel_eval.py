@@ -59,7 +59,7 @@ class Refs: # references for efficiency evaluation
                             self.lid = j
                             self.cid = k
 
-class Unpickler(pickle.Unpickler):
+class EnamUnpickler(pickle.Unpickler):
     CLS_DICT = {'enam.evaluate.Test': Test, 'enam.evaluate.Refs': Refs}
     def find_class(self, module, name):
         if module in self.CLS_DICT:

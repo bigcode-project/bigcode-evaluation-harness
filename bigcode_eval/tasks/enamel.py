@@ -17,12 +17,12 @@ _CITATION = """
 """
 
 
-import pickle
 from warnings import warn
+import pickle
 import numpy as np
 from huggingface_hub import hf_hub_download
 from bigcode_eval.tasks.humaneval import GeneralHumanEval
-from bigcode_eval.tasks.custom_metrics.enamel_eval import Unpickler, evaluate_all, might_catch_timeout_signal
+from bigcode_eval.tasks.custom_metrics.enamel_eval import EnamUnpickler, evaluate_all, might_catch_timeout_signal
 
 
 class GeneralENAMEL(GeneralHumanEval):
@@ -48,8 +48,12 @@ class GeneralENAMEL(GeneralHumanEval):
         self.memory_giga = memory_giga
         self.timeout_factor = timeout_factor
         self.tolerence_sec = tolerence_sec
+        if self.DATASET_PATH != 'q-rz/enamel':
+            warn(f"Tests are loaded from {self.DATASET_PATH}/{tests_path} by `pickle`. Unpickling files from an unknown provider can be unsafe.")
         self.tests_path = hf_hub_download(repo_id = self.DATASET_PATH, filename = tests_path, repo_type = "dataset")
-        # TODO: load tests from tests_path
+        with open(self.tests_path, 'rb') as fi:
+            self.tests_full = EnamUnpickler(fi).load()
+        self.tests = [self.tests_full[i] for i in self.subset]
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
