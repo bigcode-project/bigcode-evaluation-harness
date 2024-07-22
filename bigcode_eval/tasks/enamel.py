@@ -35,7 +35,7 @@ class GeneralENAMEL(GeneralHumanEval):
     DATASET_ALL = "ENAMEL_HumanEval"
 
     def __init__(self, subset, # list of problem IDs
-        hardness=[0., 3., 3., 4.], n_reps = 6, memory_giga=8., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
+        hardness=[0., 3., 3., 4.], n_reps = 10, memory_giga=10., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
         strip_prompt=True, k=[1, 10, 100],
     ):
         super().__init__(strip_prompt=strip_prompt, k=k, num_workers=1, timeout=None) # each problem has a different time limit
@@ -53,9 +53,8 @@ class GeneralENAMEL(GeneralHumanEval):
             warn(f"Tests are loaded from {self.DATASET_PATH}/{tests_path} by `pickle`. Unpickling files from an unknown provider can be unsafe.")
         self.tests_path = hf_hub_download(repo_id = self.DATASET_PATH, filename = tests_path, repo_type = "dataset")
         with open(self.tests_path, 'rb') as fi:
-            tests_all, refs_all = EnamUnpickler(fi).load()
+            tests_all, _ = EnamUnpickler(fi).load()
             self.tests = [tests_all[i] for i in self.subset]
-            self.refs = [refs_all[i] for i in self.subset]
 
     def get_dataset(self):
         """Returns dataset as an iterable of namedtuple"""
@@ -73,10 +72,10 @@ class GeneralENAMEL(GeneralHumanEval):
         """
         :param doc: namedtuple
             a row from the dataset
-        :return: tuple (problem, tests, refs)
+        :return: tuple (problem, tests)
         """
         i = self.prob_ids[doc.task_id]
-        return (doc, self.tests[i], self.refs[i])
+        return doc, self.tests[i]
 
     def postprocess_generation(self, generation, idx):
         """
@@ -105,13 +104,11 @@ class GeneralENAMEL(GeneralHumanEval):
         """
         problems = []
         tests = []
-        refs = []
-        for problem, tests_i, refs_i in references:
+        for problem, tests_i in references:
             problems.append(problem)
             tests.append(tests_i)
-            refs.append(refs_i)
         return evaluate_all(
-            problems=problems, codes=generations, tests=tests, refs=refs,
+            problems=problems, codes=generations, tests=tests,
             k=self.k, hardness=self.hardness, n_reps=self.n_reps,
             memory_giga=self.memory_giga, timeout_factor=self.timeout_factor, tolerence_sec=self.tolerence_sec,
         )

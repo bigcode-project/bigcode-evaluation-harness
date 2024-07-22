@@ -80,9 +80,8 @@ TPL_TEST = '''%s
 __accepted = __check(__input, __answer, __output)
 ''' # % (prompt, checker)
 
-def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, timeout_factor, tolerence_sec, time_correction):
+def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, timeout_factor, tolerence_sec):
     timeout = timeout_factor * refs.ref_max
-    time_limit = timeout / min(time_correction, 1.)
     memory_bytes = memory_giga * (1024 ** 3)
     n_levels = len(tests)
     zero_effs = [0. for j in range(n_levels)]
@@ -96,16 +95,14 @@ def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, t
             for rep in range(n_reps_j):
                 scope = dict(time = time, input = None, print = None, __input = deepcopy(test.input)) # in case that the code modifies the input
                 try:
-                    unsafe_timed_execute(TPL_RUN % (problem.prompt, code, problem.entry_point), scope, memory_bytes, time_limit + tolerence_sec)
+                    unsafe_timed_execute(TPL_RUN % (problem.prompt, code, problem.entry_point), scope, memory_bytes, timeout + tolerence_sec)
                     scope['__input'] = test.input
                     scope['__answer'] = test.answer # to prevent the code reading the answer
                     unsafe_execute(TPL_TEST % (problem.prompt, problem.checker), scope) # assuming that the checker does not modify the input
                 except TimeoutException as e:
-                    print(f'TLE {problem.task_id} level={j} case={k}')##########
                     level_break = True
                     break
                 except MemoryError as e:
-                    print(f'MLE {problem.task_id} level={j} case={k}')##########
                     level_break = True
                     break
                 except OverflowError as e:
@@ -114,18 +111,16 @@ def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, t
                 except KeyboardInterrupt as e:
                     raise e
                 except BaseException as e:
-                    print(f'RE {problem.task_id} level={j} case={k} {type(e)} {e}')##########
                     return False, zero_effs
                 else:
                     if '__accepted' in scope and scope['__accepted']:
                         elapsed[rep] = scope['__t1'] - scope['__t0']
                     else:
-                        print(f'WA {problem.task_id} level={j} case={k} {type(e)} {e}')##########
                         return False, zero_effs
             if level_break:
                 break
             else:
-                level_elapsed.append(calc_exec_time(elapsed).item() * time_correction)
+                level_elapsed.append(calc_exec_time(elapsed).item())
         if level_break:
             break
         else:
@@ -136,20 +131,21 @@ def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, t
         effs.append(0.)
     return True, effs
 
-def get_time_correction(problem, tests, refs, n_reps): # computes the calibration factor of of execution time
-    j = refs.lid
-    k = refs.cid
-    test = tests[j][-1][k]
-    n_reps_j = n_reps[j]
-    elapsed = [None for rep in range(n_reps_j)]
-    for rep in range(n_reps_j):
-        scope = dict(time = time, __input = deepcopy(test.input)) # in case that the code modifies the input
-        unsafe_execute(TPL_RUN % (problem.prompt, problem.reference_solution, problem.entry_point), scope) # assuming that the reference solution is error-free
-        elapsed[rep] = scope['__t1'] - scope['__t0']
-    elapsed = calc_exec_time(elapsed).item()
-    return refs.ref_max / elapsed
+def compute_refs(problem, tests, n_reps, hardness): # computes the calibration factor of of execution time
+    for j in range(len(tests)):
+        if hardness[j]:
+            for k in range(len(tests[j][-1])):
+                test = tests[j][-1][k]
+                n_reps_j = n_reps[j]
+                elapsed = [None for rep in range(n_reps_j)]
+                for rep in range(n_reps_j):
+                    scope = dict(time = time, __input = deepcopy(test.input)) # in case that the code modifies the input
+                    unsafe_execute(TPL_RUN % (problem.prompt, problem.reference_solution, problem.entry_point), scope) # assuming that the reference solution is error-free
+                    elapsed[rep] = scope['__t1'] - scope['__t0']
+                test.ref = calc_exec_time(elapsed).item()
+    return Refs(tests = tests, hardness = hardness)
 
-def evaluate_all(problems, codes, tests, refs, k, hardness, n_reps, memory_giga, timeout_factor, tolerence_sec):
+def evaluate_all(problems, codes, tests, k, hardness, n_reps, memory_giga, timeout_factor, tolerence_sec):
     if isinstance(k, int):
         k = [k]
     min_codes = min(len(codes_i) for codes_i in codes)
@@ -157,8 +153,8 @@ def evaluate_all(problems, codes, tests, refs, k, hardness, n_reps, memory_giga,
     passes = [[] for k_ in k]
     effs = [[] for k_ in k]
     gc.collect()
-    for problem, codes_i, tests_i, refs_i in zip(problems, codes, tests, refs):
-        time_correction = get_time_correction(problem = problem, tests = tests_i, refs = refs_i, n_reps = n_reps)
+    for problem, codes_i, tests_i in zip(problems, codes, tests):
+        refs_i = compute_refs(problem = problem, tests = tests_i, n_reps = n_reps, hardness = hardness)
         n_levels = len(tests_i)
         problem_passes = []
         problem_effs = []
@@ -166,13 +162,12 @@ def evaluate_all(problems, codes, tests, refs, k, hardness, n_reps, memory_giga,
             passed, code_effs = evaluate_one(
                 code = code, problem = problem, tests = tests_i, refs = refs_i,
                 k = k, hardness = hardness, n_reps = n_reps, memory_giga = memory_giga,
-                timeout_factor = timeout_factor, tolerence_sec = tolerence_sec, time_correction = time_correction)
+                timeout_factor = timeout_factor, tolerence_sec = tolerence_sec)
             problem_passes.append(passed)
             problem_effs.append(code_effs)
         for j, k_ in enumerate(k):
             passes[j].append(calc_pass_at_k(n = len(problem_passes), c = sum(problem_passes), k = k_))
             effs[j].append(calc_eff_at_k(e = np.average(problem_effs, axis = 1, weights = hardness), k = k_))
-            if abs(effs[j][-1] - 1.) > 0.03: print(f'{problem.task_id}: eff={effs[j][-1]:.4f} c={time_correction:.4f}', flush = True)##############
     metrics = dict()
     for k_, pass_k in zip(k, passes):
         metrics[f'pass@{k_}'] = np.mean(pass_k).item()
