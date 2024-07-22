@@ -35,7 +35,7 @@ class GeneralENAMEL(GeneralHumanEval):
     DATASET_ALL = "ENAMEL_HumanEval"
 
     def __init__(self, subset, # list of problem IDs
-        hardness=[0., 3., 3., 4.], n_reps = 10, memory_giga=10., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
+        hardness=[0., 3., 3., 4.], n_reps = 6, memory_giga=10., timeout_factor=2., tolerence_sec=0.01, tests_path="cache/eval~tests.pkl",
         strip_prompt=True, k=[1, 10, 100],
     ):
         super().__init__(strip_prompt=strip_prompt, k=k, num_workers=1, timeout=None) # each problem has a different time limit
