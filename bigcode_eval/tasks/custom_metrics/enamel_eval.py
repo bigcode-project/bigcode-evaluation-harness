@@ -167,6 +167,7 @@ def evaluate_all(problems, codes, tests, refs, k, hardness, n_reps, memory_giga,
         for j, k_ in enumerate(k):
             passes[j].append(calc_pass_at_k(n = len(problem_passes), c = sum(problem_passes), k = k_))
             effs[j].append(calc_eff_at_k(e = np.average(problem_effs, axis = 1, weights = hardness), k = k_))
+            if effs[j][-1] < 0.98: print(f'{problem.task_id}: eff={effs[j][-1]:.4f}', flush = True)
     metrics = dict()
     for k_, pass_k in zip(k, passes):
         metrics[f'pass@{k_}'] = np.mean(pass_k).item()
