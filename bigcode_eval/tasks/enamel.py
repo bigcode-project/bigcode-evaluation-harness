@@ -49,7 +49,6 @@ class GeneralENAMEL(GeneralHumanEval):
         self.memory_giga = memory_giga
         self.timeout_factor = timeout_factor
         self.tolerence_sec = tolerence_sec
-        #warn(f"Problems here have been renumbered 0--{self.n_probs - 1} to compatibilize with `bigcode_eval`")
         if self.DATASET_PATH != 'q-rz/enamel':
             warn(f"Tests are loaded from {self.DATASET_PATH}/{tests_path} by `pickle`. Unpickling files from an unknown provider can be unsafe.")
         self.tests_path = hf_hub_download(repo_id = self.DATASET_PATH, filename = tests_path, repo_type = "dataset")
@@ -85,7 +84,7 @@ class GeneralENAMEL(GeneralHumanEval):
         :param generation: str
             code generation from LM
         :param idx: int (if needed)
-            index of doc in the dataset to which the generation belongs
+            index of doc in the dataset to which the generation belongs; not needed here
         :return: str
         """
         generation = self._stop_at_stop_token(generation, self.stop_words)

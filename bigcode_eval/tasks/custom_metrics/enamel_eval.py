@@ -81,7 +81,8 @@ __accepted = __check(__input, __answer, __output)
 ''' # % (prompt, checker)
 
 def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, timeout_factor, tolerence_sec, time_correction):
-    timeout = timeout_factor * refs.ref_max / time_correction
+    timeout = timeout_factor * refs.ref_max
+    time_limit = timeout / min(time_correction, 1.)
     memory_bytes = memory_giga * (1024 ** 3)
     n_levels = len(tests)
     zero_effs = [0. for j in range(n_levels)]
@@ -95,16 +96,16 @@ def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, t
             for rep in range(n_reps_j):
                 scope = dict(time = time, input = None, print = None, __input = deepcopy(test.input)) # in case that the code modifies the input
                 try:
-                    unsafe_timed_execute(TPL_RUN % (problem.prompt, code, problem.entry_point), scope, memory_bytes, timeout + tolerence_sec)
+                    unsafe_timed_execute(TPL_RUN % (problem.prompt, code, problem.entry_point), scope, memory_bytes, time_limit + tolerence_sec)
                     scope['__input'] = test.input
                     scope['__answer'] = test.answer # to prevent the code reading the answer
                     unsafe_execute(TPL_TEST % (problem.prompt, problem.checker), scope) # assuming that the checker does not modify the input
                 except TimeoutException as e:
-                    print(f'TLE: {problem.task_id} level={j} case={k}')##########
+                    print(f'TLE {problem.task_id} level={j} case={k}')##########
                     level_break = True
                     break
                 except MemoryError as e:
-                    print(f'MLE: {problem.task_id} level={j} case={k}')##########
+                    print(f'MLE {problem.task_id} level={j} case={k}')##########
                     level_break = True
                     break
                 except OverflowError as e:
@@ -113,11 +114,13 @@ def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, t
                 except KeyboardInterrupt as e:
                     raise e
                 except BaseException as e:
+                    print(f'RE {problem.task_id} level={j} case={k} {type(e)} {e}')##########
                     return False, zero_effs
                 else:
                     if '__accepted' in scope and scope['__accepted']:
                         elapsed[rep] = scope['__t1'] - scope['__t0']
                     else:
+                        print(f'WA {problem.task_id} level={j} case={k} {type(e)} {e}')##########
                         return False, zero_effs
             if level_break:
                 break
