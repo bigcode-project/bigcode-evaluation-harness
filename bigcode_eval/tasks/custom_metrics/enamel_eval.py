@@ -83,8 +83,9 @@ __accepted = __check(__input, __answer, __output)
 def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, timeout_factor, tolerence_sec, time_correction):
     timeout = timeout_factor * refs.ref_max
     memory_bytes = memory_giga * (1024 ** 3)
+    n_levels = len(tests)
+    zero_effs = [0. for j in range(n_levels)]
     effs = []
-    elapsed_list = []
     for j, (size, tests_j) in enumerate(tests):
         n_reps_j = n_reps[j]
         level_elapsed = []
@@ -110,26 +111,25 @@ def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, t
                 except KeyboardInterrupt as e:
                     raise e
                 except BaseException as e:
-                    return False, self.zero_effs(), elapsed_list
+                    return False, zero_effs
                 else:
                     if '__accepted' in scope and scope['__accepted']:
                         elapsed[rep] = scope['__t1'] - scope['__t0']
                     else:
-                        return False, self.zero_effs(), elapsed_list
+                        return False, zero_effs
             if level_break:
                 break
             else:
                 level_elapsed.append(calc_exec_time(elapsed).item() * time_correction)
-        elapsed_list.append(level_elapsed)
         if level_break:
             break
         else:
             effs.append(calc_eff(elapsed = max(level_elapsed), ref = refs.refs[j], timeout = timeout))
     if j == 0 and level_break:
-        return False, self.zero_effs(), elapsed_list
-    for j in range(len(effs), self.n_levels):
+        return False, zero_effs
+    for j in range(len(effs), n_levels):
         effs.append(0.)
-    return True, effs, elapsed_list
+    return True, effs
 
 def get_time_correction(problem, tests, refs, n_reps): # computes the calibration factor of of execution time
     j = refs.lid
@@ -158,7 +158,7 @@ def evaluate_all(problems, codes, tests, refs, k, hardness, n_reps, memory_giga,
         problem_passes = []
         problem_effs = []
         for code in codes_i:
-            passed, code_effs, code_elapsed = evaluate_one(
+            passed, code_effs = evaluate_one(
                 code = code, problem = problem, tests = tests_i, refs = refs_i,
                 k = k, hardness = hardness, n_reps = n_reps, memory_giga = memory_giga,
                 timeout_factor = timeout_factor, tolerence_sec = tolerence_sec, time_correction = time_correction)

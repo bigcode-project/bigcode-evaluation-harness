@@ -42,6 +42,7 @@ class GeneralENAMEL(GeneralHumanEval):
         self.subset = subset if isinstance(subset, list) else list(subset)
         self.n_probs = len(self.subset)
         self.dataset = self.dataset[self.DATASET_ALL].to_pandas().iloc[self.subset, :]
+        self.prob_ids = {row.task_id: i for i, row in enumerate(self.dataset.itertuples(index=False))}
         self.hardness = hardness
         self.n_levels = len(self.hardness)
         self.n_reps = [n_reps if self.hardness[j] else 1 for j in range(self.n_levels)] # no need to repeat if it does not count into the efficiency score
@@ -59,7 +60,7 @@ class GeneralENAMEL(GeneralHumanEval):
 
     def get_dataset(self):
         """Returns dataset as an iterable of namedtuple"""
-        return list(self.dataset.itertuples(index=True))
+        return list(self.dataset.itertuples(index=False))
 
     def get_prompt(self, doc):
         """
@@ -75,7 +76,7 @@ class GeneralENAMEL(GeneralHumanEval):
             a row from the dataset
         :return: tuple (problem, tests, refs)
         """
-        i = doc.Index
+        i = self.prob_ids[doc.task_id]
         return (doc, self.tests[i], self.refs[i])
 
     def postprocess_generation(self, generation, idx):
