@@ -81,7 +81,7 @@ __accepted = __check(__input, __answer, __output)
 ''' # % (prompt, checker)
 
 def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, timeout_factor, tolerence_sec, time_correction):
-    timeout = timeout_factor * refs.ref_max
+    timeout = timeout_factor * refs.ref_max / time_correction
     memory_bytes = memory_giga * (1024 ** 3)
     n_levels = len(tests)
     zero_effs = [0. for j in range(n_levels)]
@@ -100,9 +100,11 @@ def evaluate_one(code, problem, tests, refs, k, hardness, n_reps, memory_giga, t
                     scope['__answer'] = test.answer # to prevent the code reading the answer
                     unsafe_execute(TPL_TEST % (problem.prompt, problem.checker), scope) # assuming that the checker does not modify the input
                 except TimeoutException as e:
+                    print(f'TLE: {problem.task_id} level={j} case={k}')##########
                     level_break = True
                     break
                 except MemoryError as e:
+                    print(f'MLE: {problem.task_id} level={j} case={k}')##########
                     level_break = True
                     break
                 except OverflowError as e:
@@ -167,7 +169,7 @@ def evaluate_all(problems, codes, tests, refs, k, hardness, n_reps, memory_giga,
         for j, k_ in enumerate(k):
             passes[j].append(calc_pass_at_k(n = len(problem_passes), c = sum(problem_passes), k = k_))
             effs[j].append(calc_eff_at_k(e = np.average(problem_effs, axis = 1, weights = hardness), k = k_))
-            if effs[j][-1] < 0.98: print(f'{problem.task_id}: eff={effs[j][-1]:.4f}', flush = True)
+            if abs(effs[j][-1] - 1.) > 0.03: print(f'{problem.task_id}: eff={effs[j][-1]:.4f} c={time_correction:.4f}', flush = True)##############
     metrics = dict()
     for k_, pass_k in zip(k, passes):
         metrics[f'pass@{k_}'] = np.mean(pass_k).item()
