@@ -431,6 +431,5 @@ def main():
         with open(args.metric_output_path, "w") as f:
             f.write(dumped)
 
-
 if __name__ == "__main__":
     main()
