@@ -73,7 +73,8 @@ def parallel_generations(
         "temperature": args.temperature,
         "top_p": args.top_p,
         "top_k": args.top_k,
-        "max_length": args.max_length_generation,
+        #pulling from https://github.com/bigcode-project/bigcode-evaluation-harness/pull/257
+        "max_new_tokens": args.max_length_generation,
     }
     stopping_criteria = []
     # The input_length / start_length set to 0 for now will be adjusted later
