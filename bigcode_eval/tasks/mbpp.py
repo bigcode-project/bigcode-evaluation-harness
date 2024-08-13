@@ -52,7 +52,7 @@ class MBPP(Task):
         """
         description = doc["text"]
         test_example = doc["test_list"][0]
-        prompt = f'"""\n{description}\n{test_example}\nPseudocode:"""\n'
+        prompt = f'"""\n{description}\n{test_example}\nPseudocode:\n"""'
         return prompt
 
     def get_reference(self, doc):
@@ -70,7 +70,7 @@ class MBPP(Task):
         prompt = self.get_prompt(self.dataset["test"][idx])
         start_idx = generation.find("Code:")
         generation = generation[start_idx + len("Code:"):]
-        print(prompt + self._stop_at_stop_token(generation, self.stop_words))
+        print(generation)
         return prompt + self._stop_at_stop_token(generation, self.stop_words)
 
     def process_results(self, generations, references):
