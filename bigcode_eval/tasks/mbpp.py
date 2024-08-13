@@ -57,7 +57,7 @@ class MBPP(Task):
         test_example = doc["test_list"][0]
         prompt = f'"""Task Description: \n\n{description}\n{test_example}\n\nPseudocode:\n\n"""'
         self.model.to(self.device)
-        inputs = self.tokenizer.encode(prompt, return_tensors = "pt")
+        inputs = self.tokenizer.encode(prompt, return_tensors = "pt").to(self.device)
         outputs = self.model.generate(inputs, max_new_tokens = 300)
         output = tokenizer.decode(outputs[0])
         start_idx = output.find("Code:")
