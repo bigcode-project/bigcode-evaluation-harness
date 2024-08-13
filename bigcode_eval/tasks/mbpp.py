@@ -59,7 +59,7 @@ class MBPP(Task):
         self.model.to(self.device)
         inputs = self.tokenizer.encode(prompt, return_tensors = "pt").to(self.device)
         outputs = self.model.generate(inputs, max_new_tokens = 300)
-        output = tokenizer.decode(outputs[0])
+        output = self.tokenizer.decode(outputs[0])
         start_idx = output.find("Code:")
         return output[:start_idx]
         
