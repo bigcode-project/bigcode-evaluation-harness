@@ -12,6 +12,9 @@ Homepage:: https://github.com/google-research/google-research/tree/master/mbpp
 
 from bigcode_eval.base import Task
 from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
 
 _CITATION = """
 @article{austin2021program,
@@ -35,6 +38,10 @@ class MBPP(Task):
             stop_words=["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/", "\n```"],
             requires_execution=True,
         )
+        checkpoint = "/mnt/roma/abhineet/output_dir_p/checkpoint-5640"
+        self.model = AutoModelForCausalLM.from_pretrained(checkpoint)
+        self.tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -45,14 +52,31 @@ class MBPP(Task):
         ), "please ensure you have the latest version of MBPP dataset, try deleting its old cache"
         return dataset
 
+    def generate_prompt(self, doc):
+        description = doc["text"]
+        test_example = doc["test_list"][0]
+        prompt = f'"""Task Description: \n\n{description}\n{test_example}\n\nPseudocode:\n\n"""'
+        self.model.to(self.device)
+        inputs = self.tokenizer.encode(prompt, return_tensors = "pt")
+        outputs = self.model.generate(inputs, max_new_tokens = 300)
+        output = tokenizer.decode(outputs[0])
+        start_idx = output.find("Code:")
+        return output[:start_idx]
+        
+    
+    
     def get_prompt(self, doc):
         """Builds the prompt for the LM to generate from.
         MBPP prompt is built following to InCoder (Fried et al.) approach
         prompt = docstring that includes one test
         """
-        description = doc["text"]
-        test_example = doc["test_list"][0]
-        prompt = f'"""Task Description: \n\n{description}\n{test_example}\n\nPseudocode:\n\n"""'
+        # description = doc["text"]
+        # test_example = doc["test_list"][0]
+        # prompt = f'"""Task Description: \n\n{description}\n{test_example}\n\nPseudocode:\n\n"""'
+        prompt_with_pseudocode = self.generate_prompt(doc)
+        prompt = prompt_with_pseudocode + "\n\n\nCode:\n\n"
+        
+        
         return prompt
 
     def get_reference(self, doc):
