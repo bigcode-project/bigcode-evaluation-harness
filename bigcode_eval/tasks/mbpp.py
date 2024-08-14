@@ -31,7 +31,7 @@ class MBPP(Task):
     answers, generation settings and evaluation methods.
     """
 
-    DATASET_PATH = "mbpp"
+    DATASET_PATH = "/mnt/roma/abhineet/mbpp_withpseudods"
 
     def __init__(self):
         super().__init__(
@@ -72,8 +72,9 @@ class MBPP(Task):
         """
         description = doc["text"]
         test_example = doc["test_list"][0]
-        #prompt = f'"""Task Description: \n\n{description}\n{test_example}\n\nPseudocode:\n\n"""'
-        prompt = f'"""{doc}\n\nCode:\n\n"""'
+        pseudocodes = doc["Pseudocodes"]
+        prompt = f'"""Task Description: \n\n{description}\n{test_example}{pseudocodes}\nCode:\n\n"""'
+        
         #prompt_with_pseudocode = self.generate_prompt(doc)
         #prompt = prompt_with_pseudocode + "\n\n\nCode:\n\n"
         
