@@ -45,7 +45,7 @@ class MBPP(Task):
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
-        dataset = self.dataset["test"]
+        dataset = self.dataset
         # the wrong split of mbpp can be loaded with old datasets cache
         assert (
             len(dataset) == 500
@@ -70,11 +70,12 @@ class MBPP(Task):
         MBPP prompt is built following to InCoder (Fried et al.) approach
         prompt = docstring that includes one test
         """
-        # description = doc["text"]
-        # test_example = doc["test_list"][0]
-        # prompt = f'"""Task Description: \n\n{description}\n{test_example}\n\nPseudocode:\n\n"""'
-        prompt_with_pseudocode = self.generate_prompt(doc)
-        prompt = prompt_with_pseudocode + "\n\n\nCode:\n\n"
+        description = doc["text"]
+        test_example = doc["test_list"][0]
+        #prompt = f'"""Task Description: \n\n{description}\n{test_example}\n\nPseudocode:\n\n"""'
+        prompt = f'"""{doc}\n\nCode:\n\n"""'
+        #prompt_with_pseudocode = self.generate_prompt(doc)
+        #prompt = prompt_with_pseudocode + "\n\n\nCode:\n\n"
         
         
         return prompt
