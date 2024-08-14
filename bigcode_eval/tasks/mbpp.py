@@ -93,7 +93,7 @@ class MBPP(Task):
         :param idx: int
             index of doc in the dataset to which the generation belongs
         """
-        prompt = self.get_prompt(self.dataset["test"][idx])
+        prompt = self.get_prompt(self.dataset[idx])
         start_idx = generation.find("Code:")
         generation = generation[start_idx + len("Code:"):]
         print(generation)
