@@ -73,7 +73,7 @@ class MBPP(Task):
         description = doc["text"]
         test_example = doc["test_list"][0]
         pseudocodes = doc["Pseudocodes"]
-        prompt = f'"""Task Description: \n\n{description}\n{test_example}{pseudocodes}\nCode:\n\n"""'
+        prompt = f'"""Task Description: \n\n{description}\n{test_example}{pseudocodes}"""\nCode:\n\n'
         
         #prompt_with_pseudocode = self.generate_prompt(doc)
         #prompt = prompt_with_pseudocode + "\n\n\nCode:\n\n"
