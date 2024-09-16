@@ -1,4 +1,4 @@
-FROM ghcr.io/nuprl/multipl-e-evaluation:2cb4fcd74d89d149f7a3feb177f7d8169cef390a7ea7951c9b84e7ff59ea26cc
+FROM ghcr.io/nuprl/multipl-e-evaluation@sha256:11864ca95774df16c34b4cd1eac231f9e5466c7ea38dac98e5b5b053e18479de
 
 # Standard requirements
 COPY . /app
