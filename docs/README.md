@@ -427,9 +427,9 @@ accelerate launch main.py  \
 ```
 
 ### Shadereval 
-[Shadereval](tbd.) explores "creative" code generation. Fragment shaders are sourced from Shadertoy.com and curated into the [Shadertoys](https://huggingface.co/datasets/Vipitis/Shadertoys) dataset. The task specific datasets are build from the Shadertoys dataset and therefore share a common train/test split.
+[Shadereval](tbd.) explores "creative" code generation. Fragment GLSL shaders are sourced from Shadertoy.com and curated into the [Shadertoys](https://github.com/Vipitis/shadertoys-dataset) dataset. The task specific datasets are build from the Shadertoys dataset.
 
-Task-1: **ReturnCompletion** provides a function header and body, so the model generates a matching return statement. Generations are evaluated by `exact-match` therefore does not require code execution. The original publication uses greedy decoding and only 300 samples.
+Task-1: **ReturnCompletion** provides a function header and body, so the model generates a matching return statement. Generations are evaluated by `exact-match` therefore does not require code execution. The original publication uses greedy decoding and only 300 samples. Dataset is now private due to a takedown notice, please contact for access. This is only meant as a prototype task.
 
 ```bash
 accelerate launch main.py \ 
@@ -439,18 +439,20 @@ accelerate launch main.py \
   --do_sample False \
 ```
 
-Task-2: **FunctionGeneration** parses comments directly before or after the function header as model input. The model is expected to generate a complete function that is syntactially sound. Generated functions are inserted in the original shader program for evaluation. A custom metric is hosted in the [demo space](https://huggingface.co/spaces/Vipitis/shadermatch) which render frames to compare. This requires an additional dependency [wgpu-shadertoy](https://github.com/pygfx/shadertoy). It's recommended to generate generations first and then evaluate them later.
-The reference uses greedy decoding and fp16 for the first 300 examples.
+Task-2: **FunctionGeneration** parses comments directly before the function header and the header itself as model input. The model is expected to generate a complete function that is syntactially sound. Generated functions are inserted in the original shader program for evaluation. A custom metric is hosted in the [demo space](https://huggingface.co/spaces/Vipitis/shadermatch) which renders frames to compare. This requires an additional dependency [wgpu-shadertoy](https://github.com/pygfx/shadertoy) as well as [tree-sitter-glsl](https://github.com/tree-sitter-grammars/tree-sitter-glsl). It's recommended to generate generations first and then evaluate them later.
+The original publication greedily decodes 512 tokens at BF16. However custom sampling strategies and additional prompts can be attempted, as long as accurately communicated with claimed results.
 
 ```bash
 accelerate launch main.py \ 
   --model <MODEL_NAME> \ 
   --tasks shadereval-2 \ 
   --generation_only \ 
+  --save_generations \ 
   --save_generations_path "saved_generations.json" \ 
   --allow_code_execution \ 
-  --limit 300 \ 
-  --do_sample False \ --precision fp16 \ 
+  --do_sample False \ 
+  --precision bf16 \ 
+  --max_length_generation 512
 ```
 
 To evaluate later run the following command:
@@ -461,9 +463,9 @@ accelerate launch main.py \
   --tasks shadereval-2 \ 
   --load_generations_path "saved_generations.json" \ 
   --allow_code_execution \ 
-  --limit 300 \ 
   --metric_output_path "eval_results.json" \ 
-  --precision fp16
+  --precision bf16 \ 
+  --max_length_generation 512
 ```
 
 ## Code generation benchmarks without unit tests
