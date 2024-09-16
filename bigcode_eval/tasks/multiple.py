@@ -27,24 +27,33 @@ from bigcode_eval.tasks.custom_metrics.multiple_metrics.single_experiment_pass_k
 
 _CITATION = """
 @article{cassano2022scalable,
-  title={A Scalable and Extensible Approach to Benchmarking NL2Code for 18 Programming Languages},
-  author={Cassano, Federico and Gouwar, John and Nguyen, Daniel and Nguyen, Sydney and Phipps-Costin, Luna and Pinckney, Donald and Yee, Ming Ho and Zi, Yangtian and Anderson, Carolyn Jane and Feldman, Molly Q and others},
-  journal={arXiv preprint arXiv:2208.08227},
-  year={2022}
+  author={Cassano, Federico and Gouwar, John and Nguyen, Daniel and Nguyen, Sydney and Phipps-Costin, Luna and Pinckney, Donald and Yee, Ming-Ho and Zi, Yangtian and Anderson, Carolyn Jane and Feldman, Molly Q and Guha, Arjun and Greenberg, Michael and Jangda, Abhinav},
+  journal={IEEE Transactions on Software Engineering}, 
+  title={MultiPL-E: A Scalable and Polyglot Approach to Benchmarking Neural Code Generation}, 
+  year={2023},
+  volume={49},
+  number={7},
+  pages={3675-3691},
+  doi={10.1109/TSE.2023.3267446}
 }
 """
 
 LANGUAGES = [
     "py",
     "sh",
+    "clj"
     "cpp",
     "cs",
     "d",
+    "dart",
+    "elixir",
     "go",
+    "hs",
     "java",
     "js",
     "jl",
     "lua",
+    "ml"
     "pl",
     "php",
     "r",
