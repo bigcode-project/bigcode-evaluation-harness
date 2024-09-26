@@ -227,10 +227,10 @@ accelerate launch  main.py \
   --allow_code_execution
 ```
 
-By setting `MBBPPLUS_USE_MBPP_TESTS=1` when running MBPP+, one can run the 399 MBPP+ tasks (a subset of the 500 MBPP evaluation tasks) with the original MBPP base tests:
+By setting `MBPPPLUS_USE_MBPP_TESTS=1` when running MBPP+, one can run the 399 MBPP+ tasks (a subset of the 500 MBPP evaluation tasks) with the original MBPP base tests:
 
 ```bash
-MBBPPLUS_USE_MBPP_TESTS=1 accelerate launch main.py \
+MBPPPLUS_USE_MBPP_TESTS=1 accelerate launch main.py \
   --tasks mbppplus \
   --allow_code_execution \
   --load_generations_path generations_mbppplus.json \
