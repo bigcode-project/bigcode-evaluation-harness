@@ -26,6 +26,16 @@ Before diving into the tasks, here are some instructions that stand for all the 
   * The generations are saved with `save_generations` that should be called during the execution, you can visualize the post-processed model generations used for the evaluation. You also have the option of saving the references, it can be useful for tasks that use BLEU score and actual solutions as references, you just need to `save_references`.
   * For experimenting, you can choose the number of tasks to evaluate on instead of using the whole test set with the `limit` argument, try using a number that is proportional to your number of devices.
 
+If you want to evaluate a model running behind an OpenAI compatible API, then you can use `base_url` to send any generation requests to that URL.
+  * If you are self-hosting an OpenAI compatible API:
+    * Set `base_url` to the url you are hosting with (i.e. `http://localhost:8000/v1`).
+    * Set `model` to the served name of your model.
+  * If you are using OpenAI's API:
+    * Set the environment variable `OPENAI_API_KEY`.
+    * Set `base_url` to `https://api.openai.com/v1`.
+    * Set `model` to the name of the OpenAI model you want to use (e.g. `gpt-3.5-turbo-1106`).
+
+
 ## Code generation benchmarks with unit tests
 
 ### HumanEval
@@ -124,9 +134,6 @@ accelerate launch main.py \
   --allow_code_execution \
   --save_generations
 ```
-
-
-There is also a version to run the OpenAI API on HumanEvalPack at `bigcode_eval/tasks/humanevalpack_openai.py`. It requires the `openai` package that can be installed via `pip install openai`. You will need to set the environment variables `OPENAI_ORGANIZATION` and `OPENAI_API_KEY`. Then you may want to modify the global variables defined in the script, such as `LANGUAGE`. Finally, you can run it with `python bigcode_eval/tasks/humanevalpack_openai.py`.
 
 
 ### InstructHumanEval
