@@ -12,6 +12,7 @@ ds1000_requirements = [
     "matplotlib==3.5.2",
     "numpy==1.21.6",
     "openai==0.23.0",
+    "litellm==0.13.2",
     "pandas==1.3.5",
     "pandas-datareader==0.10.0",
     "pathlib==1.0.1",
