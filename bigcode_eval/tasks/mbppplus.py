@@ -48,7 +48,7 @@ class MBPPPlus(MBPP):
     #                is different from HumanEval(+) which further requires a `check` func
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
-        use_mbpp_tests = os.getenv("MBBPPLUS_USE_MBPP_TESTS", "0")
+        use_mbpp_tests = os.getenv("MBPPPLUS_USE_MBPP_TESTS", "0")
         if use_mbpp_tests == "1":
             return "\n".join(doc["test_list"])
         return "\n" + doc["test"]
