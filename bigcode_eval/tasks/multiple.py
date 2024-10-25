@@ -53,7 +53,7 @@ LANGUAGES = [
     "js",
     "jl",
     "lua",
-    "ml"
+    "ml",
     "pl",
     "php",
     "r",
