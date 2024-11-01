@@ -76,7 +76,9 @@ def parallel_generations(
     # The input_length / start_length set to 0 for now will be adjusted later
     # Check if the task has a custom check_fn method for the stopping criteria
     if task.stop_words and tokenizer.eos_token:
-        task.stop_words.append(tokenizer.eos_token)    
+        # if padding token is same as eos it cannot be a delimiter as hpu output is padded
+        if not (accelerator.device.type == "hpu" and tokenizer.eos_token == tokenizer.pad_token):
+            task.stop_words.append(tokenizer.eos_token)
     if hasattr(task, "check_fn"):
         stopping_criteria.append(
             EndOfFunctionCriteria(0, task.stop_words, tokenizer, task.check_fn)
