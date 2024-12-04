@@ -41,7 +41,7 @@ _CITATION = """
 LANGUAGES = [
     "py",
     "sh",
-    "clj"
+    "clj",
     "cpp",
     "cs",
     "d",
@@ -53,7 +53,7 @@ LANGUAGES = [
     "js",
     "jl",
     "lua",
-    "ml"
+    "ml",
     "pl",
     "php",
     "r",
@@ -71,13 +71,19 @@ def create_all_tasks():
     :return: {task_name: task}
         e.g. {multiple-py: Task, multiple-java: Task}
     """
-    return {f"multiple-{language}": create_task(language) for language in LANGUAGES}
+    # The root dataset is HumanEval
+    tasks = {f"multiple-{language}": create_task("humaneval", language) for language in LANGUAGES}
+    
+    # The root dataset is MBPP
+    for language in LANGUAGES:
+        tasks[f"multiple-{language}-mbpp"] = create_task("mbpp", language)
 
+    return tasks
 
-def create_task(language):
+def create_task(source, language):
     class MultiPLE(GeneralMultiPLE):
         def __init__(self):
-            super().__init__(language)
+            super().__init__(source, language)
 
     return MultiPLE
 
@@ -91,9 +97,9 @@ class GeneralMultiPLE(Task):
     DATASET_NAME = None
     DATASET_REVISION = "ff5c146da05f10bc69b9ce393b77f381b3825d1b"
 
-    def __init__(self, language):
+    def __init__(self, source, language):
         self.language = language
-        self.DATASET_NAME = f"humaneval-{language}"
+        self.DATASET_NAME = f"{source}-{language}"
         # we need the dataset to get stop words for each language
         self.dataset = load_dataset(
             GeneralMultiPLE.DATASET_PATH,
@@ -194,3 +200,5 @@ class GeneralMultiPLE(Task):
             if k <= len(generations[0])
         }
         return results
+
+print(create_all_tasks().keys())
