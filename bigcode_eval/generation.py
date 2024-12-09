@@ -8,6 +8,7 @@ from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
 
 from bigcode_eval.utils import TokenizedDataset, complete_code
+from bigcode_eval.wx_ai import WxInference
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
@@ -62,6 +63,43 @@ def parallel_generations(
                 )
         return generations[:n_tasks]
 
+    if args.modeltype == "wx":
+        wx_inference = WxInference()
+
+        return wx_inference.infer(
+            dataset=dataset,
+            task=task,
+            args=args,
+        )
+    else:
+        return _parallel_generations(
+            task,
+            dataset,
+            accelerator,
+            model,
+            tokenizer,
+            n_tasks,
+            args,
+            curr_sample_idx,
+            save_every_k_tasks,
+            intermediate_generations,
+            intermediate_save_generations_path,
+        )
+
+
+def _parallel_generations(
+    task,
+    dataset,
+    accelerator,
+    model,
+    tokenizer,
+    n_tasks,
+    args,
+    curr_sample_idx: int = 0,
+    save_every_k_tasks: int = -1,
+    intermediate_generations: Optional[List[Optional[List[Optional[str]]]]] = None,
+    intermediate_save_generations_path: Optional[str] = None,
+):
     set_seed(args.seed, device_specific=True)
 
     # Setup generation settings
