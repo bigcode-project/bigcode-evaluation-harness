@@ -110,6 +110,8 @@ def parallel_generations(
 
     ds_tokenized = TokenizedDataset(
         task,
+        model,
+        args,
         dataset,
         tokenizer,
         num_devices=accelerator.state.num_processes,
@@ -127,21 +129,22 @@ def parallel_generations(
 
     is_loaded_in_8bit = getattr(model, "is_loaded_in_8bit", False)
     is_loaded_in_4bit = getattr(model, "is_loaded_in_4bit", False)
-    if args.max_memory_per_gpu is not None:
-        # The model is already sharded across multiple GPUs
-        ds_loader = accelerator.prepare(ds_loader)
-    elif not is_loaded_in_8bit and not is_loaded_in_4bit:
-        # we only wrap data loader to avoid extra memory occupation
-        model = model.to(accelerator.device)
-        ds_loader = accelerator.prepare(ds_loader)
-    else:
-        # model.to() is not supported for 8bit and 4bit models
-        model, ds_loader = accelerator.prepare(model, ds_loader)
+    # if args.max_memory_per_gpu is not None:
+    #     # The model is already sharded across multiple GPUs
+    #     ds_loader = accelerator.prepare(ds_loader)
+    # elif not is_loaded_in_8bit and not is_loaded_in_4bit:
+    #     # we only wrap data loader to avoid extra memory occupation
+    #     model = model.to(accelerator.device)
+    #     ds_loader = accelerator.prepare(ds_loader)
+    # else:
+    #     # model.to() is not supported for 8bit and 4bit models
+    #     model, ds_loader = accelerator.prepare(model, ds_loader)
 
     generations = complete_code(
         task,
         accelerator,
         model,
+        args,
         tokenizer,
         ds_loader,
         n_tasks=n_tasks,

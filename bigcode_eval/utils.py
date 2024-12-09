@@ -24,6 +24,8 @@ class TokenizedDataset(IterableDataset):
     def __init__(
         self,
         task,
+        model,
+        args,
         dataset,
         tokenizer,
         num_devices,
@@ -36,6 +38,8 @@ class TokenizedDataset(IterableDataset):
         instruction_tokens=None,
     ):
         self.task = task
+        self.model = model
+        self.args = args
         self.dataset = dataset
         self.tokenizer = tokenizer
         self.num_devices = num_devices
@@ -83,6 +87,8 @@ class TokenizedDataset(IterableDataset):
                     prompt_encoder = self.prefix + prompt_encoder
                 prompts_encoder.append(prompt_encoder)
 
+        
+
         if not len(set(infill)) == 1 or not len(set(instruction)) == 1:
             raise ValueError(
                 "Mixed infill/instruction and completion prompts are not supported."
@@ -120,24 +126,32 @@ class TokenizedDataset(IterableDataset):
                 "n_copies (n_samples/batch_size) was changed from 1 to 2 because n_tasks isn't proportional to num devices"
             )
 
+
+        # Generating the responses through ollama model
         for sample in range(self.n_tasks):
             for _ in range(self.n_copies):
-                if self.has_encoder:
-                    yield {
-                        "ids": outputs.input_ids[sample],
-                        "ids_encoder": outputs_encoder.input_ids[sample],
+                if self.args.modeltype == "ollama":
+                    yield{
                         "task_id": sample,
-                        "input_len": outputs.attention_mask[sample].sum(),
-                        "input_len_encoder": outputs_encoder.attention_mask[
-                            sample
-                        ].sum(),
+                        "prompt": prompts[sample],
                     }
-                else:
-                    yield {
-                        "ids": outputs.input_ids[sample],
-                        "task_id": sample,
-                        "input_len": outputs.attention_mask[sample].sum(),
-                    }
+                else: 
+                    if self.has_encoder:
+                        yield {
+                            "ids": outputs.input_ids[sample],
+                            "ids_encoder": outputs_encoder.input_ids[sample],
+                            "task_id": sample,
+                            "input_len": outputs.attention_mask[sample].sum(),
+                            "input_len_encoder": outputs_encoder.attention_mask[
+                                sample
+                            ].sum(),
+                        }
+                    else:
+                        yield {
+                            "ids": outputs.input_ids[sample],
+                            "task_id": sample,
+                            "input_len": outputs.attention_mask[sample].sum(),
+                        }
 
     def _make_infill_prompt(self, prefix, suffix, preprefix=""):
         """Make a prompt for infilling.
@@ -225,6 +239,7 @@ def complete_code(
     task,
     accelerator,
     model,
+    args,
     tokenizer,
     dataloader,
     n_tasks,
@@ -249,74 +264,93 @@ def complete_code(
     code_gens: List[List[Optional[str]]] = [[] for _ in range(n_tasks)]
     generations = [] if not intermediate_generations else intermediate_generations
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
+
+    print(f"n_tasks: {n_tasks}")
+    print(f"copies: {dataloader.dataset.n_copies}")
+    print(f"Processes: {accelerator.num_processes}")
     for step, batch in tqdm(
         enumerate(dataloader),
         total=math.ceil(
             n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
         ),
     ):
-        with torch.no_grad():
-            if task.stop_words:
-                # Set the start_length after which to check for stopping to be the longest input ignoring padding
-                max_len = batch["input_len"].max().item()
-                if "ids_encoder" in batch:
-                    max_len += 1  # Add 1 for decoder_start_token_id
-                gen_kwargs["stopping_criteria"][0].start_length = max_len
-            if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
-                idx = 1 if task.stop_words else 0
-                gen_kwargs["stopping_criteria"][idx].input_length = (
-                    batch["input_len"].max().item()
-                )
+        if args.modeltype == "ollama":
+            task_id = batch["task_id"]
+            prompt = batch["prompt"]
+            response = model.generate(prompts=prompt * args.n_samples)
+            sample_responses = []
+            
+            for sample in range(args.n_samples):
+                text = response.generations[sample][0].text
+                sample_responses.append(text)
+            print(sample_responses)
+        else: 
+            with torch.no_grad():
+                if task.stop_words:
+                    # Set the start_length after which to check for stopping to be the longest input ignoring padding
+                    max_len = batch["input_len"].max().item()
+                    if "ids_encoder" in batch:
+                        max_len += 1  # Add 1 for decoder_start_token_id
+                    gen_kwargs["stopping_criteria"][0].start_length = max_len
+                if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
+                    idx = 1 if task.stop_words else 0
+                    gen_kwargs["stopping_criteria"][idx].input_length = (
+                        batch["input_len"].max().item()
+                    )
 
-            inputs = batch["ids"][:, : batch["input_len"]] if tokenizer.padding_side == "right" else batch["ids"]
-            if "ids_encoder" in batch:
-                if is_wrapped:
-                    generated_tokens = accelerator.unwrap_model(model).generate(
-                        decoder_input_ids=inputs,
-                        input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
-                        num_return_sequences=batch_size,
-                        decoder_start_token_id=tokenizer.pad_token_id,
-                        eos_token_id=tokenizer.eos_token_id,
-                        **gen_kwargs,
-                    )
-                else:
-                    generated_tokens = model.generate(
-                        decoder_input_ids=inputs,
-                        input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
-                        num_return_sequences=batch_size,
-                        decoder_start_token_id=tokenizer.pad_token_id,
-                        eos_token_id=tokenizer.eos_token_id,
-                        **gen_kwargs,
-                    )
-            else:
-                if is_wrapped:
-                    # 8bit and 4bit models are wrapped in accelerator
-                    generated_tokens = accelerator.unwrap_model(model).generate(
-                        input_ids=inputs,
-                        num_return_sequences=batch_size,
-                        **gen_kwargs,
-                    )
-                else:
-                    # In transformers (>= 4.40.2), if the length of input_ids == max_length, a ValueError is thrown.
-                    # We want to ignore this error in order to reproduce old results with mbpp.
-                    try:
+                inputs = batch["ids"][:, : batch["input_len"]] if tokenizer.padding_side == "right" else batch["ids"]
+                if "ids_encoder" in batch:
+                    if is_wrapped:
+                        generated_tokens = accelerator.unwrap_model(model).generate(
+                            decoder_input_ids=inputs,
+                            input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
+                            num_return_sequences=batch_size,
+                            decoder_start_token_id=tokenizer.pad_token_id,
+                            eos_token_id=tokenizer.eos_token_id,
+                            **gen_kwargs,
+                        )
+                    else:
                         generated_tokens = model.generate(
+                            decoder_input_ids=inputs,
+                            input_ids=batch["ids_encoder"][:, : batch["input_len_encoder"]],
+                            num_return_sequences=batch_size,
+                            decoder_start_token_id=tokenizer.pad_token_id,
+                            eos_token_id=tokenizer.eos_token_id,
+                            **gen_kwargs,
+                        )
+                else:
+                    if is_wrapped:
+                        # 8bit and 4bit models are wrapped in accelerator
+                        generated_tokens = accelerator.unwrap_model(model).generate(
                             input_ids=inputs,
                             num_return_sequences=batch_size,
                             **gen_kwargs,
                         )
-                    except ValueError as e:
-                        # When the length of input_ids == max_length, the generation is the same as the input
-                        if str(e).startswith(f"Input length of input_ids is {inputs.shape[1]}, but `max_length` is set to {gen_kwargs['max_length']}"):
-                            warnings.warn(f"An error with the following message was thrown: {e}. Returning the input as the generation, for higher scores consider using a larger `max_length`")
-                            generated_tokens = inputs
-                        else:
-                            raise e
+                    else:
+                        # In transformers (>= 4.40.2), if the length of input_ids == max_length, a ValueError is thrown.
+                        # We want to ignore this error in order to reproduce old results with mbpp.
+                        try:
+                            generated_tokens = model.generate(
+                                input_ids=inputs,
+                                num_return_sequences=batch_size,
+                                **gen_kwargs,
+                            )
+                        except ValueError as e:
+                            # When the length of input_ids == max_length, the generation is the same as the input
+                            if str(e).startswith(f"Input length of input_ids is {inputs.shape[1]}, but `max_length` is set to {gen_kwargs['max_length']}"):
+                                warnings.warn(f"An error with the following message was thrown: {e}. Returning the input as the generation, for higher scores consider using a larger `max_length`")
+                                generated_tokens = inputs
+                            else:
+                                raise e
+        # each task is generated batch_size times
+        generated_tasks = batch["task_id"].repeat(batch_size)
 
-            # each task is generated batch_size times
-            generated_tasks = batch["task_id"].repeat(batch_size)
+        if args.modeltype == "ollama":
+            for sample, response in zip(generated_tasks, sample_responses):
+                gen_token_dict[sample.item()].append(response)
+        else:
             generated_tokens = accelerator.pad_across_processes(
-                generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
+            generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
             )
 
             generated_tokens, generated_tasks = accelerator.gather(
@@ -324,36 +358,37 @@ def complete_code(
             )
             generated_tokens = generated_tokens.cpu().numpy()
             generated_tasks = generated_tasks.cpu().numpy()
-
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
 
-            if save_every_k_tasks >= 1 and (step + 1) % save_every_k_tasks == 0:
-                if not intermediate_save_generations_path:
-                    raise ValueError(
-                        "intermediate_save_generations_path cannot be empty!"
-                    )
-
-                code_gens = update_code_gens(
-                    task,
-                    tokenizer,
-                    limit_start,
-                    prefix,
-                    instruction_tokens,
-                    postprocess,
-                    code_gens,
-                    gen_token_dict,
+        if save_every_k_tasks >= 1 and (step + 1) % save_every_k_tasks == 0:
+            if not intermediate_save_generations_path:
+                raise ValueError(
+                    "intermediate_save_generations_path cannot be empty!"
                 )
-                with open(intermediate_save_generations_path, "w") as fp:
-                    json.dump(generations + code_gens, fp)
-                    print(
-                        f"intermediate generations were saved at {intermediate_save_generations_path}"
-                    )
-                # reset gen_token_dict - prevent redundant decoding
-                gen_token_dict = defaultdict(list)
 
+            code_gens = update_code_gens(
+                task,
+                args,
+                tokenizer,
+                limit_start,
+                prefix,
+                instruction_tokens,
+                postprocess,
+                code_gens,
+                gen_token_dict,
+            )
+            with open(intermediate_save_generations_path, "w") as fp:
+                json.dump(generations + code_gens, fp)
+                print(
+                    f"intermediate generations were saved at {intermediate_save_generations_path}"
+                )
+            # reset gen_token_dict - prevent redundant decoding
+            gen_token_dict = defaultdict(list)
+    
     code_gens = update_code_gens(
         task,
+        args,
         tokenizer,
         limit_start,
         prefix,
@@ -369,6 +404,7 @@ def complete_code(
 
 def update_code_gens(
     task,
+    args,
     tokenizer,
     limit_start,
     prefix,
@@ -379,36 +415,46 @@ def update_code_gens(
 ):  
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
-            if INFILL_MODE or tokenizer.eos_token in task.stop_words:
-                if s[0] == tokenizer.bos_token_id:
-                    s = s[1:]
-                # Treat eos token as a regular stop word not removing it from the output
-                # If it's removed it may have the effect of removing it in the middle of a
-                # longer generation in case a batch size > 1 is used, which will result in
-                # a wrong generation as it won't be used for splitting lateron
-                gen_code = tokenizer.decode(
-                    s, skip_special_tokens=False, clean_up_tokenization_spaces=False
-                )
-                try:
-                    # some tokenizers add a multi-token prefix to the generation (e.g ChatGLM)
-                    tokenizer_prefix = tokenizer.decode(tokenizer.get_prefix_tokens())
-                    if gen_code.startswith(f"{tokenizer_prefix}"):
-                        gen_code = gen_code[len(tokenizer_prefix):].lstrip()
-                except:
-                    pass
-                if INFILL_MODE:
-                    gen_code = _parse_infill(gen_code, tokenizer)
-                if INSTRUCTION_MODE:
-                    gen_code = _parse_instruction(gen_code, instruction_tokens)
+            if args.modeltype == "ollama":
+                gen_code = s + ""
             else:
-                gen_code = tokenizer.decode(
-                    s, skip_special_tokens=True, clean_up_tokenization_spaces=True
-                )
+                if INFILL_MODE or tokenizer.eos_token in task.stop_words:
+                    if s[0] == tokenizer.bos_token_id:
+                        s = s[1:]
+                    # Treat eos token as a regular stop word not removing it from the output
+                    # If it's removed it may have the effect of removing it in the middle of a
+                    # longer generation in case a batch size > 1 is used, which will result in
+                    # a wrong generation as it won't be used for splitting lateron
+                    gen_code = tokenizer.decode(
+                        s, skip_special_tokens=False, clean_up_tokenization_spaces=False
+                    )
+                    try:
+                        # some tokenizers add a multi-token prefix to the generation (e.g ChatGLM)
+                        tokenizer_prefix = tokenizer.decode(tokenizer.get_prefix_tokens())
+                        if gen_code.startswith(f"{tokenizer_prefix}"):
+                            gen_code = gen_code[len(tokenizer_prefix):].lstrip()
+                    except:
+                        pass
+                    if INFILL_MODE:
+                        gen_code = _parse_infill(gen_code, tokenizer)
+                    if INSTRUCTION_MODE:
+                        gen_code = _parse_instruction(gen_code, instruction_tokens)
+                else:
+                    gen_code = tokenizer.decode(
+                        s, skip_special_tokens=True, clean_up_tokenization_spaces=True
+                    )
+
             if not INFILL_MODE:
                 gen_code = gen_code[len(prefix) :]
+            dataset = task.get_dataset()
+            prompt = task.get_prompt(dataset[int(sample)])
+
             if postprocess:
+                # if args.modeltype == "ollama":
+                #     code_gens[sample].append(prompt + gen_code)
+                # else:    
                 code_gens[sample].append(
-                    task.postprocess_generation(gen_code, int(sample) + limit_start)
+                    task.postprocess_generation(prompt + gen_code, int(sample) + limit_start)
                 )
             else:
                 warnings.warn(

@@ -1,0 +1,11 @@
+{
+  "humaneval": {
+    "pass@1": 0.1925609756097561,
+    "pass@10": 0.33567450318498165
+  },
+  "config": {
+    "model": "bigcode/starcoder2-3b",
+    "temperature": 0.2,
+    "n_samples": 50
+  }
+}

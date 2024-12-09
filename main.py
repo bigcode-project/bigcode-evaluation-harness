@@ -19,6 +19,9 @@ from bigcode_eval.evaluator import Evaluator
 from bigcode_eval.tasks import ALL_TASKS
 
 
+from langchain_community.llms.ollama import Ollama
+from bigcode_eval import tasks
+
 class MultiChoice:
     def __init__(self, choices):
         self.choices = choices
@@ -305,6 +308,14 @@ def main():
                 args.model,
                 **model_kwargs,
             )
+        elif args.modeltype == "ollama":
+            # mapping the ollama models to hugging-face models and initiate the model
+
+            models_dict = {"bigcode/starcoder2-3b": "starcoder2:3b"}
+            for task_name in task_names: 
+                task = tasks.get_task(task_name, args)
+                model = Ollama(model=models_dict[args.model], stop=task.stop_words, num_predict=512, temperature=args.temperature, top_p=args.top_p, top_k=args.top_k)
+                print(f"{args.model} is Initiated.")
         else:
             raise ValueError(
                 f"Non valid modeltype {args.modeltype}, choose from: causal, seq2seq"
@@ -337,6 +348,7 @@ def main():
                 truncation_side="left",
                 padding_side="right",  
             )
+        
         if not tokenizer.eos_token:
             if tokenizer.bos_token:
                 tokenizer.eos_token = tokenizer.bos_token
