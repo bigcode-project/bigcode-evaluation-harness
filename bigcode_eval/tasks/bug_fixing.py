@@ -199,86 +199,74 @@ if __name__ == "__main__":
             
             "test": """
 def check(candidate):
-    def check_syntax():
-        # List of critical syntax elements that should be fixed
-        syntax_fixes = {
-            "init_parameters": ("account_number balance=0", "account_number, balance=0"),
-            "deposit_operator": ("self.balance + amount", "self.balance += amount"),
-            "unmatched_quote": ("Insufficient funds!)", "Insufficient funds!\""),
-            "display_self": ("def display_transactions():", "def display_transactions(self):"),
-            "initialize_name": ("def __initialize__(self):", "def __init__(self):"),
-            "elif_typo": ("el choice", "elif choice"),
-            "double_colon": ("elif choice == \"5\":", "elif choice == \"5\":"),
-            "checkbalance_call": ("checkbalance()", "check_balance()"),
-            "system_printf": ("system.printf", "print"),
-            "while_true": ("while rue:", "while True:"),
-            "unreachable": ("print(\"Not reachable statement\")", "")
-        }
-        
-        score = sum(1 for _, (bug, fix) in syntax_fixes.items() 
-                   if bug not in candidate and fix in candidate)
-        
-        return score, len(syntax_fixes)
-
-    def check_structure():
-        # Check for required code structure
-        required_structure = [
-            "class BankAccount:",
-            "class BankSystem:",
-            "def main():",
-            "def __init__",
-            "def deposit",
-            "def withdraw",
-            "def check_balance",
-            "def display_transactions",
-            "self.accounts = {}",
-            "self.transactions = []",
-            "if __name__ == \"__main__\":"
-        ]
-        
-        score = sum(1 for element in required_structure if element in candidate)
-        return score, len(required_structure)
-
-    def check_functionality():
-        # Check for correct implementation details
-        functionality_checks = [
-            "self.balance += amount",
-            "self.transactions.append",
-            "if amount > self.balance:",
-            "return self.accounts.get(account_number)",
-            "bank_system = BankSystem()",
-            "input(\"Enter",
-            "float(input(",
-            "print(f\"Account balance:"
-        ]
-        
-        score = sum(1 for check in functionality_checks if check in candidate)
-        return score, len(functionality_checks)
-
     try:
-        # Run all checks
-        syntax_score, syntax_total = check_syntax()
-        structure_score, structure_total = check_structure()
-        func_score, func_total = check_functionality()
-
+        # Check for syntax fixes
+        syntax_fixes = [
+            ('def __init__(self, account_number balance=0)', 'def __init__(self, account_number, balance=0)'),
+            ('self.balance + amount', 'self.balance += amount'),
+            ('display_transactions():', 'display_transactions(self):'),
+            ('def __initialize__', 'def __init__'),
+            ('el choice', 'elif choice'),
+            ('elif choice == "5":', 'elif choice == "5":'),
+            ('while rue:', 'while True:'),
+            ('account.checkbalance()', 'account.check_balance()'),
+            ('system.printf', 'print'),
+            ('print("Not reachable statement")', '')
+        ]
+        
+        syntax_score = sum(1 for old, new in syntax_fixes 
+                         if old not in candidate and new in candidate)
+        
+        # Check for structure
+        structure_checks = [
+            'class BankAccount:',
+            'class BankSystem:',
+            'def main():',
+            'def __init__',
+            'def deposit',
+            'def withdraw',
+            'def check_balance',
+            'def display_transactions',
+            'self.accounts = {}',
+            'self.transactions = []',
+            'if __name__ == "__main__"'
+        ]
+        
+        structure_score = sum(1 for check in structure_checks 
+                            if check in candidate)
+        
+        # Check for functionality
+        functionality_checks = [
+            'self.balance += amount',
+            'self.transactions.append',
+            'if amount > self.balance:',
+            'return self.accounts.get(account_number)',
+            'bank_system = BankSystem()',
+            'input(',
+            'float(input(',
+            'print(f"Account balance:'
+        ]
+        
+        functionality_score = sum(1 for check in functionality_checks 
+                                if check in candidate)
+        
         # Calculate total score
-        total_score = syntax_score + structure_score + func_score
-        total_possible = syntax_total + structure_total + func_total
+        total_checks = len(syntax_fixes) + len(structure_checks) + len(functionality_checks)
+        total_passed = syntax_score + structure_score + functionality_score
         
         return {
-            "bug_fixing_score": round((total_score / total_possible) * 100, 2),
-            "details": {
-                "syntax_fixes": f"{syntax_score}/{syntax_total}",
-                "code_structure": f"{structure_score}/{structure_total}",
-                "functionality": f"{func_score}/{func_total}"
+            'bug_fixing_score': round((total_passed / total_checks) * 100, 2),
+            'details': {
+                'syntax_fixes': f'{syntax_score}/{len(syntax_fixes)}',
+                'code_structure': f'{structure_score}/{len(structure_checks)}',
+                'functionality': f'{functionality_score}/{len(functionality_checks)}'
             }
         }
-        
     except Exception as e:
-        print(f"Evaluation error: {str(e)}")
+        print(f'Evaluation error: {str(e)}')
         return {
-            "bug_fixing_score": 0.0,
-            "error": str(e)
+            'bug_fixing_score': 0.0,
+            'error': str(e)
         }
 """
         }]
