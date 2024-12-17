@@ -5,7 +5,7 @@ from . import (apps, codexglue_code_to_text, codexglue_text_to_text, conala,
                concode, ds1000, gsm, humaneval, humanevalplus, humanevalpack,
                instruct_humaneval, instruct_wizard_humaneval, mbpp, mbppplus,
                multiple, parity, python_bugs, quixbugs, recode, santacoder_fim,
-               studenteval, mercury)
+               studenteval, mercury, code_porting, quarkus_refactoring, unittest_generation, documentation_generation, bug_fixing)
 
 TASK_REGISTRY = {
     **apps.create_all_tasks(),
@@ -31,6 +31,11 @@ TASK_REGISTRY = {
     **santacoder_fim.create_all_tasks(),
     "studenteval": studenteval.StudentEval,
     "mercury": mercury.Mercury,
+    "code-porting": code_porting.CodePorting,
+    "quarkus-refactoring": quarkus_refactoring.QuarkusRefactoring,
+    "unittest-generation": unittest_generation.UnitTestGeneration,
+    "documentation-generation": documentation_generation.DocumentationGeneration,
+    "bug-fixing": bug_fixing.BugFixing,
 }
 
 ALL_TASKS = sorted(list(TASK_REGISTRY))
