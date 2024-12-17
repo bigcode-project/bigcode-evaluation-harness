@@ -18,13 +18,13 @@ class EvalArguments:
         metadata={"help": "Sample from the language model's output distribution."},
     )
     temperature: Optional[float] = field(
-        default=0.2, metadata={"help": "Sampling temperature used for generation."}
+        default=None, metadata={"help": "Sampling temperature used for generation."}
     )
     top_k: Optional[int] = field(
-        default=0, metadata={"help": "Top-k parameter used for generation."}
+        default=None, metadata={"help": "Top-k parameter used for generation."}
     )
     top_p: Optional[float] = field(
-        default=0.95, metadata={"help": "Top-p parameter used for nucleus sampling."}
+        default=None, metadata={"help": "Top-p parameter used for nucleus sampling."}
     )
     n_samples: Optional[int] = field(
         default=1,
@@ -34,5 +34,18 @@ class EvalArguments:
         default="<|endoftext|>", metadata={"help": "end of sentence token."}
     )
     seed: Optional[int] = field(
-        default=0, metadata={"help": "Random seed used for evaluation."}
+        default=None, metadata={"help": "Random seed used for evaluation."}
+    )
+    length_penalty: Optional[dict[str, int | float]] = field(
+        default=None,
+        metadata={"help": "A dictionary with length penalty options."}
+    )
+    max_new_tokens: Optional[int] = field(
+        default=None, metadata={"help": "Maximum number of generated tokens."}
+    )
+    min_new_tokens: Optional[int] = field(
+        default=None, metadata={"help": "Minimum number of generated tokens."}
+    )
+    stop_sequences: Optional[list[str]] = field(
+        default=None, metadata={"help": "List of stop sequences."}
     )
