@@ -17,9 +17,12 @@ described in the paper "Evaluating Large Language Models Trained on Code"
 (https://arxiv.org/abs/2107.03374)."""
 
 import itertools
+import json
 import os
+import requests
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import NamedTuple, TypedDict
 
 import numpy as np
 
@@ -126,9 +129,65 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE."""
 
+
+class CodeExecRes(NamedTuple):
+    total: list[int]
+    correct: list[int]
+    detailed_results: dict[int, list]
+
+
+class ResStatus(TypedDict):
+    program: str
+    language: str
+    stdout: str
+    stderr: str
+    exit_code: int
+    status: str
+
+
 def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, timeout=3.0):
     """Returns the scores"""
 
+    total, correct, results = (
+        execute_code_remotely(predictions, references) if True
+        else execute_code_locally(predictions, references, num_workers, timeout)
+    )
+
+    total = np.array(total)
+    correct = np.array(correct)
+
+    ks = k
+    if not isinstance(ks, (list, tuple)):
+        ks = [ks]
+    pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
+
+    return pass_at_k, results
+
+
+def estimate_pass_at_k(num_samples, num_correct, k):
+    """Estimates pass@k of each problem and returns them in an array."""
+
+    def estimator(n: int, c: int, k: int) -> float:
+        """Calculates 1 - comb(n - c, k) / comb(n, k)."""
+        if n - c < k:
+            return 1.0
+        return 1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1))
+
+    if isinstance(num_samples, int):
+        num_samples_it = itertools.repeat(num_samples, len(num_correct))
+    else:
+        assert len(num_samples) == len(num_correct)
+        num_samples_it = iter(num_samples)
+
+    return np.array([estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)])
+
+
+def execute_code_locally(
+    predictions: list[list[str]],
+    references: list[str],
+    num_workers: int = 4,
+    timeout: float = 3.0,
+) -> CodeExecRes:
     if os.getenv("HF_ALLOW_CODE_EVAL", 0) != "1":
         raise ValueError(_WARNING)
 
@@ -160,30 +219,64 @@ def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, ti
         passed = [r[1]["passed"] for r in result]
         total.append(len(passed))
         correct.append(sum(passed))
-    total = np.array(total)
-    correct = np.array(correct)
 
-    ks = k
-    if not isinstance(ks, (list, tuple)):
-        ks = [ks]
-    pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
-
-    return pass_at_k, results
+    return CodeExecRes(total=total, correct=correct, detailed_results=results)
 
 
-def estimate_pass_at_k(num_samples, num_correct, k):
-    """Estimates pass@k of each problem and returns them in an array."""
+def send_code_exec_request(
+    language: str,
+    code: str,
+    url: str = "http://0.0.0.0:5000/evaluate_code",
+) -> ResStatus:
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
 
-    def estimator(n: int, c: int, k: int) -> float:
-        """Calculates 1 - comb(n - c, k) / comb(n, k)."""
-        if n - c < k:
-            return 1.0
-        return 1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1))
+    response = requests.post(
+        url=url,
+        headers=headers,
+        json={
+            "lang": language,
+            "code": code,
+        },
+    )
 
-    if isinstance(num_samples, int):
-        num_samples_it = itertools.repeat(num_samples, len(num_correct))
-    else:
-        assert len(num_samples) == len(num_correct)
-        num_samples_it = iter(num_samples)
+    if not response.ok or response.status_code >= 300:
+        raise Exception  # should we just omit such task, or raise an error?
 
-    return np.array([estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)])
+    status = json.loads(response.content.decode("utf-8"))
+    if isinstance(status, list):
+        status = status[0]
+
+    return ResStatus(**status)
+
+
+def execute_code_remotely(
+    generated_codes: list[list[str]],
+    test_cases: list[str],
+) -> CodeExecRes:
+    total, correct = [], []
+    detailed_results = defaultdict(list)
+
+    # TODO: find a way to reliably determine the language to be used;
+    #  maybe pass it in 'process_results' methods of each task?
+    language = "python"
+
+    for task_id, (generated_code, test_case) in enumerate(zip(generated_codes, test_cases)):
+        for sample_id, sample in enumerate(generated_code):
+            program = sample + "\n" + test_case
+
+            status = send_code_exec_request(language, program)
+
+            passed = 1 if status["exit_code"] == 0 else 0
+            correct.append(passed)
+            total.append(1)
+
+            result = {
+                "passed": passed,
+                **status,
+            }
+            detailed_results[task_id].append((sample_id, result))
+
+    return CodeExecRes(total=total, correct=correct, detailed_results=detailed_results)
