@@ -101,5 +101,6 @@ class GeneralHumanEval(Task):
             k=self.k,
             num_workers=self.num_workers,
             timeout=self.timeout,
+            language="python",
         )
         return results

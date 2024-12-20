@@ -70,5 +70,6 @@ class MBPPPlus(MBPP):
             references=references,
             predictions=generations,
             timeout=10.0,  # 10s timeout
+            language="python",
         )
         return results

@@ -1,8 +1,8 @@
 import json
 import re
 
-from evaluate import load
 from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 
 _CITATION = """
 @article{muennighoff2023octopack,
@@ -352,7 +352,6 @@ class HumanEvalPackGenerative(HumanEvalPack):
         :param references: list(str)
             list of str containing refrences
         """
-        code_metric = load("Muennighoff/code_eval_octopack")
         timeout = LANGUAGE_TO_TIMEOUT[self.DATASET_NAME]
         num_workers = LANGUAGE_TO_NUM_WORKERS[self.DATASET_NAME]
         language = self.DATASET_NAME if self.DATASET_NAME != "js" else "javascript"
@@ -463,12 +462,12 @@ class HumanEvalPackGenerative(HumanEvalPack):
                     gen[i] = new_gen
 
         ### EVALUATION ###
-        results, logs = code_metric.compute(
-            references=references,
+        results, logs = compute_code_eval(
             predictions=generations,
-            language=language,
+            references=references,
             timeout=timeout,
             num_workers=num_workers,
+            language=language,
         )
         # Write logs to json
         with open("logs.json", "w") as f:

@@ -134,6 +134,7 @@ class Parity(Task):
             results, _ = compute_code_eval(
                 references=[self.parity_tests for _ in gens],
                 predictions=[[g] for g in gens],
+                language="python",
             )
             out[f"{idx+1} bugs"] = results
         return out

@@ -82,5 +82,6 @@ class MBPP(Task):
         results, _ = compute_code_eval(
             references=references,
             predictions=generations,
+            language="python",
         )
         return results

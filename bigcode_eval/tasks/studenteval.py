@@ -8,12 +8,9 @@ Web page: https://huggingface.co/datasets/wellesley-easel/StudentEval
 """
 
 from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 from datasets import load_dataset
-from multiprocessing import cpu_count
-from concurrent.futures import ThreadPoolExecutor
-from tqdm import tqdm
 import tempfile
-import pandas as pd
 import numpy as np
 import subprocess
 
@@ -135,43 +132,13 @@ class StudentEval(Task):
             list of reference solutions
         """
 
-        worklist = []
-        for generations, reference in zip(generations, references):
-            # NOTE(Arjun Guha): This can be more efficient. At low temperature, we get lots of
-            # repeated completions. So, this will end up running the same program repeatedly.
-            # The original StudentEval code runs each generation once.
-            for generation in generations:
-                item = {
-                    "program": generation + "\n\n" + reference["assertions"],
-                    "prompt": reference["prompt"],
-                    "problem": reference["problem"],
-                    "group": reference["group"],
-                }
-                worklist.append(item)
-
-        with ThreadPoolExecutor(max_workers=cpu_count() - 1) as executor:
-            results_df = pd.DataFrame(
-                list(
-                    tqdm(
-                        executor.map(_run_assembled_program, worklist),
-                        total=len(worklist),
-                    )
-                )
-            )
-
-        # Calculate pass@1 for each prompt
-        results_df = results_df.groupby(["problem", "prompt", "group"]).agg(
-            c=("success", np.sum), n=("success", "count")
+        _, detailed_results = compute_code_eval(
+            predictions=generations,
+            references=[reference["assertions"] for reference in references],
+            k=1,
+            language="python",
         )
-        results_df.reset_index(inplace=True)
-        results_df["pass1"] = results_df.apply(
-            lambda row: _estimator(row["n"], row["c"], 1), axis=1
-        )
+        # TODO: They also calculated mean pass@1 for each group (reference['group']),
+        #  do we need that as well?
 
-        # Calculate mean pass@1 for each group
-        results_df = results_df.groupby(["group"]).agg(pass1=("pass1", np.mean))
-
-        # Turn into JSON
-        results_df.reset_index(inplace=True)
-        results_df = results_df.to_dict(orient="records")
-        return results_df
+        return detailed_results

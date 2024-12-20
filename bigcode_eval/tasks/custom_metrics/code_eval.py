@@ -145,13 +145,20 @@ class ResStatus(TypedDict):
     status: str
 
 
-def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, timeout=3.0):
+def compute_code_eval(
+    predictions,
+    references,
+    k=[1, 10, 100],
+    num_workers=4,
+    timeout=3.0,
+    language="python",
+):
     """Returns the scores"""
 
     total, correct, results = (
         execute_code_locally(predictions, references, num_workers, timeout)
         if os.environ.get("EXECUTE_CODE_LOCALLY")
-        else execute_code_remotely(predictions, references)
+        else execute_code_remotely(predictions, references, language)
     )
 
     total = np.array(total)
@@ -256,13 +263,10 @@ def send_code_exec_request(
 def execute_code_remotely(
     generated_codes: list[list[str]],
     test_cases: list[str],
+    language: str,
 ) -> CodeExecRes:
     total, correct = [], []
     detailed_results = defaultdict(list)
-
-    # TODO: find a way to reliably determine the language to be used;
-    #  maybe pass it in 'process_results' methods of each task?
-    language = "python"
 
     for task_id, (generated_code, test_case) in enumerate(zip(generated_codes, test_cases)):
         for sample_id, sample in enumerate(generated_code):

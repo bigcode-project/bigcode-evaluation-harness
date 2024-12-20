@@ -20,6 +20,7 @@ import requests
 import tqdm
 
 from bigcode_eval.base import Task
+from bigcode_eval.tasks.custom_metrics.code_eval import compute_code_eval
 
 _CITATION = """
 @article{Lai2022DS1000,
@@ -178,14 +179,10 @@ class GeneralDS1000(Task):
             list of str containing refrences
         :return: dict[str: float]
         """
-        dataset = self.get_dataset()
-        num_correct = 0
-        print("Scoring generations...")
-        for i, ref in tqdm.tqdm(enumerate(references), total=len(references)):
-            test = [doc for doc in dataset if doc["reference_code"] == ref][0]
-            for gen in generations[i]:
-                is_correct = test.test(gen)
-                if is_correct:
-                    num_correct += 1
-        accuracy = num_correct / len(references) / len(generations[0])
-        return {f"mean pass@1 accuracy ({len(generations[0])} samples)": accuracy}
+        pass_at_1, _ = compute_code_eval(
+            predictions=generations,
+            references=references,
+            language="python",
+            k=[1],
+        )
+        return pass_at_1

@@ -125,6 +125,7 @@ class GeneralPerturbedHumanEval(Task):
         _, detailed_results = compute_code_eval(
             references=[ref["test_code"] for ref in references],
             predictions=generations,
+            language="python",
         )
 
         # Compute robust-pass-at-1. For each transformation and each prompt, we have s=5 randomly perturbed prompts.

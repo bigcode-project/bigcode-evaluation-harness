@@ -122,6 +122,7 @@ class QuixBugs(Task):
                 references=[ref],
                 predictions=[gen],
                 timeout=10, # Levenshtein distance is slow
+                language="python",
             )
             results[name] = sub_results
         # Provide average of all metrics computed
