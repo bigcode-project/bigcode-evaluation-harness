@@ -149,8 +149,9 @@ def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, ti
     """Returns the scores"""
 
     total, correct, results = (
-        execute_code_remotely(predictions, references) if True
-        else execute_code_locally(predictions, references, num_workers, timeout)
+        execute_code_locally(predictions, references, num_workers, timeout)
+        if os.environ.get("EXECUTE_CODE_LOCALLY")
+        else execute_code_remotely(predictions, references)
     )
 
     total = np.array(total)
