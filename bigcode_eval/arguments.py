@@ -49,3 +49,7 @@ class EvalArguments:
     stop_sequences: Optional[list[str]] = field(
         default=None, metadata={"help": "List of stop sequences."}
     )
+    repetition_penalty: Optional[float] = field(
+        default=None,
+        metadata={"help": "A float value of repetition penalty."}
+    )

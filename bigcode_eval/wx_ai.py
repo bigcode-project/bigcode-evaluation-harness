@@ -33,6 +33,7 @@ class WxInference:
             "min_new_tokens": args.min_new_tokens,
             "length_penalty": args.length_penalty,
             "stop_sequences": args.stop_sequences,
+            "repetition_penalty": args.repetition_penalty,
         }
 
     def initialize_wx_model(self, model_name: str) -> ModelInference:
@@ -45,12 +46,12 @@ class WxInference:
     def create_prompt_from_dict(
         prompt_content: dict[str, str],
         prefix: str,
-        instruction_tokens: Optional[list[str]],
+        instruction_tokens: Optional[str],
     ) -> str:
         if all(key in ("instruction", "context") for key in prompt_content):
             user_token, end_token, assistant_token = "", "", "\n"
             if instruction_tokens:
-                user_token, end_token, assistant_token = instruction_tokens
+                user_token, end_token, assistant_token = instruction_tokens.split(",")
 
             return "".join(
                 (
@@ -72,12 +73,38 @@ class WxInference:
                 f"Unsupported prompt format: '{prompt_content}'."
             )
 
+    @staticmethod
+    def limit_inputs(
+        dataset: Dataset,
+        args: Namespace,
+    ) -> Dataset:
+        limit, offset = args.limit, args.limit_start
+
+        if (
+            not isinstance(limit, int)
+            or limit < 0
+            or not isinstance(offset, int)
+            or offset < 0
+        ):
+            raise ValueError(
+                f"If given, both 'args.limit' and 'args.limit_start' need to be "
+                f"positive integers, however, '{limit}' and '{offset}' were provided."
+            )
+
+        if offset:
+            dataset = dataset.select(range(offset, len(dataset)))
+
+        if limit:
+            dataset = dataset.take(limit)
+
+        return dataset
+
     def prepare_inputs(
         self,
         dataset: Dataset,
         task: Task,
         prefix: str,
-        instruction_tokens: Optional[list[str]],
+        instruction_tokens: Optional[str],
     ) -> list[str]:
         sample = task.get_prompt(dataset[0])
 
@@ -108,6 +135,8 @@ class WxInference:
 
         model = self.initialize_wx_model(args.model)
 
+        dataset = self.limit_inputs(dataset, args)
+
         prompts = self.prepare_inputs(
             dataset, task, prefix, args.instruction_tokens
         )
@@ -136,11 +165,13 @@ class WxInference:
         predictions: list[list[str]],
         prompts: list[str],
         task: Task,
-        instruction_tokens: Optional[list[str]],
+        instruction_tokens: Optional[str],
     ) -> list[list[str]]:
         if instruction_tokens:
             predictions = [
-                _parse_instruction(prediction, instruction_tokens)
+                _parse_instruction(
+                    prediction[0], instruction_tokens.split(",")
+                )
                 for prediction in predictions
             ]
 
