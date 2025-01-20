@@ -240,6 +240,7 @@ def send_code_exec_request(
         "Accept": "application/json",
         "Content-Type": "application/json",
     }
+    url = os.getenv("WML_URL_ADDR", url)
 
     response = requests.post(
         url=url,
@@ -274,9 +275,10 @@ def execute_code_remotely(
 
             status = send_code_exec_request(language, program)
 
-            passed = 1 if (
-                status["exit_code"] == 0 and len(status["stderr"]) == 0
-            ) else 0
+            passed = 1 if status["exit_code"] == 0 else 0
+            if language in ["js", "javascript", "java_script"]:
+                passed = 1 if status["stderr"] == "" else 0
+
             correct.append(passed)
             total.append(1)
 
