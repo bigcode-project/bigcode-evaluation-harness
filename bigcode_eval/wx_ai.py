@@ -1,13 +1,16 @@
 from argparse import Namespace
 from typing import Any, Optional
 
-from datasets import Dataset
+from datasets import Dataset as HfDataset
 from ibm_watsonx_ai import APIClient
 from ibm_watsonx_ai.foundation_models import ModelInference
 from unitxt.inference import WMLInferenceEngineBase
 
 from bigcode_eval.base import Task
 from bigcode_eval.utils import _parse_instruction
+
+
+Dataset = HfDataset | list[dict[str, Any]]
 
 
 class WxInference:
@@ -92,10 +95,18 @@ class WxInference:
             )
 
         if offset:
-            dataset = dataset.select(range(offset, len(dataset)))
+            dataset = (
+                dataset.select(range(offset, len(dataset)))
+                if isinstance(dataset, HfDataset)
+                else dataset[offset:]
+            )
 
         if limit:
-            dataset = dataset.take(limit)
+            dataset = (
+                dataset.take(limit)
+                if isinstance(dataset, HfDataset)
+                else dataset[:limit]
+            )
 
         return dataset
 
