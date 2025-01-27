@@ -39,6 +39,7 @@ _CITATION = """
 # Number of few shot examples to consider
 NUM_SHOTS = 8
 
+_CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class EvaluationType(str, Enum):
     """Possible values for evaluation type argument"""
@@ -105,7 +106,7 @@ class Gsm8k(Task):
     def fewshot_examples(self):
         """Loads and returns the few-shot examples for the task if they exist."""
         with open(
-            "bigcode_eval/tasks/few_shot_examples/gsm8k_few_shot_prompts.json",
+            os.path.join(_CURR_DIR, "few_shot_examples/gsm8k_few_shot_prompts.json"),
             "r",
         ) as file:
             examples = json.load(file)
