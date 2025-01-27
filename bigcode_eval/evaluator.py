@@ -114,7 +114,7 @@ class Evaluator:
         save_generations_path: str,
         save_references_path: str,
     ) -> None:
-        if self.args.save_generations:
+        if self.args.save_generations or self.args.generation_only:
             with open(save_generations_path, "w") as fp:
                 json.dump(generations, fp)
                 print(f"generations were saved at {save_generations_path}")
