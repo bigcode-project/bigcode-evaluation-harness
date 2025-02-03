@@ -28,6 +28,7 @@ You MUST follow these guidelines:
  - You are an AI assistant: do NOT claim to be a person. You are a computer program. You are NOT and CANNOT be self-awareness or consciousness.
  - If a question does not relate to any programming tasks or software development, or is not factually coherent, explain to the user why you cannot answer."""
 
+system_mixtral = "Always assist with care, respect, and truth. Respond with utmost utility yet securely. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity.\n\n"
 LANGUAGES = ["python", "cpp", "js", "java", "go", "rust"]
 
 LANGUAGE_TO_NAME = {
@@ -232,6 +233,8 @@ class HumanEvalPack(Task):
             prompt = f'Question:\n{inp}\n\nAnswer:\n{prompt_base}'
         elif self.prompt == "octocoder_system":
             prompt = f'System:\n{system}\n\nQuestion:\n{inp}\n\nAnswer:\n{prompt_base}'
+        elif self.prompt == "mixtral_system":
+            prompt = f'System:\n{system_mixtral}Question:\n{inp}\n\nAnswer:\n{prompt_base}'
         elif self.prompt == "octogeex":
             prompt = f'Question: {inp.strip()}\n\nAnswer:\n{prompt_base}'            
         elif self.prompt == "starchat":
@@ -426,7 +429,10 @@ class HumanEvalPackGenerative(HumanEvalPack):
                 [g.replace("public class Main {\n    }", "").strip() for g in gen] for gen in generations
             ]
         elif language == "go":
-            ds = self.get_dataset().select(range(len(generations)))
+            ds = self.get_dataset()
+            if not isinstance(ds, list):
+                ds = ds.select(range(len(generations)))
+            
             for gen, ref, doc in zip(generations, references, ds):
                 for line in doc["import"].split("\n"):
                     line = line.replace("import", "").replace("(", "").replace(")", "").replace('"', "").strip()
@@ -462,7 +468,10 @@ class HumanEvalPackGenerative(HumanEvalPack):
                         gen[i] = gen[i].replace("package main", "")
                     gen[i] = test_setup_str + other_pkgs_str + gen[i]
         elif language == "rust":
-            ds = self.get_dataset().select(range(len(generations)))
+            ds = self.get_dataset()
+            if not isinstance(ds, list):
+                ds = ds.select(range(len(generations)))
+
             main = "fn main(){}\n"
             for gen, doc in zip(generations, ds):
                 declaration = doc["declaration"]
