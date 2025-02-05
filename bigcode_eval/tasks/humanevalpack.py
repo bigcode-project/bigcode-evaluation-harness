@@ -432,6 +432,8 @@ class HumanEvalPackGenerative(HumanEvalPack):
             ds = self.get_dataset()
             if not isinstance(ds, list):
                 ds = ds.select(range(len(generations)))
+            else:
+                ds = ds[:len(generations)]
             
             for gen, ref, doc in zip(generations, references, ds):
                 for line in doc["import"].split("\n"):
@@ -471,6 +473,8 @@ class HumanEvalPackGenerative(HumanEvalPack):
             ds = self.get_dataset()
             if not isinstance(ds, list):
                 ds = ds.select(range(len(generations)))
+            else:
+                ds = ds[:len(generations)]
 
             main = "fn main(){}\n"
             for gen, doc in zip(generations, ds):
