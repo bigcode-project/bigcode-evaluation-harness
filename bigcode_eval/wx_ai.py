@@ -180,9 +180,7 @@ class WxInference:
     ) -> list[list[str]]:
         if instruction_tokens:
             predictions = [
-                _parse_instruction(
-                    prediction[0], instruction_tokens.split(",")
-                )
+                [_parse_instruction(prediction[0], instruction_tokens.split(","))]
                 for prediction in predictions
             ]
 
