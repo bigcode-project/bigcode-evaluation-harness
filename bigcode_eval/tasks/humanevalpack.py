@@ -29,6 +29,12 @@ You MUST follow these guidelines:
  - If a question does not relate to any programming tasks or software development, or is not factually coherent, explain to the user why you cannot answer."""
 
 system_mixtral = "Always assist with care, respect, and truth. Respond with utmost utility yet securely. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity.\n\n"
+system_granite_three = """Knowledge Cutoff Date: April 2024.
+Today's Date: December 13, 2024.
+
+You are Granite, developed by IBM. You are a helpful AI assistant.
+"""
+system_llama_three = """You are a helpful assistant that avoids causing harm. When you do not know the answer to a question, you say "I don't know"."""
 LANGUAGES = ["python", "cpp", "js", "java", "go", "rust"]
 
 LANGUAGE_TO_NAME = {
@@ -235,6 +241,19 @@ class HumanEvalPack(Task):
             prompt = f'System:\n{system}\n\nQuestion:\n{inp}\n\nAnswer:\n{prompt_base}'
         elif self.prompt == "mixtral_system":
             prompt = f'System:\n{system_mixtral}Question:\n{inp}\n\nAnswer:\n{prompt_base}'
+        elif self.prompt == "granite_three":
+            prompt = (
+                f"<|start_of_role|>system<|end_of_role|>{system_granite_three}<|end_of_text|>\n"
+                + f"<|start_of_role|>user<|end_of_role|>{inp}<|end_of_text|>\n"
+                + f"<|start_of_role|>assistant<|end_of_role|>\n{prompt_base}"
+            )
+        elif self.prompt == "llama_three":
+            prompt = (
+                f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n"
+                + f"{system_llama_three}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n"
+                + f"{inp}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+                + f"{prompt_base}"
+            )
         elif self.prompt == "octogeex":
             prompt = f'Question: {inp.strip()}\n\nAnswer:\n{prompt_base}'            
         elif self.prompt == "starchat":
