@@ -36,3 +36,20 @@ class EvalArguments:
     seed: Optional[int] = field(
         default=0, metadata={"help": "Random seed used for evaluation."}
     )
+    length_penalty: Optional[dict[str, int | float]] = field(
+        default=None,
+        metadata={"help": "A dictionary with length penalty options (for watsonx.ai)."}
+    )
+    max_new_tokens: Optional[int] = field(
+        default=None, metadata={"help": "Maximum number of generated tokens (for watsonx.ai)."}
+    )
+    min_new_tokens: Optional[int] = field(
+        default=None, metadata={"help": "Minimum number of generated tokens (for watsonx.ai)."}
+    )
+    stop_sequences: Optional[list[str]] = field(
+        default=None, metadata={"help": "List of stop sequences (for watsonx.ai)."}
+    )
+    repetition_penalty: Optional[float] = field(
+        default=None,
+        metadata={"help": "A float value of repetition penalty (for watsonx.ai)."}
+    )
