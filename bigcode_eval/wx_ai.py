@@ -152,14 +152,19 @@ class WxInference:
             dataset, task, prefix, args.instruction_tokens
         )
 
-        predictions = [
-            [result["results"][0]["generated_text"]]
-            for result in
-            model.generate(
-                prompt=prompts,
-                params=gen_params,
-            )
-        ]
+        predictions = []
+
+        for i in range(0, len(prompts), args.batch_size):
+            batch = prompts[i : i + args.batch_size]
+            copies = [prompt for prompt in batch for _ in range(args.n_samples)]
+            generations = model.generate(prompt=copies, params=gen_params)
+
+            batch_generations = [[] for _ in range(len(batch))]
+            for j, result in enumerate(generations):
+                batch_index = j // args.n_samples
+                batch_generations[batch_index].append(result["results"][0]["generated_text"])
+
+            predictions.extend(batch_generations)
 
         if postprocess:
             predictions = self.postprocess_predictions(
@@ -186,9 +191,8 @@ class WxInference:
 
         return [
             [
-                task.postprocess_generation(
-                    prompts[i] + predictions[i][0], i
-                )
+                task.postprocess_generation(prompts[i] + prediction, i)
+                for prediction in predictions[i]
             ]
             for i in range(len(predictions))
         ]
