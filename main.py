@@ -234,6 +234,13 @@ def main():
     transformers.logging.set_verbosity_error()
     datasets.logging.set_verbosity_error()
 
+    # @UMASS use these for now
+    args.batch_size = 1
+    args.do_sample = False
+    args.temperature = 0
+    args.save_generations = 1
+    args.allow_code_execution = 1
+
     if args.tasks is None:
         task_names = ALL_TASKS
     else:

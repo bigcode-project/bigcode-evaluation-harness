@@ -8,6 +8,7 @@ from typing import List, Optional
 import torch
 from torch.utils.data import IterableDataset
 from tqdm import tqdm
+from polygraph.extract import extract_model_data  # VT
 
 INFILL_MODE = False
 INSTRUCTION_MODE = False
@@ -255,7 +256,7 @@ def complete_code(
             n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
         ),
     ):
-        with torch.no_grad():
+        with (torch.no_grad()):
             if task.stop_words:
                 # Set the start_length after which to check for stopping to be the longest input ignoring padding
                 max_len = batch["input_len"].max().item()
@@ -300,11 +301,18 @@ def complete_code(
                     # In transformers (>= 4.40.2), if the length of input_ids == max_length, a ValueError is thrown.
                     # We want to ignore this error in order to reproduce old results with mbpp.
                     try:
-                        generated_tokens = model.generate(
+                        # VT our output is a dict now
+                        cont = model.generate(
                             input_ids=inputs,
                             num_return_sequences=batch_size,
                             **gen_kwargs,
                         )
+                        generated_tokens = cont.sequences
+                        assert batch_size == 1  # otherwise the inputs and outputs could be padded and we couldn't find out exact lengths
+                        index = 0  # index is index in batch, here 0 since only 1 sample in batch
+                        inplen = inputs.shape[-1]
+                        contlen = len(generated_tokens[0]) - inplen
+                        out = extract_model_data(cont, index, inplen, contlen, model.config)  # VT TODO torch.save(list of these out, one for each sample)
                     except ValueError as e:
                         # When the length of input_ids == max_length, the generation is the same as the input
                         if str(e).startswith(f"Input length of input_ids is {inputs.shape[1]}, but `max_length` is set to {gen_kwargs['max_length']}"):

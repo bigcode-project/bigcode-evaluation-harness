@@ -71,6 +71,11 @@ def parallel_generations(
         "top_p": args.top_p,
         "top_k": args.top_k,
         "max_length": args.max_length_generation,
+        # VT
+        "return_dict_in_generate": True,
+        "output_hidden_states": True,
+        "output_logits": True,
+        "min_new_tokens": 2
     }
     stopping_criteria = []
     # The input_length / start_length set to 0 for now will be adjusted later
