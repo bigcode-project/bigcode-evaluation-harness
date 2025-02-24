@@ -8,7 +8,8 @@ from typing import List, Optional
 import torch
 from torch.utils.data import IterableDataset
 from tqdm import tqdm
-from extract import extract_model_data
+# from extract import extract_model_data
+from polygraph.extract import extract_model_data
 
 INFILL_MODE = False
 INSTRUCTION_MODE = False
