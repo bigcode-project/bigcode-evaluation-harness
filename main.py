@@ -45,6 +45,11 @@ def parse_args():
         help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
     )
     parser.add_argument(
+        "--save_model_stats_path",
+        default="./stats.pt",
+        help="Location to save model evaluation information to use for uncertainty evaluation",
+    )
+    parser.add_argument(
         "--modeltype",
         default="causal",
         help="AutoModel to use, it can be causal or seq2seq",
@@ -389,7 +394,7 @@ def main():
             if args.generation_only:
                 if accelerator.is_main_process:
                     print("generation mode only")
-                generations, references = evaluator.generate_text(
+                generations, references, all_logits = evaluator.generate_text(
                     task, intermediate_generations=intermediate_generations
                 )
                 if accelerator.is_main_process:
@@ -398,8 +403,10 @@ def main():
                     evaluator.save_json_files(
                         generations,
                         references,
+                        all_logits,
                         save_generations_path,
                         save_references_path,
+                        args.save_model_stats_path,
                     )
             else:
                 results[task] = evaluator.evaluate(

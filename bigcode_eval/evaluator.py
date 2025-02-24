@@ -5,6 +5,8 @@ import warnings
 
 from typing import List
 
+import torch
+
 
 from bigcode_eval import tasks
 from bigcode_eval.generation import parallel_generations
@@ -66,7 +68,7 @@ class Evaluator:
         intermediate_save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}_intermediate.json"
         curr_sample_idx = len(curr_generations)
 
-        generations = parallel_generations(
+        generations, all_logits = parallel_generations(
             task,
             dataset,
             self.accelerator,
@@ -85,19 +87,19 @@ class Evaluator:
             warnings.warn(
                 f"Number of tasks wasn't proportional to number of devices, we removed extra predictions to only keep nsamples={self.args.n_samples}"
             )
-        return generations, references
+        return generations, references, all_logits
 
     def evaluate(self, task_name, intermediate_generations=None):
         task = tasks.get_task(task_name, self.args)
         if task.requires_execution and not self.allow_code_execution:
             raise ValueError(_WARNING)
 
-        generations, references = self.generate_text(task_name, intermediate_generations=intermediate_generations)
+        generations, references, all_logits = self.generate_text(task_name, intermediate_generations=intermediate_generations)
 
         if self.accelerator.is_main_process:
             if not self.args.load_generations_path:
                 save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}.json"
-                self.save_json_files(generations, references, save_generations_path, f"references_{task_name}.json")
+                self.save_json_files(generations, references, all_logits, save_generations_path, f"references_{task_name}.json", save_logits_path=self.args.save_model_stats_path)
 
             # make sure tokenizer plays nice with multiprocessing
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -111,8 +113,10 @@ class Evaluator:
         self,
         generations: List[str],
         references: List[str],
+        all_logits: List[dict],
         save_generations_path: str,
         save_references_path: str,
+        save_logits_path: str,
     ) -> None:
         if self.args.save_generations:
             with open(save_generations_path, "w") as fp:
@@ -122,3 +126,9 @@ class Evaluator:
             with open(save_references_path, "w") as fp:
                 json.dump(references, fp)
                 print(f"references were saved at {save_references_path}")
+        if self.args.save_model_stats_path:
+            torch.save(all_logits, save_logits_path)
+            print(f"all_logits were saved at {save_logits_path}")
+            # with open(save_logits_path, "w") as fp:
+                # json.dump(all_logits, fp)
+                # print(f"all_logits were saved at {save_logits_path}")
