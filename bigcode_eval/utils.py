@@ -8,7 +8,7 @@ from typing import List, Optional
 import torch
 from torch.utils.data import IterableDataset
 from tqdm import tqdm
-from polygraph.extract import extract_model_data  # VT
+from extract import extract_model_data
 
 INFILL_MODE = False
 INSTRUCTION_MODE = False
@@ -384,7 +384,7 @@ def update_code_gens(
     postprocess,
     code_gens,
     gen_token_dict,
-):  
+):
     for sample, generated_tokens in gen_token_dict.items():
         for s in generated_tokens:
             if INFILL_MODE or tokenizer.eos_token in task.stop_words:
