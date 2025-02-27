@@ -121,4 +121,4 @@ class CodexglueTextToText(Task):
         results = bleu.compute(
             references=references, predictions=gens, max_order=self.max_order, smooth=self.smooth
         )
-        return results
+        return {**results, "language": self.LANGUAGE, "execution_env": ""}

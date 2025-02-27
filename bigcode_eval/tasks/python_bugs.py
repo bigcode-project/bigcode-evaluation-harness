@@ -67,6 +67,7 @@ def mutate_code(input_code, task, prompt="prompt"):
 
 class PythonBugs(Task):
 
+    LANGUAGE = "python"
     DATASET_PATH = "Muennighoff/python-bugs"
 
     def __init__(self, prompt="prompt"):
@@ -125,4 +126,4 @@ class PythonBugs(Task):
             for gen in generations[i]:
                 num_correct += int(gen == ref)
         accuracy = num_correct / len(references) / len(generations[0])
-        return {"mean exact match": accuracy}
+        return {"mean exact match": accuracy, "language": self.LANGUAGE, "execution_env": ""}

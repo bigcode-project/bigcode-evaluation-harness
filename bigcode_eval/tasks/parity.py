@@ -69,6 +69,8 @@ def parity_reference(b1, b2, b3, b4):
 
 
 class Parity(Task):
+    LANGUAGE = "python"
+
     def __init__(self, prompt="prompt"):
 
         super().__init__(
@@ -131,10 +133,10 @@ class Parity(Task):
         out = {}
         # Compute metrics for each number of bugs
         for idx, gens in tqdm.tqdm(enumerate(generations), total=len(generations)):
-            results, _ = compute_code_eval(
+            results, _, execution_env = compute_code_eval(
                 references=[self.parity_tests for _ in gens],
                 predictions=[[g] for g in gens],
                 language="python",
             )
             out[f"{idx+1} bugs"] = results
-        return out
+        return {**out, "language": self.LANGUAGE, "execution_env": execution_env}

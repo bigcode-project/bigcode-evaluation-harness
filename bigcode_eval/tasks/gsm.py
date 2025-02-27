@@ -73,6 +73,7 @@ def create_task(cls, evaluation_type):
 
 class Gsm8k(Task):
 
+    LANGUAGE = "python"
     DATASET_PATH = "gsm8k"
     DATASET_NAME = "main"
     POST_SCRIPT = "print(solution())"
@@ -183,7 +184,7 @@ class Gsm8k(Task):
             predictions=generations,
             majority_voting=self.majority_voting,
         )
-        return results
+        return {**results, "language": self.LANGUAGE, "execution_env": "local"}
 
 
 class GsmHard(Gsm8k):

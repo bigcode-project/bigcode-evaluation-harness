@@ -28,6 +28,7 @@ class MBPP(Task):
     answers, generation settings and evaluation methods.
     """
 
+    LANGUAGE = "python"
     DATASET_PATH = "mbpp"
 
     def __init__(self):
@@ -79,9 +80,9 @@ class MBPP(Task):
         :param references: list(str)
             list of str containing refrences
         """
-        results, _ = compute_code_eval(
+        results, _, execution_env = compute_code_eval(
             references=references,
             predictions=generations,
             language="python",
         )
-        return results
+        return {**results, "language": self.LANGUAGE, "execution_env": execution_env}

@@ -18,6 +18,7 @@ _CITATION = """
 
 class QuixBugs(Task):
 
+    LANGUAGE = "python"
     DATASET_PATH = "Muennighoff/quixbugs"
 
     def __init__(self, prompt="prompt"):
@@ -118,7 +119,7 @@ class QuixBugs(Task):
         """
         results = {}
         for i, (gen, (name, ref)) in enumerate(zip(generations, references)):
-            sub_results, _ = compute_code_eval(
+            sub_results, _, execution_env = compute_code_eval(
                 references=[ref],
                 predictions=[gen],
                 timeout=10, # Levenshtein distance is slow
@@ -131,4 +132,4 @@ class QuixBugs(Task):
                 k: sum(v[k] for v in results.values()) / len(results) for k in results[list(results.keys())[0]]
             }
             results["num_correct"] = results["all"]["pass@1"] * (len(results) - 1) # -1 for the all metric
-        return results
+        return {**results, "language": self.LANGUAGE, "execution_env": execution_env}

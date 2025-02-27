@@ -58,6 +58,7 @@ def create_all_tasks():
 
 
 class GeneralDS1000(Task):
+    LANGUAGE = "python"
     DATASET_PATH = None
     DATASET_NAME = None
 
@@ -179,10 +180,12 @@ class GeneralDS1000(Task):
             list of str containing refrences
         :return: dict[str: float]
         """
-        pass_at_1, _ = compute_code_eval(
+        pass_at_1, _, execution_env = compute_code_eval(
             predictions=generations,
             references=references,
             language="python",
             k=[1],
         )
-        return pass_at_1
+        return {
+            **pass_at_1, "language": self.LANGUAGE, "execution_env": execution_env
+        }

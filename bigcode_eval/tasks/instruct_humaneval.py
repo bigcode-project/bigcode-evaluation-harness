@@ -64,12 +64,12 @@ class InstructHumanEval(Task):
         :param references: list(str)
             list of str containing references
         """
-        results, _ = compute_code_eval(
+        results, _, execution_env = compute_code_eval(
             references=references,
             predictions=generations,
             language="python",
         )
-        return results
+        return {**results, "language": self.LANGUAGE, "execution_env": execution_env}
 
 
 class InstructHumanEvalWithContext(InstructHumanEval):

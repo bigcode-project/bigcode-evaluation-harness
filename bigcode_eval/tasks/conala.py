@@ -32,6 +32,7 @@ class Conala(Task):
     answers, generation settings and evaluation methods.
     """
 
+    LANGUAGE = "python"
     DATASET_PATH = "neulab/conala"
 
     def __init__(self, max_order=4, smooth=True):
@@ -105,4 +106,4 @@ class Conala(Task):
         results = bleu.compute(
             references=references, predictions=gens, max_order=self.max_order, smooth=self.smooth
         )
-        return results
+        return {**results, "language": self.LANGUAGE, "execution_env": ""}

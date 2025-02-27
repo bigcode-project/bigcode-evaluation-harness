@@ -155,9 +155,14 @@ def compute_code_eval(
 ):
     """Returns the scores"""
 
+    execution_env = (
+        "local" if os.environ.get("EXECUTE_CODE_LOCALLY")
+        else "wxai-code-exec"
+    )
+
     total, correct, results = (
         execute_code_locally(predictions, references, num_workers, timeout)
-        if os.environ.get("EXECUTE_CODE_LOCALLY")
+        if execution_env == "local"
         else execute_code_remotely(predictions, references, language)
     )
 
@@ -169,7 +174,7 @@ def compute_code_eval(
         ks = [ks]
     pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
 
-    return pass_at_k, results
+    return pass_at_k, results, execution_env
 
 
 def estimate_pass_at_k(num_samples, num_correct, k):

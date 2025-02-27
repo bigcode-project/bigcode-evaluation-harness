@@ -83,6 +83,7 @@ class GeneralMultiPLE(Task):
 
     def __init__(self, language):
         self.language = language
+        self.LANGUAGE = language
         self.DATASET_NAME = f"humaneval-{language}"
         # we need the dataset to get stop words for each language
         self.dataset = load_dataset(
@@ -136,11 +137,11 @@ class GeneralMultiPLE(Task):
             list of str containing refrences
         """
 
-        pass_at_k, _ = compute_code_eval(
+        pass_at_k, _, execution_env = compute_code_eval(
             predictions=generations,
             references=references,
             language=self.language,
             k=[1, 10, 100],
         )
 
-        return pass_at_k
+        return {**pass_at_k, "language": self.LANGUAGE, "execution_env": execution_env}

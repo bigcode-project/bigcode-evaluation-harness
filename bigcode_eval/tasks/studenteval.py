@@ -84,6 +84,7 @@ def _get_group(item):
 
 
 class StudentEval(Task):
+    LANGUAGE = "python"
     DATASET_PATH = "wellesley-easel/StudentEval"
 
     def __init__(self):
@@ -132,7 +133,7 @@ class StudentEval(Task):
             list of reference solutions
         """
 
-        _, detailed_results = compute_code_eval(
+        _, detailed_results, execution_env = compute_code_eval(
             predictions=generations,
             references=[reference["assertions"] for reference in references],
             k=1,
@@ -141,4 +142,4 @@ class StudentEval(Task):
         # TODO: They also calculated mean pass@1 for each group (reference['group']),
         #  do we need that as well?
 
-        return detailed_results
+        return {**detailed_results, "language": self.LANGUAGE, "execution_env": execution_env}

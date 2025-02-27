@@ -48,6 +48,7 @@ def create_task(category, num_seeds):
 
 
 class GeneralPerturbedHumanEval(Task):
+    LANGUAGE = "python"
     DATASET_PATH = "RaymondLi/perturbed_humaneval"
 
     def __init__(self, category, num_seeds):
@@ -122,7 +123,7 @@ class GeneralPerturbedHumanEval(Task):
         :return: dict[str: float]
         """
 
-        _, detailed_results = compute_code_eval(
+        _, detailed_results, execution_env = compute_code_eval(
             references=[ref["test_code"] for ref in references],
             predictions=generations,
             language="python",
@@ -172,4 +173,4 @@ class GeneralPerturbedHumanEval(Task):
             rp1[transformation] = res
 
         # TODO: for overall-performance, a prompt is solved if correct over the s prompts for all transformation categories.
-        return rp1
+        return {**rp1, "language": self.LANGUAGE, "execution_env": execution_env}

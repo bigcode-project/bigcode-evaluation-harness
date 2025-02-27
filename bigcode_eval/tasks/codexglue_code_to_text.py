@@ -94,6 +94,7 @@ class GeneralCodeToText(Task):
 
     def __init__(self, language):
         self.DATASET_NAME = language
+        self.LANGUAGE = language
         stop_words = ["'''", '"""'] if language == "python" else ["\n"]
         super().__init__(
             stop_words=stop_words,
@@ -203,7 +204,9 @@ class GeneralCodeToText(Task):
         bleu_score = compute_codexglue_code_to_text_bleu(
             (ref, gen[0]) for ref, gen in zip(references, generations)
         )
-        return {"blue": bleu_score}
+        return {
+            "blue": bleu_score, "language": self.LANGUAGE, "execution_env": ""
+        }
 
 
 class LeftCodeToText(GeneralCodeToText):

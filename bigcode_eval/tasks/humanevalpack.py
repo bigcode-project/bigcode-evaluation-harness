@@ -185,6 +185,7 @@ class HumanEvalPack(Task):
     def __init__(self, prompt="instruct", language="python", with_docs=True):
         
         self.DATASET_NAME = language
+        self.LANGUAGE = language
         self.prompt = prompt        
         stop_words = LANGUAGE_TO_STOP_WORDS[language]
         if self.prompt.startswith("edit"):
@@ -514,7 +515,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
                     gen[i] = new_gen
 
         ### EVALUATION ###
-        results, logs = compute_code_eval(
+        results, logs, execution_env = compute_code_eval(
             predictions=generations,
             references=references,
             timeout=timeout,
@@ -548,7 +549,7 @@ class HumanEvalPackGenerative(HumanEvalPack):
                 print("Ref")
                 print(ref)
         """
-        return results
+        return {**results, "language": self.LANGUAGE, "execution_env": execution_env}
 
 
 class HumanEvalFixBase(HumanEvalPackGenerative):

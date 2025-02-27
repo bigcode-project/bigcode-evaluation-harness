@@ -9,6 +9,8 @@ class Task(ABC):
     answers, generation settings and evaluation methods.
     """
 
+    LANGUAGE: str = "python"
+
     # The name of the `Task` benchmark as denoted in the HuggingFace datasets Hub
     DATASET_PATH: str = None
 

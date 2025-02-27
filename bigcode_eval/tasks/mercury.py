@@ -27,6 +27,7 @@ class Mercury(Task):
     answers, generation settings and evaluation methods.
     """
 
+    LANGUAGE = "python"
     DATASET_PATH = "Elfsong/Mercury"
 
     def __init__(self, prompt):
@@ -103,4 +104,4 @@ class Mercury(Task):
         
         results = compute_beyond_eval(generations, references)
         
-        return results
+        return {**results, "language": self.LANGUAGE, "execution_env": "local"}
