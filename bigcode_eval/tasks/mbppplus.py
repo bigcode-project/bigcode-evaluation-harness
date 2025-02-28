@@ -71,4 +71,4 @@ class MBPPPlus(MBPP):
             predictions=generations,
             timeout=10.0,  # 10s timeout
         )
-        return results
+        return results,_
