@@ -83,4 +83,4 @@ class MBPP(Task):
             references=references,
             predictions=generations,
         )
-        return results
+        return results,_

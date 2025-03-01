@@ -106,8 +106,18 @@ class Evaluator:
             if self.allow_code_execution and task.requires_execution:
                 os.environ["HF_ALLOW_CODE_EVAL"] = "1"
             print("Evaluating generations...")
-            results = task.process_results(generations, references)
-            return results
+
+            if task_name in ["humanevalplus", "mbppplus"]:
+                results , correctness  = task.process_results(generations, references)  # Unpack (results, correctness)
+                return results , correctness
+            else:
+                # Otherwise just return results
+                results = task.process_results(generations, references)
+                return results
+            # results , correctness  = task.process_results(generations, references)
+            # return results , correctness
+            # results  = task.process_results(generations, references)
+            # return results
 
     def save_json_files(
         self,

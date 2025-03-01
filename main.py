@@ -262,7 +262,13 @@ def main():
             print("evaluation only mode")
         evaluator = Evaluator(accelerator, None, None, args)
         for task in task_names:
-            results[task] = evaluator.evaluate(task)
+            # results[task] = evaluator.evaluate(task)
+            if task in ["humanevalplus", "mbppplus"]:
+                # These tasks return (results, correctness)
+                results[task], correctness = evaluator.evaluate(task)
+            else:
+                # These tasks return results only
+                results[task] = evaluator.evaluate(task)
     else:
         # here we generate code and save it (evaluation is optional but True by default)
         dict_precisions = {
@@ -409,10 +415,27 @@ def main():
                         args.save_model_stats_path,
                     )
             else:
-                results[task] = evaluator.evaluate(
-                    task, intermediate_generations=intermediate_generations
-                )
-
+                if task in ["humanevalplus", "mbppplus"]:
+                    # These tasks return (results, correctness)
+                    results[task], correctness = evaluator.evaluate(
+                        task, intermediate_generations=intermediate_generations
+                    )
+                    #TODO: Need to rewrite for n_samples>1
+                    task_pass_status = {
+                        task_id: any(entry[1]['passed'] for entry in entries)
+                        for task_id, entries in correctness.items()
+                    }
+                    results["task_pass_status"]=task_pass_status
+                else:
+                    # These tasks return results only
+                    results[task] = evaluator.evaluate(
+                        task, intermediate_generations=intermediate_generations
+                    )
+                
+                # results[task] = evaluator.evaluate(
+                #     task, intermediate_generations=intermediate_generations
+                # )
+                
     # Save all args to config
     results["config"] = vars(args)
     if not args.generation_only:

@@ -102,4 +102,4 @@ class GeneralHumanEval(Task):
             num_workers=self.num_workers,
             timeout=self.timeout,
         )
-        return results
+        return results , _
