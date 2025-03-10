@@ -72,9 +72,7 @@ class WxInference:
             return f"{prefix}{prompt_content['prefix']}{prompt_content['suffix']}"
 
         else:
-            raise ValueError(
-                f"Unsupported prompt format: '{prompt_content}'."
-            )
+            raise ValueError(f"Unsupported prompt format: '{prompt_content}'.")
 
     @staticmethod
     def limit_inputs(
@@ -126,10 +124,12 @@ class WxInference:
         )
 
         return [
-            prefix + task.get_prompt(instance)
-            if isinstance(sample, str)
-            else self.create_prompt_from_dict(
-                task.get_prompt(instance), prefix, instruction_tokens
+            (
+                prefix + task.get_prompt(instance)
+                if isinstance(sample, str)
+                else self.create_prompt_from_dict(
+                    task.get_prompt(instance), prefix, instruction_tokens
+                )
             )
             for instance in dataset
         ]
@@ -148,18 +148,23 @@ class WxInference:
 
         dataset = self.limit_inputs(dataset, args)
 
-        prompts = self.prepare_inputs(
-            dataset, task, prefix, args.instruction_tokens
-        )
+        prompts = self.prepare_inputs(dataset, task, prefix, args.instruction_tokens)
 
-        predictions = [
-            [result["results"][0]["generated_text"]]
-            for result in
-            model.generate(
-                prompt=prompts,
-                params=gen_params,
-            )
-        ]
+        predictions = []
+
+        for i in range(0, len(prompts), args.batch_size):
+            batch = prompts[i : min(i + args.batch_size, len(prompts))]
+            copies = [prompt for prompt in batch for _ in range(args.n_samples)]
+            generations = model.generate(prompt=copies, params=gen_params)
+
+            batch_generations = [[] for _ in range(len(batch))]
+            for j, result in enumerate(generations):
+                batch_index = j // args.n_samples
+                batch_generations[batch_index].append(
+                    result["results"][0]["generated_text"]
+                )
+
+            predictions.extend(batch_generations)
 
         if postprocess:
             predictions = self.postprocess_predictions(
@@ -186,9 +191,8 @@ class WxInference:
 
         return [
             [
-                task.postprocess_generation(
-                    prompts[i] + predictions[i][0], i
-                )
+                task.postprocess_generation(prompts[i] + prediction, i)
+                for prediction in predictions[i]
             ]
             for i in range(len(predictions))
         ]
