@@ -68,7 +68,7 @@ class Evaluator:
         intermediate_save_generations_path = f"{os.path.splitext(self.args.save_generations_path)[0]}_{task_name}_intermediate.json"
         curr_sample_idx = len(curr_generations)
 
-        generations, all_logits = parallel_generations(
+        generations, all_logits, input_len_dict = parallel_generations(
             task,
             dataset,
             self.accelerator,
@@ -87,14 +87,14 @@ class Evaluator:
             warnings.warn(
                 f"Number of tasks wasn't proportional to number of devices, we removed extra predictions to only keep nsamples={self.args.n_samples}"
             )
-        return generations, references, all_logits
+        return generations, references, all_logits, input_len_dict
 
     def evaluate(self, task_name, intermediate_generations=None):
         task = tasks.get_task(task_name, self.args)
         if task.requires_execution and not self.allow_code_execution:
             raise ValueError(_WARNING)
 
-        generations, references, all_logits = self.generate_text(task_name, intermediate_generations=intermediate_generations)
+        generations, references, all_logits, input_len_dict = self.generate_text(task_name, intermediate_generations=intermediate_generations)
 
         if self.accelerator.is_main_process:
             if not self.args.load_generations_path:
@@ -109,7 +109,7 @@ class Evaluator:
 
             if task_name in ["humanevalplus", "mbppplus"]:
                 results , correctness  = task.process_results(generations, references)  # Unpack (results, correctness)
-                return results , correctness
+                return results , correctness, input_len_dict
             else:
                 # Otherwise just return results
                 results = task.process_results(generations, references)

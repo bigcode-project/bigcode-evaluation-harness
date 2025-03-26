@@ -143,7 +143,7 @@ def parallel_generations(
         # model.to() is not supported for 8bit and 4bit models
         model, ds_loader = accelerator.prepare(model, ds_loader)
 
-    generations, all_logits = complete_code(
+    generations, all_logits, input_len_dict = complete_code(
         task,
         accelerator,
         model,
@@ -161,4 +161,4 @@ def parallel_generations(
         intermediate_save_generations_path=intermediate_save_generations_path,
         **gen_kwargs,
     )
-    return generations, all_logits
+    return generations, all_logits, input_len_dict

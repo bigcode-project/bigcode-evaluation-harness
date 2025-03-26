@@ -252,6 +252,8 @@ def complete_code(
     all_outputs = []
     generations = [] if not intermediate_generations else intermediate_generations
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
+    input_len_dict = defaultdict(list)  # dict of list of input length
+    input_len = 0
     for step, batch in tqdm(
         enumerate(dataloader),
         total=math.ceil(
@@ -313,11 +315,12 @@ def complete_code(
                         assert batch_size == 1  # otherwise the inputs and outputs could be padded and we couldn't find out exact lengths
                         index = 0  # index is index in batch, here 0 since only 1 sample in batch
                         inplen = inputs.shape[-1]
+                        input_len = inplen
                         contlen = len(generated_tokens[0]) - inplen
                         out = extract_model_data(cont, index, inplen, contlen, model.config)  # VT TODO torch.save(list of these out, one for each sample)
                         out.update({"batch_index": step})
                         all_outputs.append(out)
-                        print(type(out))
+                        # print(type(out))
                     except ValueError as e:
                         # When the length of input_ids == max_length, the generation is the same as the input
                         if str(e).startswith(f"Input length of input_ids is {inputs.shape[1]}, but `max_length` is set to {gen_kwargs['max_length']}"):
@@ -340,6 +343,7 @@ def complete_code(
 
             for sample, generated_tokens in zip(generated_tasks, generated_tokens):
                 gen_token_dict[sample].append(generated_tokens)
+                input_len_dict[sample].append(input_len)
 
             if save_every_k_tasks >= 1 and (step + 1) % save_every_k_tasks == 0:
                 if not intermediate_save_generations_path:
@@ -377,7 +381,7 @@ def complete_code(
     )
 
     generations.extend(code_gens)
-    return generations, all_outputs
+    return generations, all_outputs, input_len_dict
 
 
 def update_code_gens(

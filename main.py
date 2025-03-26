@@ -2,7 +2,7 @@ import os
 import fnmatch
 import json
 import warnings
-
+import numpy as np
 import datasets
 import torch
 import transformers
@@ -417,9 +417,20 @@ def main():
             else:
                 if task in ["humanevalplus", "mbppplus"]:
                     # These tasks return (results, correctness)
-                    results[task], correctness = evaluator.evaluate(
+                    results[task], correctness, input_len_dict = evaluator.evaluate(
                         task, intermediate_generations=intermediate_generations
                     )
+
+                    # Convert defaultdict to a regular dict
+                    regular_dict = {int(k): [int(i) for i in v] for k, v in input_len_dict.items()}
+
+                    # Specify the file path where you want to save the JSON
+                    file_path = f"input_len_dict_{task}.json"
+
+                    # Save the regular dict to a JSON file
+                    with open(file_path, "w") as json_file:
+                        json.dump(regular_dict, json_file, indent=4)
+
                     #TODO: Need to rewrite for n_samples>1
                     task_pass_status = {
                         task_id: any(entry[1]['passed'] for entry in entries)
