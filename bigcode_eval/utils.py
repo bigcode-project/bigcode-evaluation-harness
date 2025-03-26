@@ -315,8 +315,8 @@ def complete_code(
                         assert batch_size == 1  # otherwise the inputs and outputs could be padded and we couldn't find out exact lengths
                         index = 0  # index is index in batch, here 0 since only 1 sample in batch
                         inplen = inputs.shape[-1]
-                        input_len = inplen
                         contlen = len(generated_tokens[0]) - inplen
+                        input_len = (inplen, contlen)
                         out = extract_model_data(cont, index, inplen, contlen, model.config)  # VT TODO torch.save(list of these out, one for each sample)
                         out.update({"batch_index": step})
                         all_outputs.append(out)

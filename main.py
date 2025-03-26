@@ -417,12 +417,12 @@ def main():
             else:
                 if task in ["humanevalplus", "mbppplus"]:
                     # These tasks return (results, correctness)
-                    results[task], correctness, input_len_dict = evaluator.evaluate(
+                    results[task], correctness, range_dict = evaluator.evaluate(
                         task, intermediate_generations=intermediate_generations
                     )
 
                     # Convert defaultdict to a regular dict
-                    regular_dict = {int(k): [int(i) for i in v] for k, v in input_len_dict.items()}
+                    regular_dict = {int(k): [(int(input_len), int(cont_len)) for input_len, cont_len in v] for k, v in range_dict.items()}
 
                     # Specify the file path where you want to save the JSON
                     file_path = f"input_len_dict_{task}.json"
@@ -442,11 +442,9 @@ def main():
                     results[task] = evaluator.evaluate(
                         task, intermediate_generations=intermediate_generations
                     )
-                
                 # results[task] = evaluator.evaluate(
                 #     task, intermediate_generations=intermediate_generations
                 # )
-                
     # Save all args to config
     results["config"] = vars(args)
     if not args.generation_only:
