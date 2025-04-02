@@ -1,9 +1,10 @@
-import os
 import fnmatch
 import json
+import os
 import warnings
-import numpy as np
+
 import datasets
+import numpy as np
 import torch
 import transformers
 from accelerate import Accelerator
@@ -48,6 +49,11 @@ def parse_args():
         "--save_model_stats_path",
         default="./stats.pt",
         help="Location to save model evaluation information to use for uncertainty evaluation",
+    )
+    parser.add_argument(
+        "--save_input_len_path",
+        default="./input_len_dict.json",
+        help="Location to save input_len information to use for uncertainty evaluation specifically tokensar",
     )
     parser.add_argument(
         "--modeltype",
@@ -371,7 +377,7 @@ def main():
         WIZARD_LLAMA_MODELS = [
             "WizardLM/WizardCoder-Python-34B-V1.0",
             "WizardLM/WizardCoder-34B-V1.0",
-            "WizardLM/WizardCoder-Python-13B-V1.0"
+            "WizardLM/WizardCoder-Python-13B-V1.0",
         ]
         if args.model in WIZARD_LLAMA_MODELS:
             tokenizer.bos_token = "<s>"
@@ -380,10 +386,9 @@ def main():
 
         evaluator = Evaluator(accelerator, model, tokenizer, args)
 
-        if (
+        if args.load_generations_intermediate_paths and len(
             args.load_generations_intermediate_paths
-            and len(args.load_generations_intermediate_paths) != len(task_names)
-        ):
+        ) != len(task_names):
             raise ValueError(
                 "If passing --load_generations_intermediate_paths, \
                 must pass equal number of files as number of tasks"
@@ -404,7 +409,9 @@ def main():
                     task, intermediate_generations=intermediate_generations
                 )
                 if accelerator.is_main_process:
-                    save_generations_path = f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
+                    save_generations_path = (
+                        f"{os.path.splitext(args.save_generations_path)[0]}_{task}.json"
+                    )
                     save_references_path = f"references_{task}.json"
                     evaluator.save_json_files(
                         generations,
@@ -422,21 +429,26 @@ def main():
                     )
 
                     # Convert defaultdict to a regular dict
-                    regular_dict = {int(k): [(int(input_len), int(cont_len)) for input_len, cont_len in v] for k, v in range_dict.items()}
+                    regular_dict = {
+                        int(k): [
+                            (int(input_len), int(cont_len)) for input_len, cont_len in v
+                        ]
+                        for k, v in range_dict.items()
+                    }
 
                     # Specify the file path where you want to save the JSON
-                    file_path = f"input_len_dict_{task}.json"
+                    file_path = f"{args.save_input_len_path}_{task}.json"
 
                     # Save the regular dict to a JSON file
                     with open(file_path, "w") as json_file:
                         json.dump(regular_dict, json_file, indent=4)
 
-                    #TODO: Need to rewrite for n_samples>1
+                    # TODO: Need to rewrite for n_samples>1
                     task_pass_status = {
-                        task_id: any(entry[1]['passed'] for entry in entries)
+                        task_id: any(entry[1]["passed"] for entry in entries)
                         for task_id, entries in correctness.items()
                     }
-                    results["task_pass_status"]=task_pass_status
+                    results["task_pass_status"] = task_pass_status
                 else:
                     # These tasks return results only
                     results[task] = evaluator.evaluate(
