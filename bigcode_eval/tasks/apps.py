@@ -116,8 +116,6 @@ class GeneralAPPS(Task):
             list of str containing refrences (not needed for APPS Task)
         """
         code_metric = load("codeparrot/apps_metric")
-        if level is None:
-            level = self.DATASET_NAME
         results = code_metric.compute(
             predictions=generations, k_list=self.k_list, level=self.DATASET_NAME
         )
