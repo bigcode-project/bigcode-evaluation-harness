@@ -95,3 +95,6 @@ class Task(ABC):
             if stop_index != -1 and stop_index < min_stop_index:
                 min_stop_index = stop_index
         return decoded_string[:min_stop_index]
+
+    def get_train_data(self):
+        return self.dataset["train"]

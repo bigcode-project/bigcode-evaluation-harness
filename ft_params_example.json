@@ -1,0 +1,11 @@
+{
+  "tune_method": "LoRA",
+  "remote_tune_name": "Sample code model tuning",
+  "num_epochs": 5,
+  "learning_rate": 0.00001,
+  "batch_size": 4,
+  "lora_alpha": 16,
+  "lora_r": 8,
+  "accumulate_steps": 2,
+  "lora_target_modules": ["all-linear"]
+}

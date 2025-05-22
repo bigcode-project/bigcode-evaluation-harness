@@ -8,7 +8,7 @@ from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
 
 from bigcode_eval.utils import TokenizedDataset, complete_code
-from bigcode_eval.wx_ai import WxInference
+from bigcode_eval.wx_ai import wx_inference
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
@@ -64,9 +64,7 @@ def parallel_generations(
         return generations[:n_tasks]
 
     if args.modeltype == "wx":
-        wx_inference = WxInference()
-
-        return wx_inference.infer(
+        return wx_inference(
             dataset=dataset,
             task=task,
             args=args,

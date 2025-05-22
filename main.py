@@ -211,6 +211,13 @@ def parse_args():
         action="store_true",
         help="Don't run generation but benchmark groundtruth (useful for debugging)",
     )
+    parser.add_argument(
+        "--fine_tuning_params",
+        type=str,
+        default=None,
+        help="Path to the JSON file which contains parameters for fine tuning. Default"
+             "is None (no fine tuning)",
+    )
     return parser.parse_args()
 
 
@@ -374,6 +381,9 @@ def main():
                 "If passing --load_generations_intermediate_paths, \
                 must pass equal number of files as number of tasks"
             )
+
+        if args.fine_tuning_params:
+            args.fine_tuning_params = os.path.abspath(args.fine_tuning_params)
 
         for idx, task in enumerate(task_names):
             intermediate_generations = None
