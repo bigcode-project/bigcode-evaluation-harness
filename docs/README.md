@@ -184,7 +184,7 @@ For [StarChat-Beta](https://huggingface.co/HuggingFaceH4/starchat-beta) for exam
 [MBPP](https://huggingface.co/datasets/mbpp):  consists of around 1,000 crowd-sourced Python programming problems, 
 designed to be solvable by entry-level programmers. Each problem consists of a task description in English, a code solution and 3 automated test cases. We evaluate on the test set of samples from index 11 to 511.
 
-* Prompts and generation: We use a few-shot setting in InCoder style prompt: we feed the prompt to the model as a doctring and only include one solution, to help the model catch the function name which is required in the unit tests.
+* Prompts and generation: We use a few-shot setting in InCoder style prompt: we feed the prompt to the model as a doctring and only include one test case, to help the model catch the function name which is required in the unit tests.
   ```python
   prompt = f'"""\n{description}\n{test_example}\n"""\n'
   ```
@@ -207,7 +207,7 @@ accelerate launch  main.py \
 Low temperatures generally work better for small $k$ in pass@k.
 
 ### MBPP+
-[MBPP+](https://huggingface.co/datasets/evalplus/mbppplus): MBPP with additional unit tests (35x of the original MBPP) for each of the 164 problems.
+[MBPP+](https://huggingface.co/datasets/evalplus/mbppplus): MBPP with additional unit tests (35x of the original MBPP) for each of the problems.
 
 The generation and evaluation follows the same approach as [MBPP](#mbpp). One only needs to change the task name to `mbppplus` to run the evaluation on MBPP+, such as:
 
