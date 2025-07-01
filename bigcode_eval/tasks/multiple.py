@@ -41,7 +41,7 @@ _CITATION = """
 LANGUAGES = [
     "py",
     "sh",
-    "clj"
+    "clj",
     "cpp",
     "cs",
     "d",
@@ -53,7 +53,7 @@ LANGUAGES = [
     "js",
     "jl",
     "lua",
-    "ml"
+    "ml",
     "pl",
     "php",
     "r",
