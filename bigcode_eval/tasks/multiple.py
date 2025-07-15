@@ -89,7 +89,7 @@ class GeneralMultiPLE(Task):
 
     DATASET_PATH = "nuprl/MultiPL-E"
     DATASET_NAME = None
-    DATASET_REVISION = "ff5c146da05f10bc69b9ce393b77f381b3825d1b"
+    DATASET_REVISION = "28441b6024e71d4a1c1c0f6bf171c935cd5a43f2"
 
     def __init__(self, language):
         self.language = language
