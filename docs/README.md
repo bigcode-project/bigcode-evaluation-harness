@@ -249,7 +249,8 @@ Below is the command to run evaluation on the full benchmark in insertion mode w
 
 ```bash
 export TF_FORCE_GPU_ALLOW_GROWTH=true
-TF_CPP_MIN_LOG_LEVEL=3 accelerate launch main.py \
+export TF_CPP_MIN_LOG_LEVEL=3
+accelerate launch main.py \
   --model <MODEL_NAME> \
   --batch_size <BATCH_SIZE> \
   --tasks ds1000-all-insertion \
@@ -299,8 +300,8 @@ Execution time may vary depending on the programming languages.
 ### APPS
 [APPS](https://huggingface.co/datasets/codeparrot/apps): is a challenging benchmark for code generation with 10,000 Python problems, 
 5,000 for the training and 5000 for the evaluation. It has three difficulty levels: introductory, interview and competition. 
-Most papers finetune models on the training split before the evaluation, since the problems are often challenging the problem descriptions are long.
-However, Chen et al. evaluated Codex-12B in a one-shot setting, although the details about the prompt format aren't given we propose two evaluation modes: 
+Most papers finetune models on the training split before the evaluation, since the problems are often challenging and the problem descriptions are long.
+However, Chen et al. evaluated Codex-12B in a one-shot setting, although the details about the prompt format aren't given, we propose two evaluation modes: 
 with fine-tuning and in a one-shot setting:
 * Prompts & generation
 
@@ -344,7 +345,7 @@ To use this setting (it's the case by default) set the argument `setup_apps` to 
 
 * Evaluation: we have two types of evaluations for this benchmark:
   * the original Hendrycks et al. evaluation, where we do single generations (`n_samples=1`) and compute the average accuracy of the number 
-of tests that pass for each problem, and the sctrict accuracy, where a problem is solved if all tests pass and we average over all problems. This metric is fast to compute given that we do single generations and capture incremental improvement especially for small models. However, strict accuracy is often very low and average accuracy may not very reprsentative as the number of tests is not consistent through the problems. Recent papers evaluate this benchmark using pass@k.
+of tests that pass for each problem, and the strict accuracy, where a problem is solved if all tests pass and we average over all problems. This metric is fast to compute given that we do single generations and capture incremental improvement especially for small models. However, strict accuracy is often very low and average accuracy may not very reprsentative as the number of tests is not consistent through the problems. Recent papers evaluate this benchmark using pass@k.
   * we compute the pass@1, pass@10 and pass@100 and generate 200 problems per task (`n_samples=200`). Note that this takes a lot of time since there are 5000 evaluation samples, and there aren't some python stop words for the generation to prevent small models that struggle in answering from generating until max_length or EOS token.
 
 In case of single generations (`n_samples=1`), the first metric is used, but when multiple generations are made the pass@k metric is used.
