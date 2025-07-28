@@ -37,6 +37,7 @@ messages=messages
 
 import os
 import openai
+import litellm
 import jsonlines
 import termcolor
 
@@ -170,7 +171,8 @@ class ChatWrapper:
         ]
         while True:
             try:
-                response = openai.ChatCompletion.create(
+                # Equivalent to response = openai.ChatCompletion.create(
+                response = litellm.completion(
                     model=self._model,
                     messages=messages,
                     temperature=0.2,
@@ -199,8 +201,11 @@ if __name__ == '__main__':
         with jsonlines.open(f"completions_{LANGUAGE}_humanevalexplaindescribe.jsonl", "r") as f:
             descriptions = [line["raw_generation"][0] for line in f]
 
-    openai.organization = os.getenv("OPENAI_ORGANIZATION")
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    # Equivalent to:
+    # openai.organization = os.getenv("OPENAI_ORGANIZATION")
+    # openai.api_key = os.getenv("OPENAI_API_KEY")
+    litellm.organization = os.getenv("OPENAI_ORGANIZATION")
+    litellm.api_key = os.getenv("OPENAI_API_KEY")
 
     samples = [s for s in load_dataset("bigcode/humanevalpack", LANGUAGE)["test"]]
 
