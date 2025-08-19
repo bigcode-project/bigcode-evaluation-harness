@@ -71,9 +71,21 @@ class TokenizedDataset(IterableDataset):
                     # Instruction-tuning mode
                     instruction.append(True)
                     infill.append(False)
-                    prompt = self._make_instruction_prompt(
-                        **prompt_contents, prefix=self.prefix
-                    )
+
+                    if self.tokenizer.chat_template is not None:
+                        prompt = (
+                            self.prefix
+                            + self.tokenizer.apply_chat_template(
+                                [{"role": "user", "content": prompt_contents['instruction']}],
+                                add_generation_prompt=True,
+                                tokenize=False
+                            )
+                            + prompt_contents['context']
+                        )
+                    else:
+                        prompt = self._make_instruction_prompt(
+                            **prompt_contents, prefix=self.prefix
+                        )
             else:
                 raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
             prompts.append(prompt)
