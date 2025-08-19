@@ -7,6 +7,7 @@ from accelerate.utils import set_seed
 from torch.utils.data.dataloader import DataLoader
 from transformers import StoppingCriteria, StoppingCriteriaList
 
+from bigcode_eval.remote_inference.utils import remote_inference
 from bigcode_eval.utils import TokenizedDataset, complete_code
 
 
@@ -62,6 +63,11 @@ def parallel_generations(
                 )
         return generations[:n_tasks]
 
+    if args.inference_platform != "hf":
+        return remote_inference(
+            args.inference_platform, dataset, task, args
+        )
+
     set_seed(args.seed, device_specific=True)
 
     # Setup generation settings
@@ -89,7 +95,7 @@ def parallel_generations(
         stopping_criteria.append(
             TooLongFunctionCriteria(0, task.max_length_multiplier)
         )
-    
+
     if stopping_criteria:
         gen_kwargs["stopping_criteria"] = StoppingCriteriaList(stopping_criteria)
 

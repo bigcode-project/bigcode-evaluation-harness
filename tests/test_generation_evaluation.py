@@ -54,6 +54,7 @@ def update_args(args):
     args.precision = None
     args.modeltype = None
     args.max_memory_per_gpu = None
+    args.inference_platform = "hf"
     return args
 
 
