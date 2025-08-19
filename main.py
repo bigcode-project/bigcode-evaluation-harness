@@ -229,6 +229,14 @@ def get_gpus_max_memory(max_memory, num_gpus):
     return max_memory
 
 
+def use_hpu():
+    import importlib
+    if importlib.util.find_spec("habana_frameworks") is not None:
+        import habana_frameworks.torch.hpu as hthpu
+        if hthpu.is_available():
+            return True
+    return False
+
 def main():
     args = parse_args()
     transformers.logging.set_verbosity_error()
@@ -239,9 +247,18 @@ def main():
     else:
         task_names = pattern_match(args.tasks.split(","), ALL_TASKS)
 
-    accelerator = Accelerator()
+    if use_hpu():
+        from optimum.habana.accelerate import GaudiAccelerator
+        accelerator = GaudiAccelerator()
+    else:
+        accelerator = Accelerator()
+
     if accelerator.is_main_process:
         print(f"Selected Tasks: {task_names}")
+
+    if accelerator.device.type == "hpu":
+        from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
+        adapt_transformers_to_gaudi()
 
     results = {}
     if args.load_generations_path:
@@ -309,6 +326,10 @@ def main():
             raise ValueError(
                 f"Non valid modeltype {args.modeltype}, choose from: causal, seq2seq"
             )
+
+        if accelerator.device.type == "hpu":
+            from habana_frameworks.torch.hpu import wrap_in_hpu_graph
+            model = wrap_in_hpu_graph(model)
 
         if args.peft_model:
             from peft import PeftModel  # dynamic import to avoid dependency on peft
