@@ -426,6 +426,27 @@ accelerate launch main.py  \
     --metric_output_path <MODEL_NAME>.json
 ```
 
+## ENAMEL
+
+[ENAMEL](https://github.com/q-rz/enamel) is a rigorous & high-standard benchmark for evaluating the efficiency of generated Python code under large-scale inputs. It supports a new efficiency metric called eff@k, which generalizes the pass@k metric. Besides that, it provides expert-written reference solutions and expert-written test case generators, thus setting a high-standard for efficiency evaluation. See [this paper](https://arxiv.org/abs/2406.06647) for detail.
+
+**Notice:** It is NOT recommended to use multiple threads or processes in efficiency evaluation. That can negatively affect efficiency results.
+
+```python
+accelerate launch main.py \
+  --model <MODEL_NAME> \
+  --max_length_generation 2048 \
+  --tasks enamel \
+  --temperature 0.8 \
+  --top_p 0.95 \
+  --do_sample True \
+  --n_samples 10 \
+  --batch_size 10 \
+  --allow_code_execution
+```
+
+This implementation also supports the two subsets Algo and Impl in the paper: `--task enamel-algo` / `--task enamel-impl`.
+
 ## Code generation benchmarks without unit tests
 
 For these tasks, we do single generations and compare the generated code against reference solutions and compute BLEU score. For the following tasks, we use a two-shot setting where we include 2 inputs and their solutions in the prompt, all preceded by an instruction such as: ` "Answer the following instructions in a one line SQL query:\n"`. The solutions consist of one line so we stop the generation when a new line is generated. 3 languages are present: Python, SQL and Java.
