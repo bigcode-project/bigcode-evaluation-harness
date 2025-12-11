@@ -6,3 +6,6 @@ pyext==0.5
 mosestokenizer==1.0.0
 huggingface_hub>=0.11.1
 fsspec>=2023.12.2
+tree-sitter==0.25.2
+tree-sitter-c-sharp==0.23.1
+tree-sitter-java==0.23.5

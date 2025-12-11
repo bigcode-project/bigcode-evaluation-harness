@@ -32,6 +32,7 @@ Below are the features and tasks of this framework:
     - [Recode](https://github.com/amazon-science/recode/tree/main) applied to the HumanEval benchmark. It evaluates the robustness of code-generation models.
     - [Pal](https://github.com/reasoning-machines/pal) Program-aided Language Models evaluation for grade school math problems : [GSM8K](https://huggingface.co/datasets/gsm8k) and [GSM-HARD](https://huggingface.co/datasets/reasoning-machines/gsm-hard). These problems are solved by generating reasoning chains of text and code.
     - Code to text task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_ct_code_to_text) (zero-shot & fine-tuning) for 6 languages: **Python, Go, Ruby, Java, JavaScript and PHP.**  Documentation translation task from [CodeXGLUE](https://huggingface.co/datasets/code_x_glue_tt_text_to_text).
+    - [Code-to-Code Translation](https://huggingface.co/datasets/google/code_x_glue_cc_code_to_code_trans) task from CodeXGLUE for translating between **Java** and **C#**, evaluated using the [CodeBLEU](https://github.com/k4black/codebleu) metric.
     - [CoNaLa](https://huggingface.co/datasets/neulab/conala) for **Python** code generation (2-shot setting and evaluation with BLEU score).
     - [Concode](https://huggingface.co/datasets/code_x_glue_tc_text_to_code) for **Java** code generation (2-shot setting and evaluation with BLEU score).
     - 3 multilingual downstream classification tasks: [Java Complexity prediction](https://huggingface.co/datasets/codeparrot/codecomplex), [Java code equivalence prediction](https://huggingface.co/datasets/code_x_glue_cc_clone_detection_big_clone_bench), [C code defect prediction](https://huggingface.co/datasets/code_x_glue_cc_defect_detection).
@@ -51,6 +52,14 @@ Install [`torch`](https://pytorch.org/get-started/locally/) based on your device
 ```
 pip install -e .
 ```
+
+### CodeBLEU Installation (for Code-to-Code Translation)
+To run the `codexglue_code_to_code_trans` task, you need to install the [CodeBLEU](https://github.com/k4black/codebleu) metric. Due to a [dependency conflict](https://github.com/k4black/codebleu/issues/62) between `codebleu` and newer `tree-sitter` versions, we first install `codebleu` without its dependencies, then install the remaining requirements which include compatible `tree-sitter` packages:
+```bash
+pip install -r requirements-codebleu.txt --no-deps
+pip install -r requirements.txt
+```
+
 To run the `DS-1000` benchmark, additional constraints must be resolved.
 ```
 # python version must be 3.7.10
