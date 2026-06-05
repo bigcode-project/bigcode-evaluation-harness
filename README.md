@@ -215,3 +215,8 @@ We thank EleutherAI for their work on the [lm-evaluation harness](https://github
   year = 2022,
 }
 ```
+
+
+## Benchmarks
+
+- [REFUTE](https://huggingface.co/datasets/BGPT-OFFICIAL/refute) — Scientific critique & epistemic calibration (Apache-2.0). [Leaderboard](https://huggingface.co/spaces/BGPT-OFFICIAL/refute-leaderboard) · [Report](https://huggingface.co/datasets/BGPT-OFFICIAL/refute/blob/main/TECHNICAL_REPORT.md) · [Integrations](https://huggingface.co/datasets/BGPT-OFFICIAL/refute/tree/main/integrations)
