@@ -151,8 +151,9 @@ class GeneralMultiPLE(Task):
             for i, doc in enumerate(self.get_dataset())
             if i < len(generations)
         ]
-        # a common temp dir for all the problems
-        temp_dir = tempfile.gettempdir()
+        # a fresh temp dir for the problems of this run, so that results files
+        # left in the shared temp dir by other runs or tasks are not scored
+        temp_dir = tempfile.mkdtemp()
         list_files = []
         for (prompt_name, generation, reference) in zip(
             prompts_names, generations, references
