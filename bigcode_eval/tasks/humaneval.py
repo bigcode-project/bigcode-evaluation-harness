@@ -29,13 +29,20 @@ def create_all_tasks():
     :return: {task_name: task}
         e.g. {multiple-py: Task, multiple-java: Task}
     """
-    return {"humaneval": create_task(True), "humaneval-unstripped": create_task(False)}
+    return {
+        "humaneval": create_task(True),
+        "humaneval-unstripped": create_task(False),
+        "humaneval-bayes-at-n": create_task(True, bayes_at_n=True),
+        "humaneval-unstripped-bayes-at-n": create_task(False, bayes_at_n=True),
+    }
 
 
-def create_task(strip_prompt):
+def create_task(strip_prompt, bayes_at_n=False):
     class HumanEval(GeneralHumanEval):
-        def __init__(self, **kwargs):
-            super().__init__(strip_prompt, **kwargs)
+        def __init__(self, n_samples=None, **kwargs):
+            super().__init__(
+                strip_prompt, bayes_at_n=bayes_at_n, n_samples=n_samples, **kwargs
+            )
 
     return HumanEval
 
@@ -47,7 +54,15 @@ class GeneralHumanEval(Task):
 
     DATASET_PATH = "openai_humaneval"
 
-    def __init__(self, strip_prompt, k=[1, 10, 100], num_workers=16, timeout=3.0):
+    def __init__(
+        self,
+        strip_prompt,
+        k=[1, 10, 100],
+        num_workers=16,
+        timeout=3.0,
+        bayes_at_n=False,
+        n_samples=None,
+    ):
         super().__init__(
             stop_words=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```", "<file_sep>"],
             requires_execution=True,
@@ -56,6 +71,8 @@ class GeneralHumanEval(Task):
         self.k = k
         self.num_workers = num_workers
         self.timeout = timeout
+        self.bayes_at_n = bayes_at_n
+        self.n_samples = n_samples
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -101,5 +118,7 @@ class GeneralHumanEval(Task):
             k=self.k,
             num_workers=self.num_workers,
             timeout=self.timeout,
+            bayes_at_n=self.bayes_at_n,
+            expected_n=self.n_samples,
         )
         return results

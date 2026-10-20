@@ -554,3 +554,8 @@ The complete prompt with 8 shot examples (as used in [PAL](https://github.com/re
 ## How to add a new benchmark
 
 We welcome contributions to add new code benchmarks to this evaluation harness. You can find a step-by-step guide in [`guide.md`](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/docs/guide.md).
+
+## Repeated-trial posterior summaries
+
+The [Bayes@N guide](bayes_at_n.md) describes optional posterior mean and standard
+deviation reporting for the HumanEval and MBPP tasks.

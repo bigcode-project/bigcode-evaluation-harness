@@ -42,6 +42,20 @@ class Evaluator:
 
     def generate_text(self, task_name, intermediate_generations=None):
         task = tasks.get_task(task_name, self.args)
+        if getattr(task, "bayes_at_n", False) and intermediate_generations is not None:
+            raise ValueError(
+                "Bayes@N does not support intermediate checkpoints; "
+                "use a complete saved-generation file."
+            )
+        if (
+            getattr(task, "bayes_at_n", False)
+            and self.args.load_generations_path
+            and self.args.limit_start != 0
+        ):
+            raise ValueError(
+                "Bayes@N does not support limit_start with loaded generations; "
+                "the existing loader does not apply that offset."
+            )
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
         # if args.limit is used, make sure args.limit_start + args.limit <= len(dataset)
@@ -80,6 +94,8 @@ class Evaluator:
             intermediate_save_generations_path=intermediate_save_generations_path,
         )
 
+        if getattr(task, "bayes_at_n", False) and not generations:
+            raise ValueError("Bayes@N needs at least one problem with generations")
         if len(generations[0]) > self.args.n_samples:
             generations = [l[: self.args.n_samples] for l in generations]
             warnings.warn(

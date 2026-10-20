@@ -20,9 +20,11 @@ import itertools
 import os
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from numbers import Integral
 
 import numpy as np
 
+from .bayes_at_n import estimate_bayes_at_n
 from .execute import check_correctness
 
 
@@ -126,8 +128,57 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE."""
 
-def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, timeout=3.0):
-    """Returns the scores"""
+def compute_code_eval(
+    predictions,
+    references,
+    k=[1, 10, 100],
+    num_workers=4,
+    timeout=3.0,
+    bayes_at_n=False,
+    expected_n=None,
+):
+    """Evaluate programs and return aggregate scores plus per-program verdicts.
+
+    Args:
+        predictions: Lists of generated programs, one list per problem.
+        references: One test program per problem.
+        k: Sample budgets for pass@k.
+        num_workers: Number of concurrent program checks.
+        timeout: Timeout in seconds per program.
+        bayes_at_n: Add binary, uniform-prior posterior mean and SD fields.
+        expected_n: Required trials per problem when Bayes@N is enabled.
+            If omitted, infer N from the first row and require every row to match.
+
+    Returns:
+        The score dictionary and per-problem completion verdicts. Optional
+        fields are ``bayes_at_n`` and ``bayes_at_n_std`` on the [0, 1] scale.
+    """
+
+    if bayes_at_n:
+        if (
+            not isinstance(predictions, (list, tuple))
+            or not predictions
+            or not isinstance(references, (list, tuple))
+            or len(predictions) != len(references)
+        ):
+            raise ValueError("Bayes@N needs matching, nonempty predictions and references")
+        if expected_n is not None and (
+            isinstance(expected_n, bool)
+            or not isinstance(expected_n, Integral)
+            or expected_n < 1
+        ):
+            raise ValueError("Bayes@N expected_n must be a positive integer")
+        for candidates, reference in zip(predictions, references):
+            if (
+                not isinstance(candidates, (list, tuple))
+                or not candidates
+                or not all(isinstance(candidate, str) for candidate in candidates)
+                or not isinstance(reference, str)
+            ):
+                raise ValueError("Bayes@N needs nonempty program lists and string references")
+        expected_n = len(predictions[0]) if expected_n is None else expected_n
+        if any(len(row) != expected_n for row in predictions):
+            raise ValueError("Bayes@N needs exactly expected_n programs for every problem")
 
     if os.getenv("HF_ALLOW_CODE_EVAL", 0) != "1":
         raise ValueError(_WARNING)
@@ -155,7 +206,15 @@ def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, ti
             results[result["task_id"]].append((result["completion_id"], result))
 
     total, correct = [], []
+    if bayes_at_n and set(results) != set(range(len(predictions))):
+        raise ValueError("Bayes@N is missing evaluated problems")
     for result in results.values():
+        if bayes_at_n and (
+            len(result) != expected_n
+            or {item[0] for item in result} != set(range(expected_n))
+            or any(not isinstance(item[1].get("passed"), (bool, np.bool_)) for item in result)
+        ):
+            raise ValueError("Bayes@N needs a complete set of unique binary verdicts")
         result.sort()
         passed = [r[1]["passed"] for r in result]
         total.append(len(passed))
@@ -167,6 +226,10 @@ def compute_code_eval(predictions, references, k=[1, 10, 100], num_workers=4, ti
     if not isinstance(ks, (list, tuple)):
         ks = [ks]
     pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
+
+    if bayes_at_n:
+        mean, std = estimate_bayes_at_n(total, correct)
+        pass_at_k.update(bayes_at_n=mean, bayes_at_n_std=std)
 
     return pass_at_k, results
 
