@@ -20,6 +20,7 @@ TASK_REGISTRY = {
     **humanevalplus.create_all_tasks(),
     **humanevalpack.create_all_tasks(),
     "mbpp": mbpp.MBPP,
+    "mbpp-bayes-at-n": mbpp.MBPPBayesAtN,
     "mbppplus": mbppplus.MBPPPlus,
     "parity": parity.Parity,
     "python_bugs": python_bugs.PythonBugs,
@@ -43,6 +44,8 @@ def get_task(task_name, args=None):
             kwargs["prompt"] = args.prompt
         if "load_data_path" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
             kwargs["load_data_path"] = args.load_data_path
+        if "n_samples" in inspect.signature(TASK_REGISTRY[task_name]).parameters:
+            kwargs["n_samples"] = getattr(args, "n_samples", None)
         return TASK_REGISTRY[task_name](**kwargs)
     except KeyError:
         print("Available tasks:")

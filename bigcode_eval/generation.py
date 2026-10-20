@@ -56,6 +56,21 @@ def parallel_generations(
         # load generated code
         with open(args.load_generations_path) as fp:
             generations = json.load(fp)
+            if getattr(task, "bayes_at_n", False):
+                if (
+                    not isinstance(generations, list)
+                    or n_tasks < 1
+                    or len(generations) < n_tasks
+                    or any(
+                        not isinstance(row, list)
+                        or not row
+                        or not all(isinstance(program, str) for program in row)
+                        for row in generations[:n_tasks]
+                    )
+                ):
+                    raise ValueError(
+                        "Bayes@N needs a nonempty program list for every selected problem."
+                    )
             if accelerator.is_main_process:
                 print(
                     f"generations loaded, {n_tasks} selected from {len(generations)} with {len(generations[0])} candidates"

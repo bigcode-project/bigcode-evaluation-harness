@@ -30,11 +30,13 @@ class MBPP(Task):
 
     DATASET_PATH = "mbpp"
 
-    def __init__(self):
+    def __init__(self, bayes_at_n=False, n_samples=None):
         super().__init__(
             stop_words=["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/", "\n```"],
             requires_execution=True,
         )
+        self.bayes_at_n = bayes_at_n
+        self.n_samples = n_samples
 
     def get_dataset(self):
         """Returns dataset for the task or an iterable of any object, that get_prompt can handle"""
@@ -82,5 +84,14 @@ class MBPP(Task):
         results, _ = compute_code_eval(
             references=references,
             predictions=generations,
+            bayes_at_n=self.bayes_at_n,
+            expected_n=self.n_samples,
         )
         return results
+
+
+class MBPPBayesAtN(MBPP):
+    """MBPP with binary Bayes@N posterior summaries alongside pass@k."""
+
+    def __init__(self, n_samples=None):
+        super().__init__(bayes_at_n=True, n_samples=n_samples)
